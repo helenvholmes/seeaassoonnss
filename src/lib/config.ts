@@ -29,6 +29,10 @@ export const config = {
     }
     return driver;
   },
+  /** Only the public URL: enough to show pages, without the R2 keys. */
+  r2PublicUrl() {
+    return required("R2_PUBLIC_URL").replace(/\/+$/, "");
+  },
   r2() {
     return {
       accountId: required("R2_ACCOUNT_ID"),

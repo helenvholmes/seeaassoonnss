@@ -20,7 +20,9 @@ function s3(): S3Client {
 }
 
 export function r2Storage(): Storage {
-  const c = config.r2();
+  // Each operation reads only the settings it needs, so public pages render with
+  // just R2_PUBLIC_URL even while the R2 keys are still missing.
+  const c = new Proxy({} as ReturnType<typeof config.r2>, { get: (_t, key) => config.r2()[key as keyof ReturnType<typeof config.r2>] });
   return {
     async createUpload(area, key, contentType, size) {
       const isPublic = area === "public";
@@ -57,6 +59,6 @@ export function r2Storage(): Storage {
     async writePublic(key, body, contentType) {
       await s3().send(new PutObjectCommand({ Bucket: c.publicBucket, Key: key, Body: body, ContentType: contentType, CacheControl: IMMUTABLE }));
     },
-    publicBaseUrl: () => c.publicUrl,
+    publicBaseUrl: () => config.r2PublicUrl(),
   };
 }
