@@ -1,9 +1,12 @@
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
-import type { Item, Layout, Placement, PhotoItem, QuoteItem, SeasonDoc } from "@/lib/schema";
+import type { Item, Layout, MapItem, Placement, PhotoItem, QuoteItem, SeasonDoc, StickerItem } from "@/lib/schema";
+import { BASE_PATH } from "@/lib/client";
 import { CANVAS_WIDTH, MAX_SCALE } from "@/lib/schema";
 import { units } from "./geometry";
 import { PlaylistCard } from "./PlaylistCard";
+import { VideoView } from "./items/VideoView";
+import { VoiceNoteView } from "./items/VoiceNoteView";
 
 export const FONT_STACKS: Record<QuoteItem["content"]["font"], string> = {
   serif: '"EB Garamond", Garamond, "Times New Roman", serif',
@@ -62,6 +65,41 @@ export function quoteSize(item: QuoteItem, layout: Layout, placement: Placement)
   return placement.textSize ?? item.content.size * (CANVAS_WIDTH.mobile / CANVAS_WIDTH.desktop);
 }
 
+/** Responsive image attributes for a stored image shown in a box `placement.w` units wide. */
+function imageAttrs(mediaBase: string, mediaId: string, widths: number[], layout: Layout, placement: Placement) {
+  const share = placement.w / CANVAS_WIDTH[layout];
+  return {
+    src: imageUrl(mediaBase, mediaId, widths[widths.length - 1]),
+    srcSet: widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", "),
+    sizes: `min(${(share * 100).toFixed(2)}vw, ${Math.ceil(placement.w * MAX_SCALE)}px)`,
+  };
+}
+
+function Sticker({ item, mediaBase, layout, placement }: { item: StickerItem; mediaBase: string; layout: Layout; placement: Placement }) {
+  const c = item.content;
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img className="item-photo" {...imageAttrs(mediaBase, c.mediaId, c.widths, layout, placement)} alt={c.alt} loading="lazy" decoding="async" draggable={false} style={{ objectFit: "contain" }} />;
+}
+
+export function mapUrl(c: MapItem["content"]) {
+  return `${BASE_PATH}/map?lat=${c.lat.toFixed(4)}&lon=${c.lon.toFixed(4)}&zoom=${Math.round(c.zoom * 4) / 4}${c.borders ? "&borders=1" : ""}`;
+}
+
+function MapView({ item, layout }: { item: MapItem; layout: Layout }) {
+  const c = item.content;
+  return (
+    <div className="map-item">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={mapUrl(c)} alt={c.label ? `Map: ${c.label}` : "Map"} loading="lazy" decoding="async" draggable={false} />
+      {c.label ? (
+        <span className="map-label" style={{ fontSize: units(layout === "desktop" ? 14 : 11, CANVAS_WIDTH[layout]) }}>
+          {c.label}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
 function Quote({ item, doc, layout, placement }: { item: QuoteItem; doc: SeasonDoc; layout: Layout; placement: Placement }) {
   const c = item.content;
   const style = {
@@ -96,5 +134,16 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
       return <Quote item={item} doc={doc} layout={layout} placement={placement} />;
     case "playlist":
       return <PlaylistCard item={item} interactive={interactive} />;
+    case "sticker":
+      return <Sticker item={item} mediaBase={mediaBase} layout={layout} placement={placement} />;
+    case "map":
+      return <MapView item={item} layout={layout} />;
+    case "video": {
+      const c = item.content;
+      const posterWidth = c.posterWidths.find((w) => w >= Math.min(1280, placement.w * 2)) ?? c.posterWidths[c.posterWidths.length - 1];
+      return <VideoView item={item} mediaBase={mediaBase} posterUrl={imageUrl(mediaBase, c.posterMediaId, posterWidth)} interactive={interactive} />;
+    }
+    case "voice_note":
+      return <VoiceNoteView item={item} mediaBase={mediaBase} interactive={interactive} />;
   }
 }

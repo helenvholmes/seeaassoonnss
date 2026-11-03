@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handle, readJson } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
-import { MediaError, processImage } from "@/lib/media";
+import { finishTimed, isMediaKind, MediaError, processImage, processSticker } from "@/lib/media";
 import { isUuid } from "@/lib/seasons";
 
 export const maxDuration = 60;
@@ -10,6 +10,16 @@ export const POST = handle(async (request: Request) => {
   await requireOwner(request);
   const body = await readJson(request);
   const mediaId = String(body.mediaId ?? "");
+  const kind = body.kind ?? "image";
   if (!isUuid(mediaId)) throw new MediaError("Bad media id.");
-  return NextResponse.json(await processImage(mediaId));
+  if (!isMediaKind(kind)) throw new MediaError("Unknown media kind.");
+  switch (kind) {
+    case "image":
+      return NextResponse.json(await processImage(mediaId));
+    case "sticker":
+      return NextResponse.json(await processSticker(mediaId, typeof body.name === "string" ? body.name : ""));
+    case "video":
+    case "audio":
+      return NextResponse.json(await finishTimed(mediaId, kind, Number(body.duration)));
+  }
 });

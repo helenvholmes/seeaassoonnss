@@ -3,8 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { QUOTE_FONTS, slugProblem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, QUOTE_FONTS, slugProblem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
 import { quoteSize } from "../ItemContent";
+import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
 import { normalizeRotation, placementOf } from "./ops";
 
@@ -29,10 +30,23 @@ interface Props {
 }
 
 function itemLabel(item: Item): string {
-  if (item.type === "photo") return item.content.alt ? `photo: ${item.content.alt.slice(0, 30)}` : "photo";
-  if (item.type === "playlist") return `playlist: ${item.content.title.slice(0, 30)}`;
-  if (item.content.binding) return item.content.binding;
-  return `quote: ${item.content.markdown.replace(/[*_\[\]()#>`]/g, "").slice(0, 30)}`;
+  const cut = (t: string) => t.replace(/[*_\[\]()#>`]/g, "").slice(0, 30);
+  switch (item.type) {
+    case "photo":
+      return item.content.alt ? `photo: ${cut(item.content.alt)}` : "photo";
+    case "video":
+      return item.content.alt ? `video: ${cut(item.content.alt)}` : "video";
+    case "sticker":
+      return item.content.alt ? `sticker: ${cut(item.content.alt)}` : "sticker";
+    case "playlist":
+      return `playlist: ${cut(item.content.title)}`;
+    case "map":
+      return `map: ${cut(item.content.label || `${item.content.lat}, ${item.content.lon}`)}`;
+    case "voice_note":
+      return item.content.caption ? `voice note: ${cut(item.content.caption)}` : "voice note";
+    case "quote":
+      return item.content.binding ?? `quote: ${cut(item.content.markdown)}`;
+  }
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -44,10 +58,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** A number input that only commits finite values. */
-function NumberInput({ value, onChange, step = 1, min }: { value: number; onChange: (n: number) => void; step?: number; min?: number }) {
-  const [text, setText] = useState(String(Math.round(value * 10) / 10));
-  useEffect(() => setText(String(Math.round(value * 10) / 10)), [value]);
+/** A number input that only commits finite values. Shows `digits` decimals. */
+function NumberInput({ value, onChange, step = 1, min, digits }: { value: number; onChange: (n: number) => void; step?: number; min?: number; digits?: number }) {
+  const places = digits ?? (step < 0.1 ? 4 : 1);
+  const show = (n: number) => String(Math.round(n * 10 ** places) / 10 ** places);
+  const [text, setText] = useState(show(value));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setText(show(value)), [value]);
   return (
     <input
       type="number"
@@ -236,7 +253,7 @@ function ItemSettings(props: Props & { item: Item }) {
 
   return (
     <div className="stack">
-      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type}</p>
+      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type.replace("_", " ")}</p>
 
       {item.type === "photo" ? (
         <>
@@ -343,6 +360,84 @@ function ItemSettings(props: Props & { item: Item }) {
           <a className="small" href={item.content.url} target="_blank" rel="noreferrer">
             Open on Spotify
           </a>
+        </>
+      ) : null}
+
+      {item.type === "video" ? (
+        <>
+          <Field label="Description (for screen readers)">
+            <textarea rows={3} value={item.content.alt} placeholder="Describe the video" onChange={(e) => content({ alt: e.target.value }, "alt")} />
+          </Field>
+          <Field label="Fit">
+            <select value={item.content.fit} onChange={(e) => content({ fit: e.target.value as "cover" | "contain" }, "fit")}>
+              <option value="cover">Crop to fill the box</option>
+              <option value="contain">Show the whole video</option>
+            </select>
+          </Field>
+          <p className="small muted">
+            Loops without sound. {item.content.hasAudio ? "Visitors can turn sound on." : "This video has no sound."} {Math.round(item.content.duration)} s.
+          </p>
+        </>
+      ) : null}
+
+      {item.type === "sticker" ? (
+        <Field label="Description (empty if decorative)">
+          <input type="text" value={item.content.alt} onChange={(e) => content({ alt: e.target.value }, "alt")} />
+        </Field>
+      ) : null}
+
+      {item.type === "video" || item.type === "sticker" ? (
+        <div className="row">
+          <button
+            onClick={() => {
+              const { width, height } = item.content;
+              updateItem((i) => {
+                const cur = placementOf(i, layout);
+                return cur ? patchPlacement(i, layout, { h: Math.round(((cur.w * height) / width) * 10) / 10 }) : i;
+              });
+            }}
+          >
+            Original aspect ratio
+          </button>
+        </div>
+      ) : null}
+
+      {item.type === "map" ? (
+        <>
+          <Field label="Label">
+            <input type="text" value={item.content.label} onChange={(e) => content({ label: e.target.value }, "label")} />
+          </Field>
+          <Field label={`Zoom: ${item.content.zoom} (0 = world)`}>
+            <input
+              type="range"
+              min={MAP_ZOOM_MIN}
+              max={MAP_ZOOM_MAX}
+              step={0.25}
+              value={item.content.zoom}
+              onChange={(e) => content({ zoom: Number(e.target.value) }, "zoom")}
+            />
+          </Field>
+          <div className="grid2">
+            <Field label="Latitude">
+              <NumberInput value={item.content.lat} step={0.01} onChange={(lat) => Math.abs(lat) <= 85 && content({ lat }, "lat")} />
+            </Field>
+            <Field label="Longitude">
+              <NumberInput value={item.content.lon} step={0.01} onChange={(lon) => Math.abs(lon) <= 180 && content({ lon }, "lon")} />
+            </Field>
+          </div>
+          <label className="row small">
+            <input type="checkbox" checked={item.content.borders} onChange={(e) => content({ borders: e.target.checked }, "borders")} />
+            Country borders
+          </label>
+        </>
+      ) : null}
+
+      {item.type === "voice_note" ? (
+        <>
+          <Field label="Caption">
+            <input type="text" value={item.content.caption} placeholder="optional" onChange={(e) => content({ caption: e.target.value }, "caption")} />
+          </Field>
+          <p className="small muted">{formatDuration(item.content.duration)}. Plays only when a visitor presses play.</p>
         </>
       ) : null}
 

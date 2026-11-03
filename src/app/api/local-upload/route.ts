@@ -9,10 +9,14 @@ import { writeLocal } from "@/lib/storage/local";
 export const PUT = handle(async (request: Request) => {
   if (config.storageDriver !== "local") return new NextResponse(null, { status: 404 });
   await requireOwner(request);
-  const key = new URL(request.url).searchParams.get("key") ?? "";
-  if (!key.startsWith("originals/")) throw new MediaError("Bad key.");
+  const params = new URL(request.url).searchParams;
+  const key = params.get("key") ?? "";
+  const area = params.get("area");
+  // Browsers upload originals to private storage, and finished video/audio to public storage.
+  const ok = area === "private" ? key.startsWith("originals/") : area === "public" ? /\/(video\.mp4|audio\.mp3)$/.test(key) : false;
+  if (!ok) throw new MediaError("Bad key.");
   const body = Buffer.from(await request.arrayBuffer());
   if (body.length > MAX_UPLOAD_BYTES) throw new MediaError("File too large.", 413);
-  await writeLocal("private", key, body);
+  await writeLocal(area as "private" | "public", key, body);
   return new NextResponse(null, { status: 200 });
 });

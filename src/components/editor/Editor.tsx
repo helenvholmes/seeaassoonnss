@@ -25,7 +25,9 @@ import {
   withMobileLayout,
   type LayerMove,
 } from "./ops";
-import { isAcceptedImage, uploadImage } from "./upload";
+import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
+import { Tools } from "./Tools";
+import type { Place } from "@/lib/geo";
 import { parsePlaylistId } from "@/lib/spotify";
 
 type SaveState = { kind: "saved" } | { kind: "pending" } | { kind: "saving" } | { kind: "error"; message: string; fatal: boolean };
@@ -59,6 +61,7 @@ export function Editor(props: EditorProps) {
   const [save, setSave] = useState<SaveState>({ kind: "saved" });
   const [notice, setNotice] = useState<string | null>(null);
   const [uploads, setUploads] = useState({ done: 0, total: 0, failed: [] as string[] });
+  const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [shift, setShift] = useState(false);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
@@ -69,7 +72,6 @@ export function Editor(props: EditorProps) {
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const moveableRef = useRef<Moveable>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
   const canvasWidth = CANVAS_WIDTH[layout];
   const canvasHeight = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
@@ -196,14 +198,57 @@ export function Editor(props: EditorProps) {
     }
   };
 
+  const failUpload = (name: string, e: unknown) =>
+    setUploads((u) => ({ ...u, done: u.done + 1, failed: [...u.failed, `${name}: ${(e as Error).message}`] }));
+
+  const addVoiceNote = async (blob: Blob, name = "recording", at?: { x: number; y: number }) => {
+    setUploads((u) => ({ ...u, total: u.total + 1 }));
+    try {
+      const a = await uploadAudio(blob);
+      addAndSelect({
+        id: crypto.randomUUID(),
+        type: "voice_note",
+        desktop: place(340, 64, at),
+        mobile: null,
+        content: { mediaId: a.mediaId, duration: a.duration, waveform: a.waveform, caption: "" },
+      });
+      setUploads((u) => ({ ...u, done: u.done + 1 }));
+    } catch (e) {
+      failUpload(name, e);
+    }
+  };
+
+  const addSticker = (s: StickerEntry) => {
+    const w = 200;
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "sticker",
+      desktop: place(w, Math.round((w * s.height) / s.width)),
+      mobile: null,
+      content: { stickerId: s.id, mediaId: s.mediaId, width: s.width, height: s.height, widths: s.widths, alt: "" },
+    });
+  };
+
+  const addMap = (p: Place) => {
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "map",
+      desktop: place(320, 320),
+      mobile: null,
+      content: { lat: p.lat, lon: p.lon, zoom: 5, label: p.label, borders: true },
+    });
+  };
+
+  /** Photos (3 at a time), videos (one at a time; compression is heavy) and audio files. */
   const uploadFiles = async (files: File[], at?: { x: number; y: number }) => {
     const images = files.filter(isAcceptedImage);
-    const rejected = files.filter((f) => !isAcceptedImage(f)).map((f) => `${f.name}: use JPEG, PNG, HEIC or WebP${f.type === "image/gif" ? " (GIF is not accepted)" : ""}.`);
-    if (!images.length) {
-      if (rejected.length) setNotice(rejected.join(" "));
-      return;
-    }
-    setUploads((u) => ({ done: u.done, total: u.total + images.length, failed: [...u.failed, ...rejected] }));
+    const videos = files.filter((f) => !isAcceptedImage(f) && isAcceptedVideo(f));
+    const audios = files.filter((f) => !isAcceptedImage(f) && !isAcceptedVideo(f) && isAudio(f));
+    const rejected = files.filter((f) => !images.includes(f) && !videos.includes(f) && !audios.includes(f)).map(rejectionReason);
+    if (rejected.length) setUploads((u) => ({ ...u, failed: [...u.failed, ...rejected] }));
+    if (!images.length && !videos.length && !audios.length) return;
+    setUploads((u) => ({ ...u, total: u.total + images.length + videos.length }));
+
     let index = 0;
     const queue = images.map((file) => ({ file, index: index++ }));
     const worker = async () => {
@@ -212,21 +257,56 @@ export function Editor(props: EditorProps) {
           const img = await uploadImage(job.file);
           const w = 360;
           const h = Math.round((w * img.height) / img.width);
-          const item: Item = {
-            id: crypto.randomUUID(),
-            type: "photo",
-            desktop: place(w, h, at, job.index),
-            mobile: null,
-            content: { mediaId: img.mediaId, width: img.width, height: img.height, widths: img.widths, alt: "", fit: "cover" },
-          };
-          change((d) => addItem(d, item));
+          change((d) =>
+            addItem(d, {
+              id: crypto.randomUUID(),
+              type: "photo",
+              desktop: place(w, h, at, job!.index),
+              mobile: null,
+              content: { mediaId: img.mediaId, width: img.width, height: img.height, widths: img.widths, alt: "", fit: "cover" },
+            }),
+          );
           setUploads((u) => ({ ...u, done: u.done + 1 }));
         } catch (e) {
-          setUploads((u) => ({ ...u, done: u.done + 1, failed: [...u.failed, `${job!.file.name}: ${(e as Error).message}`] }));
+          failUpload(job.file.name, e);
         }
       }
     };
-    await Promise.all([worker(), worker(), worker()]);
+    const videoWorker = async () => {
+      for (const file of videos) {
+        const n = index++;
+        try {
+          setVideoProgress(`compressing ${file.name}…`);
+          const v = await uploadVideo(file, (p) => setVideoProgress(`compressing ${file.name}: ${Math.round(p * 100)}%`));
+          const w = 360;
+          change((d) =>
+            addItem(d, {
+              id: crypto.randomUUID(),
+              type: "video",
+              desktop: place(w, Math.round((w * v.height) / v.width), at, n),
+              mobile: null,
+              content: {
+                mediaId: v.mediaId,
+                posterMediaId: v.poster.mediaId,
+                posterWidths: v.poster.widths,
+                width: v.width,
+                height: v.height,
+                duration: v.duration,
+                hasAudio: v.hasAudio,
+                alt: "",
+                fit: "cover",
+              },
+            }),
+          );
+          setUploads((u) => ({ ...u, done: u.done + 1 }));
+        } catch (e) {
+          failUpload(file.name, e);
+        } finally {
+          setVideoProgress(null);
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), videoWorker(), ...audios.map((f) => addVoiceNote(f, f.name, at))]);
   };
 
   // ---------- item commands ----------
@@ -446,45 +526,32 @@ export function Editor(props: EditorProps) {
       </header>
 
       <aside className="editor-tools">
-        <p className="tools-heading">add</p>
-        <button onClick={() => fileInput.current?.click()}>Photos…</button>
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          hidden
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-          onChange={(e) => {
-            void uploadFiles(Array.from(e.target.files ?? []));
-            e.target.value = "";
-          }}
+        <Tools
+          onFiles={(files) => void uploadFiles(files)}
+          onQuote={() => addQuote()}
+          onTitle={() => addQuote("", "title")}
+          onSubtitle={() => addQuote("", "subtitle")}
+          onPlaylist={addPlaylist}
+          onSticker={addSticker}
+          onMap={addMap}
+          onRecording={(blob) => void addVoiceNote(blob)}
+          playlistUrl={playlistUrl}
+          setPlaylistUrl={setPlaylistUrl}
+          setNotice={setNotice}
+          mediaBase={mediaBase}
         />
-        <button onClick={() => addQuote()}>Quote</button>
-        <button onClick={() => addQuote("", "title")}>Title</button>
-        <button onClick={() => addQuote("", "subtitle")}>Subtitle</button>
-        <form
-          className="stack"
-          style={{ gap: 4 }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            void addPlaylist(playlistUrl);
-          }}
-        >
-          <input type="url" placeholder="Spotify playlist link" value={playlistUrl} onChange={(e) => setPlaylistUrl(e.target.value)} />
-          <button disabled={!playlistUrl}>Playlist</button>
-        </form>
-        <p className="muted small">You can also paste images, text or a Spotify link, or drop photos onto the canvas.</p>
         {uploads.total > 0 && uploads.done < uploads.total ? (
-          <p className="small">
+          <p className="small" role="status">
             uploading {uploads.done + 1} of {uploads.total}…
           </p>
         ) : null}
+        {videoProgress ? <p className="small">{videoProgress}</p> : null}
         {uploads.failed.length ? (
           <div className="small error">
             {uploads.failed.map((f, i) => (
               <p key={i}>{f}</p>
             ))}
-            <button className="quiet" onClick={() => setUploads({ done: 0, total: 0, failed: [] })}>
+            <button className="quiet" onClick={() => setUploads((u) => ({ ...u, failed: [] }))}>
               Clear
             </button>
           </div>

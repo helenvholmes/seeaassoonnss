@@ -84,11 +84,78 @@ export const playlistSchema = z.object({
   }),
 });
 
-export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema]);
+export const videoSchema = z.object({
+  ...base,
+  type: z.literal("video"),
+  content: z.object({
+    /** The compressed MP4, stored as media/<mediaId>/video.mp4. */
+    mediaId: z.string().uuid(),
+    /** The poster frame, stored like a photo. */
+    posterMediaId: z.string().uuid(),
+    posterWidths: z.array(z.number().int().positive()).min(1),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    duration: num.nonnegative(),
+    hasAudio: z.boolean(),
+    /** Description for screen readers. */
+    alt: z.string().max(1000),
+    fit: z.enum(["cover", "contain"]),
+  }),
+});
+
+export const stickerSchema = z.object({
+  ...base,
+  type: z.literal("sticker"),
+  content: z.object({
+    /** The sticker library entry this came from. */
+    stickerId: z.string().uuid(),
+    /** Copied from the library, so the page needs no lookup and survives library deletes. */
+    mediaId: z.string().uuid(),
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    widths: z.array(z.number().int().positive()).min(1),
+    alt: z.string().max(1000),
+  }),
+});
+
+export const MAP_ZOOM_MIN = 0;
+export const MAP_ZOOM_MAX = 12;
+
+export const mapSchema = z.object({
+  ...base,
+  type: z.literal("map"),
+  content: z.object({
+    lat: num.min(-85).max(85),
+    lon: num.min(-180).max(180),
+    /** 0 = the whole world; each step doubles the scale. */
+    zoom: num.min(MAP_ZOOM_MIN).max(MAP_ZOOM_MAX),
+    label: z.string().max(200),
+    borders: z.boolean(),
+  }),
+});
+
+export const voiceNoteSchema = z.object({
+  ...base,
+  type: z.literal("voice_note"),
+  content: z.object({
+    /** MP3, stored as media/<mediaId>/audio.mp3. */
+    mediaId: z.string().uuid(),
+    duration: num.nonnegative(),
+    caption: z.string().max(500),
+    /** Peak levels 0–1 for drawing the waveform. */
+    waveform: z.array(num.min(0).max(1)).max(200),
+  }),
+});
+
+export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema]);
 export type Item = z.infer<typeof itemSchema>;
 export type PhotoItem = z.infer<typeof photoSchema>;
 export type QuoteItem = z.infer<typeof quoteSchema>;
 export type PlaylistItem = z.infer<typeof playlistSchema>;
+export type VideoItem = z.infer<typeof videoSchema>;
+export type StickerItem = z.infer<typeof stickerSchema>;
+export type MapItem = z.infer<typeof mapSchema>;
+export type VoiceNoteItem = z.infer<typeof voiceNoteSchema>;
 export type ItemType = Item["type"];
 
 export const seasonDocSchema = z.object({
@@ -113,7 +180,7 @@ export const CANVAS_WIDTH: Record<Layout, number> = { desktop: DESKTOP_WIDTH, mo
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Paths used by the app itself, so no season can take them. */
-export const RESERVED_SLUGS = new Set(["edit", "api", "local-media", "_next"]);
+export const RESERVED_SLUGS = new Set(["edit", "api", "local-media", "map", "_next"]);
 
 export function slugProblem(slug: string): string | null {
   if (!slug) return "Slug is empty.";

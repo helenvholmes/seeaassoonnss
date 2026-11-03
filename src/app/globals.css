@@ -168,3 +168,52 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .preview-caption { text-align: center; margin: 16px 0 8px; }
 .preview-stage { overflow: auto; padding: 0 16px 48px; text-align: center; }
 .preview-frame { border: 0; background: #fff; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.08); }
+
+/* ---------- Video, voice note, map ---------- */
+.video-wrap { position: relative; width: 100%; height: 100%; }
+.media-button {
+  position: absolute; right: 8px; bottom: 8px; z-index: 1;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; padding: 3px 8px;
+  background: rgb(255 255 255 / 0.85); color: #1d1d1b; border: 0; border-radius: 3px; cursor: pointer;
+}
+.media-button:hover:not(:disabled) { background: #fff; color: #1d1d1b; }
+.media-button-center { right: auto; bottom: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 16px; padding: 10px 14px; }
+.voice-note {
+  container-type: size;
+  display: flex; align-items: center; gap: 4cqh; width: 100%; height: 100%; padding: 0 5cqh;
+  background: #fff; color: #1d1d1b; border-radius: 999px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; overflow: hidden;
+}
+.voice-play {
+  flex: none; display: grid; place-items: center; width: 70cqh; height: 70cqh; border-radius: 50%;
+  border: 0; padding: 0; background: #1d1d1b; color: #fff; font-size: 24cqh; cursor: pointer;
+}
+.voice-play:hover:not(:disabled) { background: #444; color: #fff; }
+.voice-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6cqh; height: 100%; }
+.voice-wave { width: 100%; height: 34cqh; }
+.voice-wave rect { fill: #c9c9c2; }
+.voice-wave rect.played { fill: #1d1d1b; }
+.voice-meta { display: flex; justify-content: space-between; gap: 8px; font-size: clamp(7px, 16cqh, 18px); white-space: nowrap; }
+.voice-caption { overflow: hidden; text-overflow: ellipsis; }
+.voice-time { opacity: 0.55; }
+.map-item { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.map-item img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.map-label {
+  position: absolute; left: 50%; top: 50%; transform: translate(0.9em, -50%);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; white-space: nowrap;
+  background: rgb(251 251 249 / 0.85); padding: 0.1em 0.35em;
+}
+
+/* ---------- Editor tool panels ---------- */
+.tool-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px; margin-top: -4px; border: 1px solid #e3e3df; border-top: 0; border-radius: 0 0 4px 4px; background: #fafaf8; }
+.sticker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.sticker-tile { position: relative; }
+.sticker-add { width: 100%; aspect-ratio: 1; padding: 4px; border-color: #e3e3df; background: repeating-conic-gradient(#f0f0ec 0 25%, #fff 0 50%) 0 0 / 12px 12px; }
+.sticker-add:hover:not(:disabled) { background: repeating-conic-gradient(#e6e6e0 0 25%, #fff 0 50%) 0 0 / 12px 12px; border-color: #1d1d1b; }
+.sticker-add img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sticker-remove { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; padding: 0; line-height: 1; border-radius: 50%; font-size: 12px; opacity: 0; }
+.sticker-tile:hover .sticker-remove, .sticker-remove:focus-visible { opacity: 1; }
+.place-result { text-align: left; font-size: 12px; }
+.recording-dot { width: 10px; height: 10px; border-radius: 50%; background: #b3261e; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .recording-dot { animation: none; } }
