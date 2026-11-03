@@ -85,12 +85,14 @@ export interface IndexEntry {
   doc: SeasonDoc;
 }
 
-/** Published seasons for the public index: pinned ones by position, then newest first. */
+/** Published seasons for the public index: pinned ones by position, then by month (newest first), then newest created. */
 export async function listPublishedSeasons(): Promise<IndexEntry[]> {
   const rows = await sql`
     select slug, published from seasons
     where status = 'published' and published is not null
-    order by sort_order asc nulls last, created_at desc`;
+    order by sort_order asc nulls last,
+             published->>'month' desc nulls last,
+             created_at desc`;
   return rows.map((r) => ({ slug: r.slug, doc: r.published as SeasonDoc }));
 }
 

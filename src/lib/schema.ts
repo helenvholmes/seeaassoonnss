@@ -10,6 +10,9 @@ export const IMAGE_WIDTHS = [640, 1280, 2048] as const;
 /** Screens narrower than this show the mobile layout. */
 export const MOBILE_BREAKPOINT = 960;
 export const DEFAULT_BACKGROUND = "#fbfbf9";
+/** Not a design limit, only a guard against absurd values. */
+export const MAX_CANVAS_HEIGHT = 10_000_000;
+export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const num = z.number().finite();
 
@@ -164,8 +167,14 @@ export const seasonDocSchema = z.object({
   period: z.string().max(200),
   coverItemId: z.string().uuid().nullable(),
   background: z.object({ type: z.literal("color"), value: z.string().regex(/^#[0-9a-f]{6}$/i) }),
-  desktopHeight: num.min(200).max(40000),
-  mobileHeight: num.min(200).max(40000),
+  /** Optional month the season belongs to, "YYYY-MM". Orders the index. */
+  month: z.string().regex(MONTH_PATTERN).nullable().default(null),
+  /**
+   * Minimum canvas heights. The page always grows to fit its lowest item (see
+   * lib/layout.ts), so these only add empty space; there is no upper limit.
+   */
+  desktopHeight: num.min(200).max(MAX_CANVAS_HEIGHT),
+  mobileHeight: num.min(200).max(MAX_CANVAS_HEIGHT),
   /**
    * False for seasons from before the mobile layout existed. Their items have no
    * mobile placement yet, and the page uses the scaled-down desktop layout.
@@ -207,9 +216,10 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     subtitle: "",
     period: "",
     coverItemId: null,
+    month: null,
     background: { type: "color", value: DEFAULT_BACKGROUND },
-    desktopHeight: 1800,
-    mobileHeight: Math.round(1800 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
+    desktopHeight: 900,
+    mobileHeight: Math.round(900 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
     mobileLayout: true,
     items: [],
   };

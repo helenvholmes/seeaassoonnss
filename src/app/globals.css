@@ -217,3 +217,14 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .recording-dot { width: 10px; height: 10px; border-radius: 50%; background: #b3261e; animation: pulse 1s infinite alternate; }
 @keyframes pulse { from { opacity: 1; } to { opacity: 0.3; } }
 @media (prefers-reduced-motion: reduce) { .recording-dot { animation: none; } }
+
+/* ---------- Editor: end of page ---------- */
+.page-end {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 99999; pointer-events: none;
+  border-top: 1px dashed #a9a9a0;
+  background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.025) 0 10px, transparent 10px 20px);
+}
+.page-end span {
+  position: absolute; top: 6px; left: 8px;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
+}

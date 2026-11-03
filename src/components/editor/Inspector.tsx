@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
-import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, QUOTE_FONTS, slugProblem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, QUOTE_FONTS, slugProblem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
 import { quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
@@ -77,6 +77,46 @@ function NumberInput({ value, onChange, step = 1, min, digits }: { value: number
         if (e.target.value !== "" && Number.isFinite(n) && (min === undefined || n >= min)) onChange(n);
       }}
     />
+  );
+}
+
+const MONTH_NAMES = ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"];
+
+/** Month and year as two plain controls (the native month picker is missing in some browsers). */
+function MonthInput({ value, onChange }: { value: string | null; onChange: (month: string | null) => void }) {
+  const [year, month] = value ? value.split("-") : ["", ""];
+  const [yearText, setYearText] = useState(year);
+  useEffect(() => setYearText(year), [year]);
+  const emit = (y: string, m: string) => {
+    if (!m) return onChange(null);
+    const yy = /^\d{4}$/.test(y) ? y : String(new Date().getFullYear());
+    onChange(`${yy}-${m}`);
+  };
+  return (
+    <div className="row" style={{ flexWrap: "nowrap" }}>
+      <select value={month} onChange={(e) => emit(yearText, e.target.value)} aria-label="Month">
+        <option value="">no month</option>
+        {MONTH_NAMES.map((name, i) => (
+          <option key={name} value={String(i + 1).padStart(2, "0")}>
+            {name}
+          </option>
+        ))}
+      </select>
+      <input
+        type="number"
+        aria-label="Year"
+        placeholder="year"
+        min={1900}
+        max={2999}
+        value={yearText}
+        disabled={!month}
+        onChange={(e) => {
+          setYearText(e.target.value);
+          if (/^\d{4}$/.test(e.target.value)) emit(e.target.value, month);
+        }}
+        style={{ width: 90 }}
+      />
+    </div>
   );
 }
 
@@ -184,15 +224,19 @@ function SeasonSettings(props: Props) {
         {problem ? <span className="small error">{problem}</span> : slugMessage ? <span className="small muted">{slugMessage}</span> : null}
       </Field>
       <SortOrderField id={id} sortOrder={props.sortOrder} onSortOrderChange={props.onSortOrderChange} />
-      {layout === "desktop" ? (
-        <Field label="Canvas height (desktop, 1440 wide)">
-          <NumberInput value={doc.desktopHeight} min={200} step={50} onChange={(n) => set("desktopHeight", Math.min(40000, n))} />
-        </Field>
-      ) : (
-        <Field label="Canvas height (mobile, 390 wide)">
-          <NumberInput value={doc.mobileHeight} min={200} step={20} onChange={(n) => set("mobileHeight", Math.min(40000, n))} />
-        </Field>
-      )}
+      <Field label="Month">
+        <MonthInput value={doc.month ?? null} onChange={(m) => change((d) => ({ ...d, month: m }), "season:month")} />
+        <span className="small muted">Orders the index page (newest first). Shown when the period is empty.</span>
+      </Field>
+      <Field label={`Minimum page length (${layout}, ${layout === "desktop" ? 1440 : 390} wide)`}>
+        <NumberInput
+          value={layout === "desktop" ? doc.desktopHeight : doc.mobileHeight}
+          min={200}
+          step={layout === "desktop" ? 50 : 20}
+          onChange={(n) => set(layout === "desktop" ? "desktopHeight" : "mobileHeight", Math.min(MAX_CANVAS_HEIGHT, n))}
+        />
+        <span className="small muted">The page grows to fit everything on it, with no limit. This only adds empty space at the end.</span>
+      </Field>
       <Field label="Background">
         <div className="row">
           <input type="color" value={doc.background.value} onChange={(e) => set("background", { type: "color", value: e.target.value })} />

@@ -7,6 +7,7 @@ import { INDEX_TAG } from "@/lib/revalidate";
 import { listPublishedSeasons } from "@/lib/seasons";
 import { absoluteUrl, coverPhoto, slashTitle } from "@/lib/share";
 import { storage } from "@/lib/storage";
+import { formatMonth } from "@/lib/layout";
 import { logPageError } from "@/lib/health";
 
 // Rendered per request from cached data; Publish, Unpublish, renames, pins and
@@ -62,7 +63,7 @@ export default async function Index() {
                   ) : null}
                 </span>
                 <span className="index-title">{slashTitle(doc.title)}</span>
-                {doc.period ? <span className="index-period">{doc.period}</span> : null}
+                {doc.period || doc.month ? <span className="index-period">{doc.period || formatMonth(doc.month)}</span> : null}
               </Link>
             </li>
           );

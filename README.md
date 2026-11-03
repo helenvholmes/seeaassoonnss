@@ -215,7 +215,8 @@ Open http://localhost:3000/seasons/edit, enter your setup token and register a p
 
 - **Next.js** (App Router) with `basePath: "/seasons"`. Public pages are cached and refreshed when you publish.
 - **Postgres** stores each season as one row with two JSON documents: `draft`, which the editor autosaves, and `published`, the snapshot visitors see. Publish copies one into the other.
-- **Layouts:** the desktop canvas is 1440 units wide and the mobile canvas 390. Each scales to the screen, so overlaps stay as placed. Screens narrower than 960 px get the mobile layout.
+- **Layouts:** the desktop canvas is 1440 units wide and the mobile canvas 390. Each scales to the screen, so overlaps stay as placed. Screens narrower than 960 px get the mobile layout. A page has no length limit: it grows to fit its lowest item, and visitors scroll.
+- **Index order:** pinned seasons first, then by each season's month (newest first), then by creation date.
 - **Media** lives in Cloudflare R2. Photos and stickers are resized to WebP on the server ([sharp](https://sharp.pixelplumbing.com)), without metadata. HEIC is converted to JPEG, video compressed to MP4 ([Mediabunny](https://mediabunny.dev)) and audio encoded to MP3 (LAME) in the browser, so the server never runs ffmpeg.
 - **Maps** are SVG drawn on the server from [Natural Earth](https://www.naturalearthdata.com) outlines and cached per place and zoom. Place search uses OpenStreetMap's [Nominatim](https://nominatim.org), from the editor only.
 - **Spotify** playlist titles and covers come from Spotify's oEmbed endpoint, which needs no account or key.

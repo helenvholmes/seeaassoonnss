@@ -6,6 +6,7 @@ import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
 import { CANVAS_WIDTH, DESKTOP_WIDTH, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
 import { ItemContent } from "../ItemContent";
 import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
@@ -74,7 +75,10 @@ export function Editor(props: EditorProps) {
   const gestureStart = useRef<SeasonDoc | null>(null);
 
   const canvasWidth = CANVAS_WIDTH[layout];
-  const canvasHeight = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  // The page grows to fit its lowest item. Below the end of the page the editor
+  // keeps empty working room; dragging an item there makes the page longer.
+  const pageEnd = pageHeight(doc, layout);
+  const canvasHeight = pageEnd + (layout === "desktop" ? 900 : 500);
   const scale = stageWidth / canvasWidth;
   const selected = doc.items.find((i) => i.id === selectedId) ?? null;
   const selectedPlacement = selected ? placementOf(selected, layout) : null;
@@ -161,7 +165,7 @@ export function Editor(props: EditorProps) {
   const place = (w: number, h: number, center?: { x: number; y: number }, index = 0): Placement => {
     const c = center ?? visibleCenter();
     const x = Math.max(0, Math.min(DESKTOP_WIDTH - w, c.x - w / 2 + index * 32));
-    const y = Math.max(0, Math.min(doc.desktopHeight - h, c.y - h / 2 + index * 32));
+    const y = Math.max(0, c.y - h / 2 + index * 32);
     return roundPlacement({ x, y, w, h, rotation: 0, z: 0, locked: false });
   };
 
@@ -600,9 +604,12 @@ export function Editor(props: EditorProps) {
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
             </div>
           ))}
+          <div className="page-end" style={{ top: `${(pageEnd / canvasHeight) * 100}%` }} aria-hidden>
+            <span>end of page · drag items below to make it longer</span>
+          </div>
         </div>
         <div className="canvas-height-label muted small">
-          {layout} canvas {canvasWidth} × {canvasHeight}
+          {layout} page {canvasWidth} × {pageEnd}, grows to fit
         </div>
         <Moveable
           ref={moveableRef}

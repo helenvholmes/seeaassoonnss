@@ -1,12 +1,13 @@
 import { withMobileLayout } from "@/components/editor/ops";
 import { CANVAS_WIDTH, MAX_SCALE, type Layout, type SeasonDoc } from "@/lib/schema";
+import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "./geometry";
 import { ItemContent } from "./ItemContent";
 
 /** One layout of a season: the editor canvas without the controls. */
 export function LayoutCanvas({ doc, mediaBase, layout, className = "" }: { doc: SeasonDoc; mediaBase: string; layout: Layout; className?: string }) {
   const width = CANVAS_WIDTH[layout];
-  const height = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  const height = pageHeight(doc, layout);
   const items = doc.items
     .map((item) => ({ item, p: layout === "desktop" ? item.desktop : item.mobile }))
     .filter((x): x is { item: typeof x.item; p: NonNullable<typeof x.p> } => x.p !== null)

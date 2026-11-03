@@ -2,6 +2,7 @@ import "server-only";
 import type { Metadata } from "next";
 import { imageUrl } from "@/components/ItemContent";
 import { BASE_PATH, config } from "./config";
+import { formatMonth } from "./layout";
 import type { PhotoItem, SeasonDoc } from "./schema";
 
 /** The season's cover photo: the chosen cover, or else the first photo. */
@@ -32,7 +33,7 @@ export function slashTitle(title: string): string {
 
 export function seasonMetadata(slug: string, doc: SeasonDoc, mediaBase: string): Metadata {
   const title = doc.title || "untitled";
-  const description = [doc.period, plainText(doc.subtitle)].filter(Boolean).join(" · ") || undefined;
+  const description = [doc.period || formatMonth(doc.month), plainText(doc.subtitle)].filter(Boolean).join(" · ") || undefined;
   const url = absoluteUrl(`${BASE_PATH}/${slug}`);
   const cover = coverPhoto(doc);
   const width = cover ? [...cover.content.widths].reverse().find((w) => w <= 1280) ?? cover.content.widths[0] : 0;
