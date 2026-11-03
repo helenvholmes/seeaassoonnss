@@ -196,7 +196,7 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .voice-meta { display: flex; justify-content: space-between; gap: 8px; font-size: clamp(7px, 16cqh, 18px); white-space: nowrap; }
 .voice-caption { overflow: hidden; text-overflow: ellipsis; }
 .voice-time { opacity: 0.55; }
-.map-item { position: relative; width: 100%; height: 100%; overflow: hidden; }
+.map-item { position: relative; width: 100%; height: 100%; } /* The label may extend past the map. */
 .map-item img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
 .map-label {
   position: absolute; left: 50%; top: 50%; transform: translate(0.9em, -50%);

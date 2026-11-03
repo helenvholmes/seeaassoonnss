@@ -16,6 +16,7 @@ export interface Storage {
   /** A URL the browser can PUT a file to, valid for a few minutes. */
   createUpload(area: Area, key: string, contentType: string, size: number): Promise<UploadTarget>;
   readPrivate(key: string): Promise<Buffer>;
+  writePrivate(key: string, body: Buffer, contentType: string): Promise<void>;
   /** The first `length` bytes of a public file, or null if it does not exist. */
   readPublicStart(key: string, length: number): Promise<Buffer | null>;
   writePublic(key: string, body: Buffer, contentType: string): Promise<void>;

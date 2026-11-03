@@ -28,6 +28,7 @@ export function localStorage(): Storage {
       };
     },
     readPrivate: (key) => readFile(localPath("private", key)),
+    writePrivate: (key, body) => writeLocal("private", key, body),
     async readPublicStart(key, length) {
       try {
         const handle = await open(localPath("public", key));

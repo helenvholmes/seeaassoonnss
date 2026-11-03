@@ -43,6 +43,9 @@ export function r2Storage(): Storage {
       if (!res.Body) throw new Error(`Empty object ${key}`);
       return Buffer.from(await res.Body.transformToByteArray());
     },
+    async writePrivate(key, body, contentType) {
+      await s3().send(new PutObjectCommand({ Bucket: c.privateBucket, Key: key, Body: body, ContentType: contentType }));
+    },
     async readPublicStart(key, length) {
       try {
         const res = await s3().send(new GetObjectCommand({ Bucket: c.publicBucket, Key: key, Range: `bytes=0-${length - 1}` }));

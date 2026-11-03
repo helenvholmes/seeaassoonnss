@@ -406,3 +406,13 @@ Version 1 must replace one Pinterest board with one published season. Everything
 6. Removing a sticker from the library does not remove it from seasons that use it.
 7. Maps use an orthographic (globe) projection centered on the place, drawn from Natural Earth data at three levels of detail. Zoom runs from 0 (whole globe) to 12. Country borders are optional.
 8. Place search uses OpenStreetMap Nominatim from the server, owner only, at most one request per second. Typed coordinates need no search.
+
+**Nov 3, 2026 (phase 4 build)**
+
+1. `npm run seed` creates one demo season at `/seasons/demo` as a draft, with placeholder photos drawn by the script (no photos ship in the repository). It never overwrites an existing demo unless run with `--force`.
+2. `npm run doctor` checks a setup: environment, database and migrations, passkeys and setup token, both R2 buckets (write, read, public URL, CORS from `SITE_URL`) and Spotify. It writes and deletes one test file per bucket.
+3. Vercel builds apply database migrations (`vercel-build`). Without `DATABASE_URL` the build warns and continues, so a fork's first deploy succeeds before its database exists.
+4. The app builds with no environment variables. The database connects on first use.
+5. A deployment without a main site sends `/` to `/seasons`.
+6. CI (GitHub Actions) type-checks, runs unit tests, builds without environment variables, and runs migrate, seed (twice) and doctor against Postgres.
+7. The README is a step-by-step deploy guide for a second person, with an environment variable table and troubleshooting.

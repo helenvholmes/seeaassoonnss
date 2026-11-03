@@ -4,10 +4,16 @@ import postgres from "postgres";
 
 const url = process.env.DATABASE_URL;
 if (!url) {
+  if (process.env.VERCEL) {
+    // The first deploy of a fork usually happens before its database exists.
+    console.warn("\n⚠ DATABASE_URL is not set: skipping database migrations. Add a database (README step 3), then redeploy.\n");
+    process.exit(0);
+  }
   console.error("DATABASE_URL is not set.");
   process.exit(1);
 }
-const sql = postgres(url, { onnotice: () => {} });
+// prepare: false works with pooled connections (Neon's pgbouncer endpoint).
+const sql = postgres(url, { onnotice: () => {}, prepare: false, max: 1 });
 const dir = new URL("../db/migrations/", import.meta.url);
 
 try {
