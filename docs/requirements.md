@@ -69,7 +69,7 @@ A small backend is acceptable. It does these tasks only:
 
 ### Passkey rules
 
-1. The app accepts passkey registration only when no passkey exists, or when the request includes a one-time setup token from an environment variable. This stops a stranger from claiming a new fork first.
+1. The app accepts passkey registration only from the signed-in owner, or when the request includes the one-time setup token from the `SETUP_TOKEN` environment variable. The first passkey on a new deployment therefore also needs the token. This stops a stranger from claiming a new fork first.
 2. The owner can register a second passkey (for example a phone) as a backup.
 3. A session cookie (HTTP-only, secure) keeps the owner signed in.
 4. All write routes require a valid session. All public routes are read-only.
@@ -184,7 +184,7 @@ Seven item types are in scope. No item plays sound until a visitor clicks it. Vi
 ### Spotify playlist: limits and proposal
 
 1. The standard Spotify embed is an iframe. Its own options are size and a color theme (Spotify community, Iframe API theme). The app cannot change the styles inside the iframe.
-2. The Spotify oEmbed endpoint returns a title, a thumbnail image and the embed code for a Spotify URL, with no sign-in (Spotify oEmbed guide). The reference lists shows, episodes, artists, albums and tracks (oEmbed reference). Playlist support must be tested before the build.
+2. The Spotify oEmbed endpoint returns a title, a thumbnail image and the embed code for a Spotify URL, with no sign-in (Spotify oEmbed guide). The reference lists shows, episodes, artists, albums and tracks (oEmbed reference). **Tested Nov 3, 2026: playlist URLs work** and return `title`, `thumbnail_url` and `iframe_url`.
 3. A full track list needs the Spotify Web API. Since February 2026, a Development Mode app needs the app owner to have Spotify Premium, and playlist items are available only for playlists the user owns or collaborates on (Spotify migration guide).
 
 **Decided for version 1:** the server gets title and cover image through oEmbed. oEmbed gives no owner name or track count, so the owner types an optional caption instead (for example "for walking home"). The page shows a custom-styled card with that data. A click on the card opens the standard Spotify embed in place (or opens Spotify). The track list via the Web API is a later phase.
@@ -333,7 +333,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 
 - [x] Media storage provider: Cloudflare R2.
 - [x] Framework: keep Next.js.
-- [ ] Does Spotify oEmbed return data for playlist URLs? Test one playlist before the build.
+- [x] Does Spotify oEmbed return data for playlist URLs? Yes (tested Nov 3, 2026).
 - [x] Playlist card: cover, title and an owner-written caption. Track count waits for the Web API.
 - [x] Saving: edits go live only after Publish.
 - [x] Index page: cover, `// title`, period. Newest first, with optional manual pinning.
@@ -377,3 +377,10 @@ Version 1 must replace one Pinterest board with one published season. Everything
 7. Storage: Cloudflare R2. Framework: Next.js. Playlist card gets an owner caption. Index: newest first with optional pinning. Quote fonts: EB Garamond, IBM Plex Mono, one sans-serif. Passkey recovery: setup token.
 8. License: AGPL-3.0.
 9. Optional extras: voice-note waveform, arrow-key nudging, alignment guides, previous/next season links.
+
+**Nov 3, 2026 (phase 1 build)**
+
+1. Spotify oEmbed returns title and cover for playlist URLs.
+2. Passkey registration needs either a signed-in session or the unused setup token, also for the first passkey. ("When no passkey exists" alone would let a stranger claim a fresh fork.)
+3. The title and subtitle are quote items set to show the season title or subtitle.
+4. Phase 1 shows the desktop layout at every screen width, scaled to fit. The mobile layout arrives in phase 2.

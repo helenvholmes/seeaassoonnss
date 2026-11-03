@@ -1,0 +1,134 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #fbfbf9;
+  color: #1d1d1b;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Canvas (shared by the public page and the editor) ---------- */
+.canvas {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  overflow: hidden; /* The page cuts off parts of items outside the canvas. */
+  container-type: inline-size;
+}
+.item { position: absolute; transform-origin: center center; }
+.item-photo { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.item-quote { margin: 0; line-height: 1.3; font-weight: 400; overflow-wrap: break-word; }
+.item-quote p { margin: 0 0 0.6em; }
+.item-quote p:last-child { margin-bottom: 0; }
+.item-quote a { color: inherit; }
+.item-quote-source { opacity: 0.6; font-size: 0.7em; margin-top: 0.6em !important; }
+.item-title { font-weight: 400; }
+
+/* ---------- Playlist card ---------- */
+.playlist-card {
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 4%;
+  padding: 4%;
+  background: #fff;
+  color: #1d1d1b;
+  text-decoration: none;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  cursor: pointer;
+  overflow: hidden;
+}
+@container (min-aspect-ratio: 3 / 2) {
+  .playlist-text { justify-content: center; }
+}
+.playlist-cover { width: 100%; aspect-ratio: 1; object-fit: cover; flex: 0 1 auto; min-height: 0; background: #e8e8e4; }
+.playlist-text { display: flex; flex-direction: column; gap: 0.35em; min-width: 0; font-size: clamp(8px, 6.5cqw, 40px); }
+.playlist-label { opacity: 0.55; font-size: 0.75em; text-transform: lowercase; }
+.playlist-title { font-weight: 600; }
+.playlist-caption { opacity: 0.75; font-size: 0.85em; }
+@container (min-aspect-ratio: 3 / 2) {
+  .playlist-card { flex-direction: row; }
+  .playlist-cover { width: auto; height: 100%; }
+  .playlist-text { font-size: clamp(8px, 9cqh, 40px); }
+}
+.playlist-embed { display: block; width: 100%; height: 100%; border: 0; border-radius: 12px; }
+
+/* ---------- Public page ---------- */
+.season-page { min-height: 100vh; }
+.source-link {
+  display: block;
+  padding: 32px 16px 40px;
+  text-align: center;
+  font: 12px "IBM Plex Mono", ui-monospace, monospace;
+  color: inherit;
+  opacity: 0.45;
+}
+.source-link:hover { opacity: 0.8; }
+
+/* ---------- Owner pages ---------- */
+.owner { font: 14px/1.45 "IBM Plex Mono", ui-monospace, monospace; max-width: 720px; margin: 0 auto; padding: 48px 16px; }
+.owner h1 { font: 400 28px "EB Garamond", serif; margin: 0 0 24px; }
+.owner a { color: inherit; }
+.owner-list { list-style: none; padding: 0; margin: 24px 0; border-top: 1px solid #e3e3df; }
+.owner-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e3e3df; }
+.muted { opacity: 0.55; }
+.error { color: #b3261e; }
+button, .button, input, textarea, select { font: inherit; }
+button, .button {
+  border: 1px solid #1d1d1b; background: #fff; color: #1d1d1b; padding: 6px 12px;
+  border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block;
+}
+button:hover:not(:disabled), .button:hover { background: #1d1d1b; color: #fff; }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: #1d1d1b; color: #fff; }
+button.quiet { border-color: transparent; background: transparent; }
+button.quiet:hover:not(:disabled) { background: #ecece8; color: inherit; }
+input[type="text"], input[type="password"], input[type="number"], input[type="url"], textarea, select {
+  border: 1px solid #c9c9c4; border-radius: 4px; padding: 6px 8px; background: #fff; width: 100%;
+}
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- Editor ---------- */
+.editor {
+  display: grid;
+  grid-template-columns: 200px 1fr 300px;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  font: 13px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+  background: #ecece8;
+}
+.editor-bar {
+  grid-column: 1 / -1;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 8px 16px; background: #fff; border-bottom: 1px solid #dcdcd6;
+}
+.editor-tools, .editor-inspector { background: #fff; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.editor-tools { border-right: 1px solid #dcdcd6; }
+.editor-inspector { border-left: 1px solid #dcdcd6; }
+.editor-stage { position: relative; overflow: auto; padding: 32px; }
+.editor-canvas { margin: 0; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.06); overflow: visible; }
+/* Outside the canvas, items are shown faded so the cut-off is visible while editing. */
+.editor-canvas::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 0 100vmax rgb(236 236 232 / 0.75); z-index: 100000; }
+.editor .item { cursor: move; }
+.editor .item * { pointer-events: none; }
+.editor .item.is-locked { cursor: default; }
+.editor .item.is-selected.is-locked { outline: 1px dashed #8a8a84; }
+.badge { position: absolute; top: 4px; left: 4px; font: 10px "IBM Plex Mono", monospace; background: #1d1d1b; color: #fff; padding: 1px 5px; border-radius: 3px; z-index: 1; }
+.badge-warn { background: #b3261e; }
+.editor .item:not(.is-selected) .badge-warn { opacity: 0; }
+.editor:hover .item .badge-warn { opacity: 1; }
+.canvas-height-label { margin-top: 8px; }
+.tools-heading { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > span { font-size: 11px; opacity: 0.7; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.small { font-size: 11px; }
+.quiet-link { color: inherit; opacity: 0.7; }
+hr { border: 0; border-top: 1px solid #e3e3df; width: 100%; margin: 8px 0; }
+button.error { color: #b3261e; border-color: #b3261e; }
+button.error:hover:not(:disabled) { background: #b3261e; color: #fff; }
+input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #c9c9c4; border-radius: 4px; background: none; }

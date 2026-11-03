@@ -1,0 +1,554 @@
+"use client";
+
+import Link from "next/link";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { flushSync } from "react-dom";
+import Moveable from "react-moveable";
+import { api, BASE_PATH } from "@/lib/client";
+import { DESKTOP_WIDTH, type Item, type Placement, type SeasonDoc } from "@/lib/schema";
+import { placementStyle } from "../geometry";
+import { ItemContent } from "../ItemContent";
+import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
+import { Inspector } from "./Inspector";
+import { addItem, duplicateItem, moveLayer, removeItem, roundPlacement, setPlacement, type LayerMove } from "./ops";
+import { isAcceptedImage, uploadImage } from "./upload";
+import { parsePlaylistId } from "@/lib/spotify";
+
+type SaveState = { kind: "saved" } | { kind: "pending" } | { kind: "saving" } | { kind: "error"; message: string; fatal: boolean };
+
+export interface EditorProps {
+  id: string;
+  initialSlug: string;
+  initialDoc: SeasonDoc;
+  initialVersion: number;
+  initialStatus: "draft" | "published";
+  initialPublished: SeasonDoc | null;
+  mediaBase: string;
+}
+
+const SAVE_DELAY = 1000;
+
+function isTyping(target: EventTarget | null) {
+  const el = target as HTMLElement | null;
+  return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
+}
+
+export function Editor(props: EditorProps) {
+  const { id, mediaBase } = props;
+  const [history, setHistory] = useState<History<SeasonDoc>>(() => createHistory(props.initialDoc));
+  const doc = history.present;
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [slug, setSlug] = useState(props.initialSlug);
+  const [status, setStatus] = useState(props.initialStatus);
+  const [published, setPublished] = useState<SeasonDoc | null>(props.initialPublished);
+  const [save, setSave] = useState<SaveState>({ kind: "saved" });
+  const [notice, setNotice] = useState<string | null>(null);
+  const [uploads, setUploads] = useState({ done: 0, total: 0, failed: [] as string[] });
+  const [shift, setShift] = useState(false);
+  const [stageWidth, setStageWidth] = useState(1000);
+  const [playlistUrl, setPlaylistUrl] = useState("");
+
+  const stageWrapRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef(new Map<string, HTMLDivElement>());
+  const moveableRef = useRef<Moveable>(null);
+  const gestureStart = useRef<SeasonDoc | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  const scale = stageWidth / DESKTOP_WIDTH;
+  const selected = doc.items.find((i) => i.id === selectedId) ?? null;
+
+  // ---------- document changes ----------
+  const change = useCallback((next: SeasonDoc | ((d: SeasonDoc) => SeasonDoc), key: string | null = null) => {
+    setHistory((h) => commit(h, typeof next === "function" ? next(h.present) : next, key));
+  }, []);
+
+  // ---------- autosave (draft only; Publish is separate) ----------
+  const version = useRef(props.initialVersion);
+  const savedDoc = useRef(props.initialDoc);
+  const saving = useRef<Promise<void> | null>(null);
+  const latestDoc = useRef(doc);
+  latestDoc.current = doc;
+  const fatal = save.kind === "error" && save.fatal;
+
+  const saveNow = useCallback(async (): Promise<void> => {
+    while (saving.current) await saving.current;
+    const toSave = latestDoc.current;
+    if (toSave === savedDoc.current) return;
+    setSave({ kind: "saving" });
+    saving.current = (async () => {
+      try {
+        const res = await api<{ version: number }>(`/seasons/${id}`, { method: "PUT", body: { version: version.current, doc: toSave } });
+        version.current = res.version;
+        savedDoc.current = toSave;
+        setSave(latestDoc.current === toSave ? { kind: "saved" } : { kind: "pending" });
+      } catch (e) {
+        const err = e as Error & { status?: number };
+        setSave({ kind: "error", message: err.message, fatal: err.status === 409 || err.status === 401 });
+        throw err;
+      } finally {
+        saving.current = null;
+      }
+    })();
+    return saving.current;
+  }, [id]);
+
+  useEffect(() => {
+    if (doc === savedDoc.current || fatal) return;
+    setSave((s) => (s.kind === "saving" ? s : { kind: "pending" }));
+    const t = setTimeout(() => saveNow().catch(() => {}), SAVE_DELAY);
+    return () => clearTimeout(t);
+  }, [doc, saveNow, fatal]);
+
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (latestDoc.current !== savedDoc.current) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, []);
+
+  // ---------- stage size ----------
+  useLayoutEffect(() => {
+    const el = stageWrapRef.current;
+    if (!el) return;
+    const measure = () => setStageWidth(Math.max(320, el.clientWidth - 64));
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
+    moveableRef.current?.updateRect();
+  }, [doc, stageWidth, selectedId]);
+
+  // ---------- placing new items ----------
+  /** A spot near the middle of what is on screen, in design units. */
+  const visibleSpot = useCallback(
+    (w: number, h: number, index = 0) => {
+      const wrap = stageWrapRef.current;
+      const top = wrap ? wrap.scrollTop / scale : 0;
+      const viewH = wrap ? wrap.clientHeight / scale : 800;
+      const x = Math.max(0, DESKTOP_WIDTH / 2 - w / 2 + index * 32 - 64);
+      const y = Math.max(0, Math.min(doc.desktopHeight - h, top + viewH / 2 - h / 2 + index * 32 - 64));
+      return { x, y };
+    },
+    [scale, doc.desktopHeight],
+  );
+
+  const place = (w: number, h: number, at?: { x: number; y: number }, index = 0): Placement => {
+    const spot = at ?? visibleSpot(w, h, index);
+    return roundPlacement({ x: spot.x, y: spot.y, w, h, rotation: 0, z: 0, locked: false });
+  };
+
+  const addAndSelect = (item: Item) => {
+    change((d) => addItem(d, item));
+    setSelectedId(item.id);
+  };
+
+  const addQuote = (markdown = "a quote", binding: "title" | "subtitle" | null = null) => {
+    const size = binding === "title" ? 72 : binding === "subtitle" ? 26 : 30;
+    const w = binding === "title" ? 900 : 480;
+    const h = binding === "title" ? 110 : binding === "subtitle" ? 80 : 180;
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "quote",
+      desktop: place(w, h),
+      mobile: null,
+      content: { markdown: binding ? "" : markdown, source: "", font: "serif", size, align: "left", color: "#1d1d1b", binding },
+    });
+  };
+
+  const addPlaylist = async (url: string) => {
+    if (!parsePlaylistId(url)) {
+      setNotice("That is not a Spotify playlist link.");
+      return;
+    }
+    try {
+      const info = await api<{ url: string; spotifyId: string; title: string; coverUrl: string | null }>("/spotify", { body: { url } });
+      addAndSelect({ id: crypto.randomUUID(), type: "playlist", desktop: place(300, 400), mobile: null, content: { ...info, caption: "" } });
+      setPlaylistUrl("");
+      setNotice(null);
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
+
+  const uploadFiles = async (files: File[], at?: { x: number; y: number }) => {
+    const images = files.filter(isAcceptedImage);
+    const rejected = files.filter((f) => !isAcceptedImage(f)).map((f) => `${f.name}: use JPEG, PNG, HEIC or WebP${f.type === "image/gif" ? " (GIF is not accepted)" : ""}.`);
+    if (!images.length) {
+      if (rejected.length) setNotice(rejected.join(" "));
+      return;
+    }
+    setUploads((u) => ({ done: u.done, total: u.total + images.length, failed: [...u.failed, ...rejected] }));
+    let index = 0;
+    const queue = images.map((file) => ({ file, index: index++ }));
+    const worker = async () => {
+      for (let job = queue.shift(); job; job = queue.shift()) {
+        try {
+          const img = await uploadImage(job.file);
+          const w = 360;
+          const h = Math.round((w * img.height) / img.width);
+          const spot = at ? { x: at.x - w / 2 + job.index * 32, y: at.y - h / 2 + job.index * 32 } : undefined;
+          const item: Item = {
+            id: crypto.randomUUID(),
+            type: "photo",
+            desktop: place(w, h, spot, job.index),
+            mobile: null,
+            content: { mediaId: img.mediaId, width: img.width, height: img.height, widths: img.widths, alt: "", fit: "cover" },
+          };
+          change((d) => addItem(d, item));
+          setUploads((u) => ({ ...u, done: u.done + 1 }));
+        } catch (e) {
+          setUploads((u) => ({ ...u, done: u.done + 1, failed: [...u.failed, `${job!.file.name}: ${(e as Error).message}`] }));
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+  };
+
+  // ---------- item commands ----------
+  const updateSelected = (fn: (item: Item) => Item, key?: string) => {
+    if (!selectedId) return;
+    change((d) => ({ ...d, items: d.items.map((i) => (i.id === selectedId ? fn(i) : i)) }), key ?? null);
+  };
+  const layer = (move: LayerMove) => selectedId && change((d) => moveLayer(d, selectedId, move));
+  const duplicate = () => {
+    if (!selectedId) return;
+    const newId = crypto.randomUUID();
+    change((d) => duplicateItem(d, selectedId, newId));
+    setSelectedId(newId);
+  };
+  const remove = () => {
+    if (!selectedId) return;
+    change((d) => removeItem(d, selectedId));
+    setSelectedId(null);
+  };
+
+  // ---------- keyboard and paste ----------
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      setShift(e.shiftKey);
+      if (e.type !== "keydown" || isTyping(e.target)) return;
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        setHistory((h) => (e.shiftKey ? redo(h) : undo(h)));
+      } else if (mod && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        setHistory(redo);
+      } else if (mod && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        duplicate();
+      } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selected.desktop.locked) {
+        e.preventDefault();
+        remove();
+      } else if (e.key === "Escape") {
+        setSelectedId(null);
+      } else if (e.key.startsWith("Arrow") && selected && !selected.desktop.locked) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        change((d) => setPlacement(d, selected.id, { x: selected.desktop.x + dx, y: selected.desktop.y + dy }), `nudge:${selected.id}`);
+      }
+    };
+    const onBlur = () => setShift(false);
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("keyup", onKey);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("keyup", onKey);
+      window.removeEventListener("blur", onBlur);
+    };
+  });
+
+  useEffect(() => {
+    const onPaste = (e: ClipboardEvent) => {
+      if (isTyping(e.target) || !e.clipboardData) return;
+      const files = Array.from(e.clipboardData.files);
+      if (files.length) {
+        e.preventDefault();
+        void uploadFiles(files);
+        return;
+      }
+      const text = e.clipboardData.getData("text/plain").trim();
+      if (!text) return;
+      e.preventDefault();
+      if (parsePlaylistId(text)) void addPlaylist(text);
+      else addQuote(text);
+    };
+    window.addEventListener("paste", onPaste);
+    return () => window.removeEventListener("paste", onPaste);
+  });
+
+  // ---------- publish ----------
+  const hasChanges = useMemo(() => !published || JSON.stringify(published) !== JSON.stringify(doc), [published, doc]);
+
+  const publish = async () => {
+    try {
+      await saveNow();
+      await api(`/seasons/${id}/publish`, { body: {} });
+      setPublished(latestDoc.current);
+      setStatus("published");
+      setNotice(null);
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
+  const unpublish = async () => {
+    try {
+      await api(`/seasons/${id}/publish`, { method: "DELETE" });
+      setStatus("draft");
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
+  const discard = async () => {
+    if (!confirm("Replace the draft with the published version?")) return;
+    try {
+      await saveNow();
+      const res = await api<{ doc: SeasonDoc; version: number }>(`/seasons/${id}/discard`, { body: {} });
+      version.current = res.version;
+      savedDoc.current = res.doc;
+      setHistory((h) => commit(h, res.doc));
+      // The server already has this document; skip the autosave it would trigger.
+      latestDoc.current = res.doc;
+      savedDoc.current = res.doc;
+      setSelectedId(null);
+    } catch (e) {
+      setNotice((e as Error).message);
+    }
+  };
+
+  // ---------- Moveable ----------
+  const target = selected ? itemRefs.current.get(selected.id) ?? null : null;
+  const locked = !!selected?.desktop.locked;
+  const live = (patch: Partial<Placement>) => {
+    if (!selectedId) return;
+    setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch)));
+  };
+  const startGesture = () => {
+    gestureStart.current = latestDoc.current;
+  };
+  const endGesture = () => {
+    const before = gestureStart.current;
+    gestureStart.current = null;
+    if (!before || !selectedId) return;
+    setHistory((h) => {
+      const item = h.present.items.find((i) => i.id === selectedId);
+      const rounded = item ? setPlacement(h.present, selectedId, roundPlacement(item.desktop)) : h.present;
+      return commitGesture(replace(h, rounded), before);
+    });
+  };
+
+  // Moveable's gesture layer listens to mouse and touch events (not pointer events),
+  // so selection and drag start on mousedown / touchstart. Selecting and dragging
+  // happen in one press.
+  const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
+    if ("button" in e && e.button !== 0) return;
+    e.stopPropagation();
+    if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
+    if (!item.desktop.locked) moveableRef.current?.dragStart(e.nativeEvent);
+  };
+
+  const sorted = [...doc.items].sort((a, b) => a.desktop.z - b.desktop.z);
+  const saveLabel =
+    save.kind === "saved" ? "saved" : save.kind === "saving" ? "saving…" : save.kind === "pending" ? "unsaved changes" : `not saved: ${save.message}`;
+
+  return (
+    <div className="editor">
+      <header className="editor-bar">
+        <div className="row">
+          <Link href="/edit" className="quiet-link">
+            ← seasons
+          </Link>
+          <strong>{doc.title || "untitled"}</strong>
+          <span className={save.kind === "error" ? "error" : "muted"} role="status">
+            {saveLabel}
+          </span>
+        </div>
+        <div className="row">
+          <button className="quiet" onClick={() => setHistory(undo)} disabled={!history.past.length} title="Undo (⌘Z)">
+            Undo
+          </button>
+          <button className="quiet" onClick={() => setHistory(redo)} disabled={!history.future.length} title="Redo (⇧⌘Z)">
+            Redo
+          </button>
+          <a className="button" href={`${BASE_PATH}/edit/${id}/preview`} target="_blank" rel="noreferrer" onClick={() => void saveNow().catch(() => {})}>
+            Preview
+          </a>
+          {status === "published" ? (
+            <>
+              <a className="quiet-link" href={`${BASE_PATH}/${slug}`} target="_blank" rel="noreferrer">
+                /{slug}
+              </a>
+              {hasChanges ? (
+                <button className="quiet" onClick={discard}>
+                  Discard changes
+                </button>
+              ) : null}
+              <button className="quiet" onClick={unpublish}>
+                Unpublish
+              </button>
+              <button className="primary" onClick={publish} disabled={!hasChanges || fatal}>
+                {hasChanges ? "Publish changes" : "Published"}
+              </button>
+            </>
+          ) : (
+            <button className="primary" onClick={publish} disabled={fatal}>
+              Publish
+            </button>
+          )}
+        </div>
+      </header>
+
+      <aside className="editor-tools">
+        <p className="tools-heading">add</p>
+        <button onClick={() => fileInput.current?.click()}>Photos…</button>
+        <input
+          ref={fileInput}
+          type="file"
+          multiple
+          hidden
+          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+          onChange={(e) => {
+            void uploadFiles(Array.from(e.target.files ?? []));
+            e.target.value = "";
+          }}
+        />
+        <button onClick={() => addQuote()}>Quote</button>
+        <button onClick={() => addQuote("", "title")}>Title</button>
+        <button onClick={() => addQuote("", "subtitle")}>Subtitle</button>
+        <form
+          className="stack"
+          style={{ gap: 4 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void addPlaylist(playlistUrl);
+          }}
+        >
+          <input type="url" placeholder="Spotify playlist link" value={playlistUrl} onChange={(e) => setPlaylistUrl(e.target.value)} />
+          <button disabled={!playlistUrl}>Playlist</button>
+        </form>
+        <p className="muted small">You can also paste images, text or a Spotify link, or drop photos onto the canvas.</p>
+        {uploads.total > 0 && uploads.done < uploads.total ? (
+          <p className="small">
+            uploading {uploads.done + 1} of {uploads.total}…
+          </p>
+        ) : null}
+        {uploads.failed.length ? (
+          <div className="small error">
+            {uploads.failed.map((f, i) => (
+              <p key={i}>{f}</p>
+            ))}
+            <button className="quiet" onClick={() => setUploads({ done: 0, total: 0, failed: [] })}>
+              Clear
+            </button>
+          </div>
+        ) : null}
+        {notice ? (
+          <p className="small error" onClick={() => setNotice(null)}>
+            {notice}
+          </p>
+        ) : null}
+      </aside>
+
+      <div
+        className="editor-stage"
+        ref={stageWrapRef}
+        onMouseDown={(e) => {
+          // Moveable's handles live inside the stage; clicks on them keep the selection.
+          if (!(e.target as HTMLElement).closest(".moveable-control-box")) setSelectedId(null);
+        }}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          const files = Array.from(e.dataTransfer.files);
+          const canvas = (e.currentTarget.querySelector(".canvas") as HTMLElement).getBoundingClientRect();
+          void uploadFiles(files, { x: (e.clientX - canvas.left) / scale, y: (e.clientY - canvas.top) / scale });
+        }}
+      >
+        <div
+          className="canvas editor-canvas"
+          style={{ width: stageWidth, aspectRatio: `${DESKTOP_WIDTH} / ${doc.desktopHeight}`, background: doc.background.value }}
+        >
+          {sorted.map((item) => (
+            <div
+              key={item.id}
+              ref={(el) => {
+                if (el) itemRefs.current.set(item.id, el);
+                else itemRefs.current.delete(item.id);
+              }}
+              data-item-id={item.id}
+              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${item.desktop.locked ? " is-locked" : ""}`}
+              style={placementStyle(item.desktop, doc.desktopHeight)}
+              onMouseDown={(e) => onItemPress(item, e)}
+              onTouchStart={(e) => onItemPress(item, e)}
+            >
+              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} />
+              {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
+              {item.desktop.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
+            </div>
+          ))}
+        </div>
+        <div className="canvas-height-label muted small">
+          canvas {DESKTOP_WIDTH} × {doc.desktopHeight}
+        </div>
+        <Moveable
+          ref={moveableRef}
+          target={target}
+          draggable={!locked}
+          resizable={!locked}
+          rotatable={!locked}
+          keepRatio={shift}
+          throttleRotate={shift ? 15 : 0}
+          rotationPosition="top"
+          origin={false}
+          renderDirections={locked ? [] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
+          onDragStart={startGesture}
+          onDrag={(e) => {
+            // Write the DOM at once so Moveable's next measurement matches; React state follows.
+            e.target.style.left = `${e.left}px`;
+            e.target.style.top = `${e.top}px`;
+            live({ x: e.left / scale, y: e.top / scale });
+          }}
+          onDragEnd={endGesture}
+          onResizeStart={startGesture}
+          onResize={(e) => {
+            e.target.style.width = `${e.width}px`;
+            e.target.style.height = `${e.height}px`;
+            e.target.style.left = `${e.drag.left}px`;
+            e.target.style.top = `${e.drag.top}px`;
+            live({ w: e.width / scale, h: e.height / scale, x: e.drag.left / scale, y: e.drag.top / scale });
+          }}
+          onResizeEnd={endGesture}
+          onRotateStart={startGesture}
+          onRotate={(e) => {
+            e.target.style.transform = `rotate(${e.rotation}deg)`;
+            live({ rotation: e.rotation });
+          }}
+          onRotateEnd={endGesture}
+        />
+      </div>
+
+      <aside className="editor-inspector">
+        <Inspector
+          id={id}
+          doc={doc}
+          item={selected}
+          slug={slug}
+          onSlugChange={setSlug}
+          change={change}
+          updateItem={updateSelected}
+          layer={layer}
+          duplicate={duplicate}
+          remove={remove}
+          mediaBase={mediaBase}
+        />
+      </aside>
+    </div>
+  );
+}
