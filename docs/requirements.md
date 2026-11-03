@@ -179,7 +179,7 @@ Seven item types are in scope. No item plays sound until a visitor clicks it. Vi
 
 **Quote rules.** Markdown only: bold, italic, links, line breaks. No raw HTML. Quotes can come from any source: own writing, lyrics, books, messages. Preset fonts: EB Garamond (serif), IBM Plex Mono (monospace) and one plain sans-serif (to be picked). Each must look right in lowercase with the `//` prefix.
 
-**Map rules.** Maps are vector outlines, not tile maps. No map provider account or API key is needed, so forks need no setup for maps. The same renderer draws the route map.
+**Map rules.** Maps are vector outlines, not tile maps. No map provider account or API key is needed, so forks need no setup for maps.
 
 **Sticker library.** Each uploaded sticker goes into a library for reuse in any season. The repository can ship with no stickers, so forks start empty.
 
@@ -190,35 +190,6 @@ Seven item types are in scope. No item plays sound until a visitor clicks it. Vi
 3. A full track list needs the Spotify Web API. Since February 2026, a Development Mode app needs the app owner to have Spotify Premium, and playlist items are available only for playlists the user owns or collaborates on (Spotify migration guide).
 
 **Decided for version 1:** the server gets title and cover image through oEmbed. oEmbed gives no owner name or track count, so the owner types an optional caption instead (for example "for walking home"). The page shows a custom-styled card with that data. A click on the card opens the standard Spotify embed in place (or opens Spotify). The track list via the Web API is a later phase.
-
-## Scroll-driven route map
-
-A route map is an optional mode of the Map item. The map stays fixed on the screen while text and photos scroll next to it or over it. The route line draws in as the reader scrolls.
-
-A season is always one canvas (no sections). The route map must therefore work inside the canvas; how is an open question.
-
-### References
-
-1. Visual: "The Russia Left Behind," *The New York Times*, October 2013 (producers: Mike Bostock, Shan Carter, Leslye Davis). Longform permalink.
-2. Technical: OpenNews Source — Animating Maps with D3 and TopoJSON.
-
-### Behavior
-
-1. **Layout:** the map stays fixed on the screen. Text and photos scroll next to it or over it.
-2. **Route drawing:** when the reader scrolls down, the route line draws in. When the reader scrolls up, the line pulls back.
-3. **Method:** draw two copies of the same route path in two colors, one on top of the other. Set the top path's `stroke-dasharray` in proportion to scroll progress through the map section.
-4. **Steps tied to places:** each content section links to a place on the route. When a section comes into view, the map moves to that place and highlights it.
-5. **Reduced motion:** when the reader has reduced motion turned on, show the full route immediately with no animation.
-
-### Data and tools
-
-1. **Input:** an ordered list of places (name, latitude, longitude). One possible source: the owner's Odyssey list in Google Maps.
-2. **Suggested tools:** D3 for the map and line. Scrollama (or an equal library) to detect which section is on the screen.
-
-### Odyssey page
-
-1. The owner's main website has an `/odyssey` route.
-2. `/odyssey` shows the Odyssey season with the scroll-driven route map.
 
 ## Editor
 
@@ -345,9 +316,6 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [ ] Quote fonts: EB Garamond and IBM Plex Mono decided; the sans-serif is still to pick.
 - [x] Design units: 1440 / 390 widths, 960 px breakpoint (proposed), scale cap 1.25× (proposed).
 - [x] License: AGPL-3.0. Sale is allowed; a changed hosted copy must offer its source.
-- [ ] Route data format: GeoJSON, or a CSV export from Google Maps?
-- [ ] Route map layout: a season is one canvas, so how does a fixed, scroll-driven map work inside it?
-- [ ] Phase for the route map and `/odyssey`.
 - [ ] Visual references beyond "leafy greens".
 - [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
@@ -416,3 +384,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 5. A deployment without a main site sends `/` to `/seasons`.
 6. CI (GitHub Actions) type-checks, runs unit tests, builds without environment variables, and runs migrate, seed (twice) and doctor against Postgres.
 7. The README is a step-by-step deploy guide for a second person, with an environment variable table and troubleshooting.
+
+**Nov 3, 2026**
+
+1. Odyssey is out of scope. The owner builds it by hand on the main site. The scroll-driven route map, which existed only for Odyssey, is removed with it.
