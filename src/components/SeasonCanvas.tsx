@@ -1,27 +1,40 @@
-import { DESKTOP_WIDTH, MAX_SCALE, type SeasonDoc } from "@/lib/schema";
+import { withMobileLayout } from "@/components/editor/ops";
+import { CANVAS_WIDTH, MAX_SCALE, type Layout, type SeasonDoc } from "@/lib/schema";
 import { placementStyle } from "./geometry";
 import { ItemContent } from "./ItemContent";
 
-/**
- * The public view of a season: the editor canvas without the controls.
- * Phase 1 shows the desktop layout at every width, scaled to fit.
- */
-export function SeasonCanvas({ doc, mediaBase }: { doc: SeasonDoc; mediaBase: string }) {
-  const items = [...doc.items].sort((a, b) => a.desktop.z - b.desktop.z);
+/** One layout of a season: the editor canvas without the controls. */
+export function LayoutCanvas({ doc, mediaBase, layout, className = "" }: { doc: SeasonDoc; mediaBase: string; layout: Layout; className?: string }) {
+  const width = CANVAS_WIDTH[layout];
+  const height = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  const items = doc.items
+    .map((item) => ({ item, p: layout === "desktop" ? item.desktop : item.mobile }))
+    .filter((x): x is { item: typeof x.item; p: NonNullable<typeof x.p> } => x.p !== null)
+    .sort((a, b) => a.p.z - b.p.z);
   return (
     <div
-      className="canvas"
-      style={{
-        maxWidth: DESKTOP_WIDTH * MAX_SCALE,
-        aspectRatio: `${DESKTOP_WIDTH} / ${doc.desktopHeight}`,
-        background: doc.background.value,
-      }}
+      className={`canvas canvas-${layout} ${className}`}
+      style={{ maxWidth: width * MAX_SCALE, aspectRatio: `${width} / ${height}`, background: doc.background.value }}
     >
-      {items.map((item) => (
-        <div key={item.id} className={`item item-${item.type}`} style={placementStyle(item.desktop, doc.desktopHeight)}>
-          <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive />
+      {items.map(({ item, p }) => (
+        <div key={item.id} className={`item item-${item.type}`} style={placementStyle(p, height, width)}>
+          <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive layout={layout} placement={p} />
         </div>
       ))}
     </div>
+  );
+}
+
+/**
+ * The public view: both layouts are in the HTML, and CSS shows one by screen width
+ * (breakpoint 960 px, see globals.css). Lazy images in the hidden layout never load.
+ */
+export function SeasonCanvas({ doc, mediaBase }: { doc: SeasonDoc; mediaBase: string }) {
+  const full = withMobileLayout(doc);
+  return (
+    <>
+      <LayoutCanvas doc={full} mediaBase={mediaBase} layout="desktop" className="only-desktop" />
+      <LayoutCanvas doc={full} mediaBase={mediaBase} layout="mobile" className="only-mobile" />
+    </>
   );
 }

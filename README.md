@@ -6,7 +6,7 @@ The full specification is in [docs/requirements.md](docs/requirements.md).
 
 ## Status
 
-**Phase 1** is built:
+**Phase 1** (built):
 
 - Passkey sign-in for one owner, with a one-time setup token.
 - Seasons: create, edit, autosave a draft, publish, publish changes, discard changes, unpublish, rename the slug, delete.
@@ -14,7 +14,16 @@ The full specification is in [docs/requirements.md](docs/requirements.md).
 - Desktop canvas (1440 units wide): drag, resize, rotate, layer order, lock, duplicate, delete, undo/redo (50 steps). Shift keeps the aspect ratio and snaps rotation to 15°. Arrow keys nudge.
 - Public page at `/seasons/[slug]`, cached until the next publish.
 
-Phases 2 to 4 (mobile layout, index page, share metadata, video, stickers, voice notes, maps, seed data) are not built yet.
+**Phase 2** (built):
+
+- Mobile canvas (390 units wide) with a Desktop / Mobile toggle in the editor. Content is shared; position, size, rotation, layer, lock and quote text size are separate per layout.
+- A new season's mobile layout starts as the desktop layout scaled down. Reset it to that, or to a single column. Hide any item on mobile.
+- Screens narrower than 960 px show the mobile layout. Both layouts are in the page's HTML and CSS picks one, so the page needs no JavaScript to choose.
+- Preview at real screen sizes: phone, large phone, tablet, laptop, desktop, wide.
+- Index page at `/seasons`: cover, `// title` and period for each published season. Pinned seasons first, then newest first.
+- Share metadata: title, description, canonical URL and the cover image for link previews.
+
+Phases 3 and 4 (video, stickers, voice notes, maps, seed data) are not built yet.
 
 ## How it works
 

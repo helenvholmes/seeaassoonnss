@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { handle, readJson } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
 import { refreshPublicPage } from "@/lib/revalidate";
-import { deleteSeason, getSeason, renameSlug, saveDraft, SeasonError } from "@/lib/seasons";
+import { deleteSeason, getSeason, renameSlug, saveDraft, SeasonError, setSortOrder } from "@/lib/seasons";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -22,15 +22,22 @@ export const PUT = handle(async (request: Request, { params }: Ctx) => {
   return NextResponse.json(await saveDraft(id, body.version, body.doc));
 });
 
-/** Settings that are not part of the document: the slug. */
+/** Settings that are not part of the document: the slug and the index position. */
 export const PATCH = handle(async (request: Request, { params }: Ctx) => {
   await requireOwner(request);
   const { id } = await params;
   const body = await readJson(request);
-  if (typeof body.slug !== "string") throw new SeasonError("Nothing to change.", 400);
-  const result = await renameSlug(id, body.slug.trim());
-  refreshPublicPage(result.oldSlug, result.slug);
-  return NextResponse.json(result);
+  if (typeof body.slug === "string") {
+    const result = await renameSlug(id, body.slug.trim());
+    refreshPublicPage(result.oldSlug, result.slug);
+    return NextResponse.json(result);
+  }
+  if ("sortOrder" in body && (body.sortOrder === null || typeof body.sortOrder === "number")) {
+    const slug = await setSortOrder(id, body.sortOrder as number | null);
+    refreshPublicPage(slug);
+    return NextResponse.json({ sortOrder: body.sortOrder });
+  }
+  throw new SeasonError("Nothing to change.", 400);
 });
 
 export const DELETE = handle(async (request: Request, { params }: Ctx) => {

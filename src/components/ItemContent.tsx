@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
-import type { Item, PhotoItem, QuoteItem, SeasonDoc } from "@/lib/schema";
-import { DESKTOP_WIDTH, MAX_SCALE } from "@/lib/schema";
+import type { Item, Layout, Placement, PhotoItem, QuoteItem, SeasonDoc } from "@/lib/schema";
+import { CANVAS_WIDTH, MAX_SCALE } from "@/lib/schema";
 import { units } from "./geometry";
 import { PlaylistCard } from "./PlaylistCard";
 
@@ -36,17 +36,17 @@ export function imageUrl(mediaBase: string, mediaId: string, width: number) {
   return `${mediaBase}/media/${mediaId}/${width}.webp`;
 }
 
-function Photo({ item, mediaBase }: { item: PhotoItem; mediaBase: string }) {
+function Photo({ item, mediaBase, layout, placement }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement }) {
   const { mediaId, widths, alt, fit } = item.content;
   const largest = widths[widths.length - 1];
-  const share = item.desktop.w / DESKTOP_WIDTH;
+  const share = placement.w / CANVAS_WIDTH[layout];
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       className="item-photo"
       src={imageUrl(mediaBase, mediaId, largest)}
       srcSet={widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", ")}
-      sizes={`min(${(share * 100).toFixed(2)}vw, ${Math.ceil(item.desktop.w * MAX_SCALE)}px)`}
+      sizes={`min(${(share * 100).toFixed(2)}vw, ${Math.ceil(placement.w * MAX_SCALE)}px)`}
       alt={alt}
       loading="lazy"
       decoding="async"
@@ -56,11 +56,17 @@ function Photo({ item, mediaBase }: { item: PhotoItem; mediaBase: string }) {
   );
 }
 
-function Quote({ item, doc }: { item: QuoteItem; doc: SeasonDoc }) {
+/** Text size in the layout's design units: desktop uses the content size; mobile its own. */
+export function quoteSize(item: QuoteItem, layout: Layout, placement: Placement): number {
+  if (layout === "desktop") return item.content.size;
+  return placement.textSize ?? item.content.size * (CANVAS_WIDTH.mobile / CANVAS_WIDTH.desktop);
+}
+
+function Quote({ item, doc, layout, placement }: { item: QuoteItem; doc: SeasonDoc; layout: Layout; placement: Placement }) {
   const c = item.content;
   const style = {
     fontFamily: FONT_STACKS[c.font],
-    fontSize: units(c.size),
+    fontSize: units(quoteSize(item, layout, placement), CANVAS_WIDTH[layout]),
     color: c.color,
     textAlign: c.align,
   } as const;
@@ -81,12 +87,13 @@ function Quote({ item, doc }: { item: QuoteItem; doc: SeasonDoc }) {
 }
 
 /** What an item shows, without its position. The editor and the public page share it. */
-export function ItemContent({ item, doc, mediaBase, interactive }: { item: Item; doc: SeasonDoc; mediaBase: string; interactive: boolean }) {
+export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: string; interactive: boolean; layout: Layout; placement: Placement }) {
+  const { item, doc, mediaBase, interactive, layout, placement } = props;
   switch (item.type) {
     case "photo":
-      return <Photo item={item} mediaBase={mediaBase} />;
+      return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} />;
     case "quote":
-      return <Quote item={item} doc={doc} />;
+      return <Quote item={item} doc={doc} layout={layout} placement={placement} />;
     case "playlist":
       return <PlaylistCard item={item} interactive={interactive} />;
   }

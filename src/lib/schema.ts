@@ -7,6 +7,8 @@ export const MOBILE_WIDTH = 390;
 /** The canvas never shows larger than this, so 2048 px images stay sharp. */
 export const MAX_SCALE = 1.25;
 export const IMAGE_WIDTHS = [640, 1280, 2048] as const;
+/** Screens narrower than this show the mobile layout. */
+export const MOBILE_BREAKPOINT = 960;
 export const DEFAULT_BACKGROUND = "#fbfbf9";
 
 const num = z.number().finite();
@@ -19,13 +21,18 @@ export const placementSchema = z.object({
   rotation: num,
   z: z.number().int(),
   locked: z.boolean(),
+  /**
+   * Quote text size in this canvas's design units. Used by the mobile layout, where
+   * text usually needs a different size than the desktop size in the item content.
+   */
+  textSize: num.positive().max(400).optional(),
 });
 export type Placement = z.infer<typeof placementSchema>;
 
 const base = {
   id: z.string().uuid(),
   desktop: placementSchema,
-  // Empty = not shown on mobile. The mobile layout arrives in phase 2.
+  // Empty = not shown on mobile (once the season has a mobile layout).
   mobile: placementSchema.nullable(),
 };
 
@@ -92,9 +99,17 @@ export const seasonDocSchema = z.object({
   background: z.object({ type: z.literal("color"), value: z.string().regex(/^#[0-9a-f]{6}$/i) }),
   desktopHeight: num.min(200).max(40000),
   mobileHeight: num.min(200).max(40000),
+  /**
+   * False for seasons from before the mobile layout existed. Their items have no
+   * mobile placement yet, and the page uses the scaled-down desktop layout.
+   */
+  mobileLayout: z.boolean().default(false),
   items: z.array(itemSchema).max(500),
 });
 export type SeasonDoc = z.infer<typeof seasonDocSchema>;
+
+export type Layout = "desktop" | "mobile";
+export const CANVAS_WIDTH: Record<Layout, number> = { desktop: DESKTOP_WIDTH, mobile: MOBILE_WIDTH };
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Paths used by the app itself, so no season can take them. */
@@ -127,7 +142,8 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     coverItemId: null,
     background: { type: "color", value: DEFAULT_BACKGROUND },
     desktopHeight: 1800,
-    mobileHeight: 2400,
+    mobileHeight: Math.round(1800 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
+    mobileLayout: true,
     items: [],
   };
 }

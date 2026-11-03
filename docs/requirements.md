@@ -127,6 +127,7 @@ The document shapes follow.
 | `background` | color or image reference | Page background |
 | `desktop_height` | number | Canvas height in design units |
 | `mobile_height` | number | Canvas height in design units |
+| `mobile_layout` | boolean | False only for seasons made before phase 2; they show the scaled desktop layout on mobile until opened in the editor |
 | `items` | list of items | See below |
 
 ### Item
@@ -148,6 +149,7 @@ The document shapes follow.
 | `rotation` | number | Degrees, any value |
 | `z` | integer | Layer order; higher is in front |
 | `locked` | boolean | Locked items cannot move by accident in the editor |
+| `textSize` | number, optional | Quote text size in this canvas's units. Used by the mobile layout; desktop uses the size in the quote content |
 
 ### Design units
 
@@ -384,3 +386,12 @@ Version 1 must replace one Pinterest board with one published season. Everything
 2. Passkey registration needs either a signed-in session or the unused setup token, also for the first passkey. ("When no passkey exists" alone would let a stranger claim a fresh fork.)
 3. The title and subtitle are quote items set to show the season title or subtitle.
 4. Phase 1 shows the desktop layout at every screen width, scaled to fit. The mobile layout arrives in phase 2.
+
+**Nov 3, 2026 (phase 2 build)**
+
+1. Each placement can carry its own quote text size (`textSize`), so text can be larger on mobile than the scaled desktop size.
+2. Layer order and lock are separate per layout.
+3. New items get their mobile placement from the scaled desktop placement, also when added in mobile mode.
+4. The preview offers six real sizes: 390, 430, 820, 1280, 1440 and 1920 px wide. 820 px (tablet) shows the mobile layout.
+5. Index entries: cover (the chosen cover, else the first photo), `// title` (no double `//`), period. Pinned seasons first by position, then newest first by creation date.
+6. Share previews use the cover image at up to 1280 px wide.

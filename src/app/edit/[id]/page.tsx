@@ -18,6 +18,7 @@ export default async function EditSeason({ params }: { params: Promise<{ id: str
       initialVersion={season.version}
       initialStatus={season.status}
       initialPublished={season.published}
+      initialSortOrder={season.sortOrder}
       mediaBase={storage().publicBaseUrl()}
     />
   );
