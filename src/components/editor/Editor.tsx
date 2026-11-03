@@ -5,13 +5,29 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { DESKTOP_WIDTH, type Item, type Placement, type SeasonDoc } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
 import { placementStyle } from "../geometry";
 import { ItemContent } from "../ItemContent";
 import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
 import { Inspector } from "./Inspector";
-import { addItem, duplicateItem, moveLayer, removeItem, roundPlacement, setPlacement, type LayerMove } from "./ops";
-import { isAcceptedImage, uploadImage } from "./upload";
+import {
+  addItem,
+  convertPoint,
+  duplicateItem,
+  moveLayer,
+  placementOf,
+  removeItem,
+  roundPlacement,
+  scaledMobileLayout,
+  setMobileVisible,
+  setPlacement,
+  singleColumnMobileLayout,
+  withMobileLayout,
+  type LayerMove,
+} from "./ops";
+import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
+import { Tools } from "./Tools";
+import type { Place } from "@/lib/geo";
 import { parsePlaylistId } from "@/lib/spotify";
 
 type SaveState = { kind: "saved" } | { kind: "pending" } | { kind: "saving" } | { kind: "error"; message: string; fatal: boolean };
@@ -23,6 +39,7 @@ export interface EditorProps {
   initialVersion: number;
   initialStatus: "draft" | "published";
   initialPublished: SeasonDoc | null;
+  initialSortOrder: number | null;
   mediaBase: string;
 }
 
@@ -35,7 +52,7 @@ function isTyping(target: EventTarget | null) {
 
 export function Editor(props: EditorProps) {
   const { id, mediaBase } = props;
-  const [history, setHistory] = useState<History<SeasonDoc>>(() => createHistory(props.initialDoc));
+  const [history, setHistory] = useState<History<SeasonDoc>>(() => createHistory(withMobileLayout(props.initialDoc)));
   const doc = history.present;
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slug, setSlug] = useState(props.initialSlug);
@@ -44,18 +61,23 @@ export function Editor(props: EditorProps) {
   const [save, setSave] = useState<SaveState>({ kind: "saved" });
   const [notice, setNotice] = useState<string | null>(null);
   const [uploads, setUploads] = useState({ done: 0, total: 0, failed: [] as string[] });
+  const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [shift, setShift] = useState(false);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
+  const [layout, setLayout] = useState<Layout>("desktop");
+  const [sortOrder, setSortOrder] = useState(props.initialSortOrder);
 
   const stageWrapRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const moveableRef = useRef<Moveable>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
-  const fileInput = useRef<HTMLInputElement>(null);
 
-  const scale = stageWidth / DESKTOP_WIDTH;
+  const canvasWidth = CANVAS_WIDTH[layout];
+  const canvasHeight = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  const scale = stageWidth / canvasWidth;
   const selected = doc.items.find((i) => i.id === selectedId) ?? null;
+  const selectedPlacement = selected ? placementOf(selected, layout) : null;
 
   // ---------- document changes ----------
   const change = useCallback((next: SeasonDoc | ((d: SeasonDoc) => SeasonDoc), key: string | null = null) => {
@@ -111,34 +133,36 @@ export function Editor(props: EditorProps) {
   useLayoutEffect(() => {
     const el = stageWrapRef.current;
     if (!el) return;
-    const measure = () => setStageWidth(Math.max(320, el.clientWidth - 64));
+    // The mobile canvas shows at a comfortable zoom; the desktop canvas fills the stage.
+    const measure = () => setStageWidth(layout === "mobile" ? Math.min(520, Math.max(320, el.clientWidth - 64)) : Math.max(320, el.clientWidth - 64));
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [layout]);
 
   useEffect(() => {
     moveableRef.current?.updateRect();
-  }, [doc, stageWidth, selectedId]);
+  }, [doc, stageWidth, selectedId, layout]);
 
   // ---------- placing new items ----------
-  /** A spot near the middle of what is on screen, in design units. */
-  const visibleSpot = useCallback(
-    (w: number, h: number, index = 0) => {
-      const wrap = stageWrapRef.current;
-      const top = wrap ? wrap.scrollTop / scale : 0;
-      const viewH = wrap ? wrap.clientHeight / scale : 800;
-      const x = Math.max(0, DESKTOP_WIDTH / 2 - w / 2 + index * 32 - 64);
-      const y = Math.max(0, Math.min(doc.desktopHeight - h, top + viewH / 2 - h / 2 + index * 32 - 64));
-      return { x, y };
-    },
-    [scale, doc.desktopHeight],
-  );
+  /**
+   * New items get a desktop placement; their mobile placement is the scaled desktop
+   * one (see ops.addItem). This is the middle of what is on screen, in desktop units.
+   */
+  const visibleCenter = useCallback(() => {
+    const wrap = stageWrapRef.current;
+    const top = wrap ? wrap.scrollTop / scale : 0;
+    const viewH = wrap ? wrap.clientHeight / scale : 800;
+    return convertPoint({ x: canvasWidth / 2, y: Math.min(canvasHeight, top + viewH / 2) }, layout, "desktop");
+  }, [scale, canvasWidth, canvasHeight, layout]);
 
-  const place = (w: number, h: number, at?: { x: number; y: number }, index = 0): Placement => {
-    const spot = at ?? visibleSpot(w, h, index);
-    return roundPlacement({ x: spot.x, y: spot.y, w, h, rotation: 0, z: 0, locked: false });
+  /** A desktop placement of size w × h centered on `center` (desktop units), cascaded by index. */
+  const place = (w: number, h: number, center?: { x: number; y: number }, index = 0): Placement => {
+    const c = center ?? visibleCenter();
+    const x = Math.max(0, Math.min(DESKTOP_WIDTH - w, c.x - w / 2 + index * 32));
+    const y = Math.max(0, Math.min(doc.desktopHeight - h, c.y - h / 2 + index * 32));
+    return roundPlacement({ x, y, w, h, rotation: 0, z: 0, locked: false });
   };
 
   const addAndSelect = (item: Item) => {
@@ -174,14 +198,57 @@ export function Editor(props: EditorProps) {
     }
   };
 
+  const failUpload = (name: string, e: unknown) =>
+    setUploads((u) => ({ ...u, done: u.done + 1, failed: [...u.failed, `${name}: ${(e as Error).message}`] }));
+
+  const addVoiceNote = async (blob: Blob, name = "recording", at?: { x: number; y: number }) => {
+    setUploads((u) => ({ ...u, total: u.total + 1 }));
+    try {
+      const a = await uploadAudio(blob);
+      addAndSelect({
+        id: crypto.randomUUID(),
+        type: "voice_note",
+        desktop: place(340, 64, at),
+        mobile: null,
+        content: { mediaId: a.mediaId, duration: a.duration, waveform: a.waveform, caption: "" },
+      });
+      setUploads((u) => ({ ...u, done: u.done + 1 }));
+    } catch (e) {
+      failUpload(name, e);
+    }
+  };
+
+  const addSticker = (s: StickerEntry) => {
+    const w = 200;
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "sticker",
+      desktop: place(w, Math.round((w * s.height) / s.width)),
+      mobile: null,
+      content: { stickerId: s.id, mediaId: s.mediaId, width: s.width, height: s.height, widths: s.widths, alt: "" },
+    });
+  };
+
+  const addMap = (p: Place) => {
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "map",
+      desktop: place(320, 320),
+      mobile: null,
+      content: { lat: p.lat, lon: p.lon, zoom: 5, label: p.label, borders: true },
+    });
+  };
+
+  /** Photos (3 at a time), videos (one at a time; compression is heavy) and audio files. */
   const uploadFiles = async (files: File[], at?: { x: number; y: number }) => {
     const images = files.filter(isAcceptedImage);
-    const rejected = files.filter((f) => !isAcceptedImage(f)).map((f) => `${f.name}: use JPEG, PNG, HEIC or WebP${f.type === "image/gif" ? " (GIF is not accepted)" : ""}.`);
-    if (!images.length) {
-      if (rejected.length) setNotice(rejected.join(" "));
-      return;
-    }
-    setUploads((u) => ({ done: u.done, total: u.total + images.length, failed: [...u.failed, ...rejected] }));
+    const videos = files.filter((f) => !isAcceptedImage(f) && isAcceptedVideo(f));
+    const audios = files.filter((f) => !isAcceptedImage(f) && !isAcceptedVideo(f) && isAudio(f));
+    const rejected = files.filter((f) => !images.includes(f) && !videos.includes(f) && !audios.includes(f)).map(rejectionReason);
+    if (rejected.length) setUploads((u) => ({ ...u, failed: [...u.failed, ...rejected] }));
+    if (!images.length && !videos.length && !audios.length) return;
+    setUploads((u) => ({ ...u, total: u.total + images.length + videos.length }));
+
     let index = 0;
     const queue = images.map((file) => ({ file, index: index++ }));
     const worker = async () => {
@@ -190,22 +257,56 @@ export function Editor(props: EditorProps) {
           const img = await uploadImage(job.file);
           const w = 360;
           const h = Math.round((w * img.height) / img.width);
-          const spot = at ? { x: at.x - w / 2 + job.index * 32, y: at.y - h / 2 + job.index * 32 } : undefined;
-          const item: Item = {
-            id: crypto.randomUUID(),
-            type: "photo",
-            desktop: place(w, h, spot, job.index),
-            mobile: null,
-            content: { mediaId: img.mediaId, width: img.width, height: img.height, widths: img.widths, alt: "", fit: "cover" },
-          };
-          change((d) => addItem(d, item));
+          change((d) =>
+            addItem(d, {
+              id: crypto.randomUUID(),
+              type: "photo",
+              desktop: place(w, h, at, job!.index),
+              mobile: null,
+              content: { mediaId: img.mediaId, width: img.width, height: img.height, widths: img.widths, alt: "", fit: "cover" },
+            }),
+          );
           setUploads((u) => ({ ...u, done: u.done + 1 }));
         } catch (e) {
-          setUploads((u) => ({ ...u, done: u.done + 1, failed: [...u.failed, `${job!.file.name}: ${(e as Error).message}`] }));
+          failUpload(job.file.name, e);
         }
       }
     };
-    await Promise.all([worker(), worker(), worker()]);
+    const videoWorker = async () => {
+      for (const file of videos) {
+        const n = index++;
+        try {
+          setVideoProgress(`compressing ${file.name}…`);
+          const v = await uploadVideo(file, (p) => setVideoProgress(`compressing ${file.name}: ${Math.round(p * 100)}%`));
+          const w = 360;
+          change((d) =>
+            addItem(d, {
+              id: crypto.randomUUID(),
+              type: "video",
+              desktop: place(w, Math.round((w * v.height) / v.width), at, n),
+              mobile: null,
+              content: {
+                mediaId: v.mediaId,
+                posterMediaId: v.poster.mediaId,
+                posterWidths: v.poster.widths,
+                width: v.width,
+                height: v.height,
+                duration: v.duration,
+                hasAudio: v.hasAudio,
+                alt: "",
+                fit: "cover",
+              },
+            }),
+          );
+          setUploads((u) => ({ ...u, done: u.done + 1 }));
+        } catch (e) {
+          failUpload(file.name, e);
+        } finally {
+          setVideoProgress(null);
+        }
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), videoWorker(), ...audios.map((f) => addVoiceNote(f, f.name, at))]);
   };
 
   // ---------- item commands ----------
@@ -213,11 +314,11 @@ export function Editor(props: EditorProps) {
     if (!selectedId) return;
     change((d) => ({ ...d, items: d.items.map((i) => (i.id === selectedId ? fn(i) : i)) }), key ?? null);
   };
-  const layer = (move: LayerMove) => selectedId && change((d) => moveLayer(d, selectedId, move));
+  const layer = (move: LayerMove) => selectedId && change((d) => moveLayer(d, selectedId, move, layout));
   const duplicate = () => {
     if (!selectedId) return;
     const newId = crypto.randomUUID();
-    change((d) => duplicateItem(d, selectedId, newId));
+    change((d) => duplicateItem(d, selectedId, newId, layout));
     setSelectedId(newId);
   };
   const remove = () => {
@@ -241,17 +342,17 @@ export function Editor(props: EditorProps) {
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
         duplicate();
-      } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selected.desktop.locked) {
+      } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selectedPlacement?.locked) {
         e.preventDefault();
         remove();
       } else if (e.key === "Escape") {
         setSelectedId(null);
-      } else if (e.key.startsWith("Arrow") && selected && !selected.desktop.locked) {
+      } else if (e.key.startsWith("Arrow") && selected && selectedPlacement && !selectedPlacement.locked) {
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
         const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
-        change((d) => setPlacement(d, selected.id, { x: selected.desktop.x + dx, y: selected.desktop.y + dy }), `nudge:${selected.id}`);
+        change((d) => setPlacement(d, selected.id, { x: selectedPlacement.x + dx, y: selectedPlacement.y + dy }, layout), `nudge:${layout}:${selected.id}`);
       }
     };
     const onBlur = () => setShift(false);
@@ -324,11 +425,11 @@ export function Editor(props: EditorProps) {
   };
 
   // ---------- Moveable ----------
-  const target = selected ? itemRefs.current.get(selected.id) ?? null : null;
-  const locked = !!selected?.desktop.locked;
+  const target = selected && selectedPlacement ? itemRefs.current.get(selected.id) ?? null : null;
+  const locked = !!selectedPlacement?.locked;
   const live = (patch: Partial<Placement>) => {
     if (!selectedId) return;
-    setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch)));
+    setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch, layout)));
   };
   const startGesture = () => {
     gestureStart.current = latestDoc.current;
@@ -339,7 +440,8 @@ export function Editor(props: EditorProps) {
     if (!before || !selectedId) return;
     setHistory((h) => {
       const item = h.present.items.find((i) => i.id === selectedId);
-      const rounded = item ? setPlacement(h.present, selectedId, roundPlacement(item.desktop)) : h.present;
+      const p = item ? placementOf(item, layout) : null;
+      const rounded = p ? setPlacement(h.present, selectedId, roundPlacement(p), layout) : h.present;
       return commitGesture(replace(h, rounded), before);
     });
   };
@@ -351,10 +453,13 @@ export function Editor(props: EditorProps) {
     if ("button" in e && e.button !== 0) return;
     e.stopPropagation();
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
-    if (!item.desktop.locked) moveableRef.current?.dragStart(e.nativeEvent);
+    if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
 
-  const sorted = [...doc.items].sort((a, b) => a.desktop.z - b.desktop.z);
+  const sorted = doc.items
+    .map((item) => ({ item, p: placementOf(item, layout) }))
+    .filter((x): x is { item: Item; p: Placement } => x.p !== null)
+    .sort((a, b) => a.p.z - b.p.z);
   const saveLabel =
     save.kind === "saved" ? "saved" : save.kind === "saving" ? "saving…" : save.kind === "pending" ? "unsaved changes" : `not saved: ${save.message}`;
 
@@ -366,6 +471,21 @@ export function Editor(props: EditorProps) {
             ← seasons
           </Link>
           <strong>{doc.title || "untitled"}</strong>
+          <span className="segmented" role="group" aria-label="Layout">
+            {(["desktop", "mobile"] as const).map((l) => (
+              <button
+                key={l}
+                className={layout === l ? "primary" : ""}
+                aria-pressed={layout === l}
+                onClick={() => {
+                  setLayout(l);
+                  if (selected && l === "mobile" && !selected.mobile) setSelectedId(null);
+                }}
+              >
+                {l === "desktop" ? "Desktop" : "Mobile"}
+              </button>
+            ))}
+          </span>
           <span className={save.kind === "error" ? "error" : "muted"} role="status">
             {saveLabel}
           </span>
@@ -377,7 +497,7 @@ export function Editor(props: EditorProps) {
           <button className="quiet" onClick={() => setHistory(redo)} disabled={!history.future.length} title="Redo (⇧⌘Z)">
             Redo
           </button>
-          <a className="button" href={`${BASE_PATH}/edit/${id}/preview`} target="_blank" rel="noreferrer" onClick={() => void saveNow().catch(() => {})}>
+          <a className="button" href={`${BASE_PATH}/edit/${id}/preview?device=${layout === "mobile" ? "phone" : "laptop"}`} target="_blank" rel="noreferrer" onClick={() => void saveNow().catch(() => {})}>
             Preview
           </a>
           {status === "published" ? (
@@ -406,45 +526,32 @@ export function Editor(props: EditorProps) {
       </header>
 
       <aside className="editor-tools">
-        <p className="tools-heading">add</p>
-        <button onClick={() => fileInput.current?.click()}>Photos…</button>
-        <input
-          ref={fileInput}
-          type="file"
-          multiple
-          hidden
-          accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-          onChange={(e) => {
-            void uploadFiles(Array.from(e.target.files ?? []));
-            e.target.value = "";
-          }}
+        <Tools
+          onFiles={(files) => void uploadFiles(files)}
+          onQuote={() => addQuote()}
+          onTitle={() => addQuote("", "title")}
+          onSubtitle={() => addQuote("", "subtitle")}
+          onPlaylist={addPlaylist}
+          onSticker={addSticker}
+          onMap={addMap}
+          onRecording={(blob) => void addVoiceNote(blob)}
+          playlistUrl={playlistUrl}
+          setPlaylistUrl={setPlaylistUrl}
+          setNotice={setNotice}
+          mediaBase={mediaBase}
         />
-        <button onClick={() => addQuote()}>Quote</button>
-        <button onClick={() => addQuote("", "title")}>Title</button>
-        <button onClick={() => addQuote("", "subtitle")}>Subtitle</button>
-        <form
-          className="stack"
-          style={{ gap: 4 }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            void addPlaylist(playlistUrl);
-          }}
-        >
-          <input type="url" placeholder="Spotify playlist link" value={playlistUrl} onChange={(e) => setPlaylistUrl(e.target.value)} />
-          <button disabled={!playlistUrl}>Playlist</button>
-        </form>
-        <p className="muted small">You can also paste images, text or a Spotify link, or drop photos onto the canvas.</p>
         {uploads.total > 0 && uploads.done < uploads.total ? (
-          <p className="small">
+          <p className="small" role="status">
             uploading {uploads.done + 1} of {uploads.total}…
           </p>
         ) : null}
+        {videoProgress ? <p className="small">{videoProgress}</p> : null}
         {uploads.failed.length ? (
           <div className="small error">
             {uploads.failed.map((f, i) => (
               <p key={i}>{f}</p>
             ))}
-            <button className="quiet" onClick={() => setUploads({ done: 0, total: 0, failed: [] })}>
+            <button className="quiet" onClick={() => setUploads((u) => ({ ...u, failed: [] }))}>
               Clear
             </button>
           </div>
@@ -468,14 +575,14 @@ export function Editor(props: EditorProps) {
           e.preventDefault();
           const files = Array.from(e.dataTransfer.files);
           const canvas = (e.currentTarget.querySelector(".canvas") as HTMLElement).getBoundingClientRect();
-          void uploadFiles(files, { x: (e.clientX - canvas.left) / scale, y: (e.clientY - canvas.top) / scale });
+          void uploadFiles(files, convertPoint({ x: (e.clientX - canvas.left) / scale, y: (e.clientY - canvas.top) / scale }, layout, "desktop"));
         }}
       >
         <div
           className="canvas editor-canvas"
-          style={{ width: stageWidth, aspectRatio: `${DESKTOP_WIDTH} / ${doc.desktopHeight}`, background: doc.background.value }}
+          style={{ width: stageWidth, aspectRatio: `${canvasWidth} / ${canvasHeight}`, background: doc.background.value }}
         >
-          {sorted.map((item) => (
+          {sorted.map(({ item, p }) => (
             <div
               key={item.id}
               ref={(el) => {
@@ -483,19 +590,19 @@ export function Editor(props: EditorProps) {
                 else itemRefs.current.delete(item.id);
               }}
               data-item-id={item.id}
-              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${item.desktop.locked ? " is-locked" : ""}`}
-              style={placementStyle(item.desktop, doc.desktopHeight)}
+              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${p.locked ? " is-locked" : ""}`}
+              style={placementStyle(p, canvasHeight, canvasWidth)}
               onMouseDown={(e) => onItemPress(item, e)}
               onTouchStart={(e) => onItemPress(item, e)}
             >
-              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} />
+              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} />
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
-              {item.desktop.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
+              {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
             </div>
           ))}
         </div>
         <div className="canvas-height-label muted small">
-          canvas {DESKTOP_WIDTH} × {doc.desktopHeight}
+          {layout} canvas {canvasWidth} × {canvasHeight}
         </div>
         <Moveable
           ref={moveableRef}
@@ -547,6 +654,16 @@ export function Editor(props: EditorProps) {
           duplicate={duplicate}
           remove={remove}
           mediaBase={mediaBase}
+          layout={layout}
+          sortOrder={sortOrder}
+          onSortOrderChange={setSortOrder}
+          select={setSelectedId}
+          setMobileVisible={(itemId, visible) => change((d) => setMobileVisible(d, itemId, visible))}
+          resetMobile={(kind) => {
+            const what = kind === "scaled" ? "the desktop layout scaled down" : "a single column";
+            if (!confirm(`Replace the whole mobile layout with ${what}?`)) return;
+            change((d) => (kind === "scaled" ? scaledMobileLayout(d) : singleColumnMobileLayout(d)));
+          }}
         />
       </aside>
     </div>

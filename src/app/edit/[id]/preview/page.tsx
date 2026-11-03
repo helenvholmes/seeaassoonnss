@@ -1,19 +1,13 @@
 import { notFound, redirect } from "next/navigation";
-import { SeasonCanvas } from "@/components/SeasonCanvas";
+import { DevicePreview } from "@/components/owner/DevicePreview";
 import { isOwner } from "@/lib/auth/session";
 import { getSeason } from "@/lib/seasons";
-import { storage } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
 
-/** The draft exactly as visitors would see it after Publish. Owner only. */
-export default async function Preview({ params }: { params: Promise<{ id: string }> }) {
+export default async function Preview({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ device?: string }> }) {
   if (!(await isOwner())) redirect("/edit/sign-in");
   const season = await getSeason((await params).id);
   if (!season) notFound();
-  return (
-    <main className="season-page" style={{ background: season.draft.background.value }}>
-      <SeasonCanvas doc={season.draft} mediaBase={storage().publicBaseUrl()} />
-    </main>
-  );
+  return <DevicePreview id={season.id} title={season.draft.title} initialDevice={(await searchParams).device ?? "laptop"} />;
 }

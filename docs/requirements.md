@@ -127,6 +127,7 @@ The document shapes follow.
 | `background` | color or image reference | Page background |
 | `desktop_height` | number | Canvas height in design units |
 | `mobile_height` | number | Canvas height in design units |
+| `mobile_layout` | boolean | False only for seasons made before phase 2; they show the scaled desktop layout on mobile until opened in the editor |
 | `items` | list of items | See below |
 
 ### Item
@@ -148,6 +149,7 @@ The document shapes follow.
 | `rotation` | number | Degrees, any value |
 | `z` | integer | Layer order; higher is in front |
 | `locked` | boolean | Locked items cannot move by accident in the editor |
+| `textSize` | number, optional | Quote text size in this canvas's units. Used by the mobile layout; desktop uses the size in the quote content |
 
 ### Design units
 
@@ -338,7 +340,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [x] Saving: edits go live only after Publish.
 - [x] Index page: cover, `// title`, period. Newest first, with optional manual pinning.
 - [x] Map style: D3 vector outlines, no tiles, no API key.
-- [x] Video: muted autoloop; sound on click. No GIF.
+- [x] Video: muted autoloop; sound on click. No GIF. Originals are not kept: the compressed MP4 is the only copy.
 - [ ] Live Photos: needed? If yes, show as a short video or as a still?
 - [ ] Quote fonts: EB Garamond and IBM Plex Mono decided; the sans-serif is still to pick.
 - [x] Design units: 1440 / 390 widths, 960 px breakpoint (proposed), scale cap 1.25× (proposed).
@@ -347,7 +349,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [ ] Route map layout: a season is one canvas, so how does a fixed, scroll-driven map work inside it?
 - [ ] Phase for the route map and `/odyssey`.
 - [ ] Visual references beyond "leafy greens".
-- [ ] Video compression: confirm size limits (1080 px, about 10 MB per 30 s) and whether to keep the original video in private storage.
+- [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
 ## Sources
 
@@ -384,3 +386,23 @@ Version 1 must replace one Pinterest board with one published season. Everything
 2. Passkey registration needs either a signed-in session or the unused setup token, also for the first passkey. ("When no passkey exists" alone would let a stranger claim a fresh fork.)
 3. The title and subtitle are quote items set to show the season title or subtitle.
 4. Phase 1 shows the desktop layout at every screen width, scaled to fit. The mobile layout arrives in phase 2.
+
+**Nov 3, 2026 (phase 2 build)**
+
+1. Each placement can carry its own quote text size (`textSize`), so text can be larger on mobile than the scaled desktop size.
+2. Layer order and lock are separate per layout.
+3. New items get their mobile placement from the scaled desktop placement, also when added in mobile mode.
+4. The preview offers six real sizes: 390, 430, 820, 1280, 1440 and 1920 px wide. 820 px (tablet) shows the mobile layout.
+5. Index entries: cover (the chosen cover, else the first photo), `// title` (no double `//`), period. Pinned seasons first by position, then newest first by creation date.
+6. Share previews use the cover image at up to 1280 px wide.
+
+**Nov 3, 2026 (phase 3 build)**
+
+1. Video is compressed in the browser with Mediabunny (WebCodecs): H.264 at 2 Mbit/s, long side at most 1080 px, audio AAC (or Opus where the browser has no AAC encoder). Metadata tags are not copied. The original is not kept.
+2. The poster is a frame from 0.5 s in, stored like a photo.
+3. Videos play only while on screen, and pause when scrolled away.
+4. Voice notes are mono MP3 at 64 kbit/s, encoded in the browser, with a 64-bar waveform.
+5. Stickers are always converted to WebP on the server, including SVG, so no SVG markup is served.
+6. Removing a sticker from the library does not remove it from seasons that use it.
+7. Maps use an orthographic (globe) projection centered on the place, drawn from Natural Earth data at three levels of detail. Zoom runs from 0 (whole globe) to 12. Country borders are optional.
+8. Place search uses OpenStreetMap Nominatim from the server, owner only, at most one request per second. Typed coordinates need no search.

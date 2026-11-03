@@ -12,6 +12,7 @@ export interface SeasonRow {
   published: SeasonDoc | null;
   version: number;
   publishedAt: Date | null;
+  sortOrder: number | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,6 +45,7 @@ function toRow(r: Record<string, unknown>): SeasonRow {
     published: (r.published as SeasonDoc | null) ?? null,
     version: r.version as number,
     publishedAt: (r.published_at as Date | null) ?? null,
+    sortOrder: (r.sort_order as number | null) ?? null,
     createdAt: r.created_at as Date,
     updatedAt: r.updated_at as Date,
   };
@@ -76,6 +78,30 @@ export async function getPublishedSeason(slug: string): Promise<{ slug: string; 
   if (slugProblem(slug)) return null;
   const [r] = await sql`select slug, published from seasons where slug = ${slug} and status = 'published' and published is not null`;
   return r ? { slug: r.slug, doc: r.published as SeasonDoc } : null;
+}
+
+export interface IndexEntry {
+  slug: string;
+  doc: SeasonDoc;
+}
+
+/** Published seasons for the public index: pinned ones by position, then newest first. */
+export async function listPublishedSeasons(): Promise<IndexEntry[]> {
+  const rows = await sql`
+    select slug, published from seasons
+    where status = 'published' and published is not null
+    order by sort_order asc nulls last, created_at desc`;
+  return rows.map((r) => ({ slug: r.slug, doc: r.published as SeasonDoc }));
+}
+
+/** Position on the index page; null = listed by date. */
+export async function setSortOrder(id: string, sortOrder: number | null): Promise<string> {
+  if (sortOrder !== null && (!Number.isInteger(sortOrder) || sortOrder < 1 || sortOrder > 9999)) {
+    throw new SeasonError("Position must be a whole number from 1 to 9999, or empty.", 400);
+  }
+  const [r] = await sql`update seasons set sort_order = ${sortOrder}, updated_at = now() where id = ${id} returning slug`;
+  if (!r) throw new SeasonError("Season not found.", 404);
+  return r.slug;
 }
 
 export async function createSeason(title: string): Promise<SeasonRow> {

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addItem, duplicateItem, moveLayer, normalizeRotation, removeItem } from "../src/components/editor/ops.ts";
+import { addItem, duplicateItem, moveLayer, normalizeRotation, removeItem, scaledMobileLayout, setMobileVisible, singleColumnMobileLayout, withMobileLayout, MOBILE_FACTOR } from "../src/components/editor/ops.ts";
 import { commit, commitGesture, createHistory, redo, replace, undo, HISTORY_LIMIT } from "../src/components/editor/history.ts";
 import { emptySeasonDoc, seasonDocSchema, slugify, slugProblem, type Item } from "../src/lib/schema.ts";
 import { targetWidths } from "../src/lib/widths.ts";
@@ -92,4 +92,48 @@ test("spotify playlist links", () => {
   assert.equal(parsePlaylistId(`spotify:playlist:${pid}`), pid);
   assert.equal(parsePlaylistId(`https://open.spotify.com/album/${pid}`), null);
   assert.equal(parsePlaylistId(`https://evil.example/playlist/${pid}`), null);
+});
+
+test("new items get a scaled mobile placement on top", () => {
+  let doc = addItem(emptySeasonDoc("t"), { ...quote(1), desktop: { ...quote(1).desktop, x: 1440, y: 720, w: 720 } });
+  const m = doc.items[0].mobile!;
+  assert.equal(m.x, 390);
+  assert.equal(m.w, 195);
+  assert.equal(m.z, 1);
+  assert.equal(m.textSize, Math.round(24 * MOBILE_FACTOR * 10) / 10);
+  assert.ok(seasonDocSchema.safeParse(doc).success);
+});
+
+test("layers are separate per layout", () => {
+  let doc = emptySeasonDoc("t");
+  for (const n of [1, 2]) doc = addItem(doc, quote(n));
+  doc = moveLayer(doc, id(1), "front", "mobile");
+  assert.deepEqual(doc.items.map((i) => [i.desktop.z, i.mobile!.z]), [[1, 2], [2, 1]]);
+});
+
+test("hide and show on mobile; duplicates of hidden items stay hidden", () => {
+  let doc = addItem(emptySeasonDoc("t"), quote(1));
+  doc = setMobileVisible(doc, id(1), false);
+  assert.equal(doc.items[0].mobile, null);
+  doc = duplicateItem(doc, id(1), id(2));
+  assert.equal(doc.items[1].mobile, null);
+  doc = setMobileVisible(doc, id(1), true);
+  assert.ok(doc.items[0].mobile);
+});
+
+test("phase 1 seasons get the scaled layout; single column stacks in reading order", () => {
+  let doc = emptySeasonDoc("t");
+  doc = { ...doc, mobileLayout: false, items: [{ ...quote(1), desktop: { ...quote(1).desktop, y: 500, w: 720, h: 360 } }, { ...quote(2), desktop: { ...quote(2).desktop, y: 100, w: 360, h: 360 } }] };
+  const scaled = withMobileLayout(doc);
+  assert.equal(scaled.mobileLayout, true);
+  assert.equal(scaled.items[0].mobile!.y, Math.round(500 * MOBILE_FACTOR * 10) / 10);
+  assert.equal(withMobileLayout(scaled), scaled);
+  const col = singleColumnMobileLayout(doc);
+  const [a, b] = col.items.map((i) => i.mobile!);
+  assert.equal(b.y, 24); // quote 2 is higher on desktop, so it comes first
+  assert.equal(a.y, 24 + 342 + 24);
+  assert.equal(a.w, 342);
+  assert.equal(a.h, 171);
+  assert.equal(col.mobileHeight, 24 + 342 + 24 + 171 + 24);
+  assert.ok(seasonDocSchema.safeParse(scaledMobileLayout(doc)).success);
 });

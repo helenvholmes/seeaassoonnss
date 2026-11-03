@@ -6,7 +6,7 @@ The full specification is in [docs/requirements.md](docs/requirements.md).
 
 ## Status
 
-**Phase 1** is built:
+**Phase 1** (built):
 
 - Passkey sign-in for one owner, with a one-time setup token.
 - Seasons: create, edit, autosave a draft, publish, publish changes, discard changes, unpublish, rename the slug, delete.
@@ -14,13 +14,31 @@ The full specification is in [docs/requirements.md](docs/requirements.md).
 - Desktop canvas (1440 units wide): drag, resize, rotate, layer order, lock, duplicate, delete, undo/redo (50 steps). Shift keeps the aspect ratio and snaps rotation to 15°. Arrow keys nudge.
 - Public page at `/seasons/[slug]`, cached until the next publish.
 
-Phases 2 to 4 (mobile layout, index page, share metadata, video, stickers, voice notes, maps, seed data) are not built yet.
+**Phase 2** (built):
+
+- Mobile canvas (390 units wide) with a Desktop / Mobile toggle in the editor. Content is shared; position, size, rotation, layer, lock and quote text size are separate per layout.
+- A new season's mobile layout starts as the desktop layout scaled down. Reset it to that, or to a single column. Hide any item on mobile.
+- Screens narrower than 960 px show the mobile layout. Both layouts are in the page's HTML and CSS picks one, so the page needs no JavaScript to choose.
+- Preview at real screen sizes: phone, large phone, tablet, laptop, desktop, wide.
+- Index page at `/seasons`: cover, `// title` and period for each published season. Pinned seasons first, then newest first.
+- Share metadata: title, description, canonical URL and the cover image for link previews.
+
+**Phase 3** (built):
+
+- **Video:** MP4, MOV or WebM. Compressed in the browser to MP4 (H.264, at most 1080 px on the long side), with all metadata dropped (phone videos carry GPS). Loops silently while on screen; sound only after a click. With reduced motion turned on, the poster shows until play is pressed. GIF is not accepted.
+- **Stickers:** transparent PNG, WebP or SVG. Each upload joins a sticker library you can reuse in any season. SVG is drawn to WebP on the server, so no SVG code reaches visitors.
+- **Voice notes:** record in the browser or upload audio. Saved as a small mono MP3 without tags, with a waveform. Nothing loads until a visitor presses play.
+- **Maps:** search a place (OpenStreetMap) or type coordinates. Drawn as a simple outline map with a dot and a label, from Natural Earth data. No map provider, account or key.
+
+Phase 4 (seed data, fork checks) is not built yet.
 
 ## How it works
 
 - **Next.js** (App Router) with `basePath: "/seasons"`. The owner's main site rewrites `/seasons/*` to this deployment.
 - **Postgres** stores each season as one row with two JSON documents: `draft` (autosaved by the editor) and `published` (the snapshot visitors see). Publish copies one into the other.
 - **Cloudflare R2** stores media: originals in a private bucket, resized WebP copies (640, 1280 and 2048 px) in a public bucket. HEIC photos are converted to JPEG in the browser before upload. The server strips all metadata, including GPS location.
+- **Video and audio** are compressed in the browser (with [Mediabunny](https://mediabunny.dev) and LAME), so the server never runs ffmpeg.
+- **Maps** are SVG drawn on the server from [Natural Earth](https://www.naturalearthdata.com) outlines, cached forever per place and zoom. Place search uses [Nominatim](https://nominatim.org) (OpenStreetMap), only from the editor.
 - **Spotify** playlist title and cover come from Spotify's oEmbed endpoint, which needs no account or key. The Spotify player loads only after a visitor clicks the card.
 
 ## Run it locally
@@ -62,14 +80,14 @@ npm run lint
 1. **Fork** this repository.
 2. **Database.** Create a free Postgres database (for example on [Neon](https://neon.tech)). Run `npm run db:migrate` once with `DATABASE_URL` set to it.
 3. **Storage.** In Cloudflare R2, create two buckets: a private one for originals and a public one for processed images. Give the public bucket a public URL (a custom domain or the `r2.dev` URL). Create an R2 API token with read and write access to both buckets.
-4. **CORS on the private bucket.** The browser uploads originals straight to R2, so allow `PUT` from your site:
+4. **CORS on both buckets.** The browser uploads straight to R2: photo and sticker originals to the private bucket, finished video and audio to the public bucket. On each bucket, allow `PUT` from your site:
 
    ```json
    [
      {
        "AllowedOrigins": ["https://your-domain.example"],
        "AllowedMethods": ["PUT"],
-       "AllowedHeaders": ["content-type"],
+       "AllowedHeaders": ["content-type", "cache-control"],
        "MaxAgeSeconds": 3600
      }
    ]

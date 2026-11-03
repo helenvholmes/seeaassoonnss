@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SeasonCanvas } from "@/components/SeasonCanvas";
 import { config } from "@/lib/config";
 import { getPublishedSeason } from "@/lib/seasons";
+import { seasonMetadata } from "@/lib/share";
 import { storage } from "@/lib/storage";
 
 // Each season page renders on its first visit and stays cached until the owner
@@ -18,7 +20,7 @@ type Props = { params: Promise<{ slug: string }> };
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const season = await getPublishedSeason((await params).slug);
   if (!season) return {};
-  return { title: season.doc.title, description: season.doc.period || undefined };
+  return seasonMetadata(season.slug, season.doc, storage().publicBaseUrl());
 }
 
 export default async function SeasonPage({ params }: Props) {
@@ -28,9 +30,10 @@ export default async function SeasonPage({ params }: Props) {
   return (
     <main className="season-page" style={{ background: doc.background.value }}>
       <SeasonCanvas doc={doc} mediaBase={storage().publicBaseUrl()} />
-      <a className="source-link" href={config.sourceUrl}>
-        Seasons is open source
-      </a>
+      <nav className="season-footer">
+        <Link href="/">// all seasons</Link>
+        <a href={config.sourceUrl}>Seasons is open source</a>
+      </nav>
     </main>
   );
 }
