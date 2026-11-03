@@ -164,7 +164,7 @@ On GitHub, open your fork and click **Sync fork**. Vercel deploys the update and
 
 ## Troubleshooting
 
-Run `npm run doctor` first (see [step 4](#4-check-the-setup-recommended)). It names the setting to fix for most problems.
+Open `https://<your site>/seasons/api/health` first. It says which part of the setup fails (address, database, tables or storage) without showing any secret values. For a deeper check, including uploads, run `npm run doctor` (see [step 4](#4-check-the-setup-recommended)).
 
 | Problem | Cause and fix |
 | --- | --- |
@@ -175,7 +175,7 @@ Run `npm run doctor` first (see [step 4](#4-check-the-setup-recommended)). It na
 | Photos upload but do not show | `R2_PUBLIC_URL` is wrong, or public access is off on the public bucket. |
 | "This browser cannot compress video" | Video is compressed in the browser. Use a current Chrome, Edge, Safari or Firefox on a computer. |
 | A playlist link is refused | The playlist must be public. |
-| Pages show "Something went wrong" right after deploying | The database is missing or not set up. Add it (step 3.5) and redeploy. |
+| "Application error: a server-side exception has occurred" | A setting is missing or wrong. `/seasons/api/health` names it, and Vercel's runtime logs show a line starting with `[seasons]`. Fix the setting, then redeploy. |
 
 ## Run it locally
 

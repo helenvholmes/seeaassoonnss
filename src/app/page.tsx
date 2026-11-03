@@ -7,6 +7,7 @@ import { INDEX_TAG } from "@/lib/revalidate";
 import { listPublishedSeasons } from "@/lib/seasons";
 import { absoluteUrl, coverPhoto, slashTitle } from "@/lib/share";
 import { storage } from "@/lib/storage";
+import { logPageError } from "@/lib/health";
 
 // Rendered per request from cached data; Publish, Unpublish, renames, pins and
 // deletes refresh the cache (see lib/revalidate.ts). Nothing touches the database
@@ -16,13 +17,26 @@ export const dynamic = "force-dynamic";
 const cachedSeasons = unstable_cache(listPublishedSeasons, ["published-seasons"], { tags: [INDEX_TAG] });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const url = absoluteUrl(BASE_PATH);
-  return { title: "seasons", alternates: { canonical: url }, openGraph: { title: "seasons", url, siteName: "seasons", type: "website" } };
+  try {
+    const url = absoluteUrl(BASE_PATH);
+    return { title: "seasons", alternates: { canonical: url }, openGraph: { title: "seasons", url, siteName: "seasons", type: "website" } };
+  } catch (e) {
+    logPageError("index metadata", e);
+    throw e;
+  }
+}
+
+async function load() {
+  try {
+    return { seasons: await cachedSeasons(), mediaBase: storage().publicBaseUrl() };
+  } catch (e) {
+    logPageError("index page (see /seasons/api/health)", e);
+    throw e;
+  }
 }
 
 export default async function Index() {
-  const seasons = await cachedSeasons();
-  const mediaBase = storage().publicBaseUrl();
+  const { seasons, mediaBase } = await load();
   return (
     <main className="index-page">
       <h1 className="index-heading">// seasons</h1>

@@ -5,6 +5,7 @@ import { SeasonCanvas } from "@/components/SeasonCanvas";
 import { config } from "@/lib/config";
 import { getPublishedSeason } from "@/lib/seasons";
 import { seasonMetadata } from "@/lib/share";
+import { logPageError } from "@/lib/health";
 import { storage } from "@/lib/storage";
 
 // Each season page renders on its first visit and stays cached until the owner
@@ -18,21 +19,35 @@ export async function generateStaticParams() {
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const season = await getPublishedSeason((await params).slug);
-  if (!season) return {};
-  return seasonMetadata(season.slug, season.doc, storage().publicBaseUrl());
+  try {
+    const season = await getPublishedSeason((await params).slug);
+    if (!season) return {};
+    return seasonMetadata(season.slug, season.doc, storage().publicBaseUrl());
+  } catch (e) {
+    logPageError("season metadata", e);
+    throw e;
+  }
+}
+
+async function load(slug: string) {
+  try {
+    return { season: await getPublishedSeason(slug), mediaBase: storage().publicBaseUrl(), sourceUrl: config.sourceUrl };
+  } catch (e) {
+    logPageError(`season page /${slug} (see /seasons/api/health)`, e);
+    throw e;
+  }
 }
 
 export default async function SeasonPage({ params }: Props) {
-  const season = await getPublishedSeason((await params).slug);
+  const { season, mediaBase, sourceUrl } = await load((await params).slug);
   if (!season) notFound();
   const { doc } = season;
   return (
     <main className="season-page" style={{ background: doc.background.value }}>
-      <SeasonCanvas doc={doc} mediaBase={storage().publicBaseUrl()} />
+      <SeasonCanvas doc={doc} mediaBase={mediaBase} />
       <nav className="season-footer">
         <Link href="/">// all seasons</Link>
-        <a href={config.sourceUrl}>Seasons is open source</a>
+        <a href={sourceUrl}>Seasons is open source</a>
       </nav>
     </main>
   );
