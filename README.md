@@ -118,19 +118,21 @@ It prints a link to the demo in the editor. Publish it to see `/seasons/demo`, o
 
 ## Environment variables
 
-| Variable | Required | What it is |
-| --- | --- | --- |
-| `DATABASE_URL` | yes | Postgres connection string. Set automatically by the Neon integration. |
-| `SITE_URL` | yes | The address visitors use, without `/seasons`. For example `https://example.com` or `https://my-seasons.vercel.app`. Passkeys are bound to this domain. |
-| `SETUP_TOKEN` | yes, for the first sign-in | A long random secret. Allows registering a passkey when you are not signed in. Each value works once. |
-| `SOURCE_URL` | recommended | Your fork's GitHub URL, for the "Seasons is open source" link. |
-| `STORAGE_DRIVER` | yes | `r2` for a deployment. `local` stores files on disk and only works in development. |
-| `R2_ACCOUNT_ID` | with r2 | Cloudflare account ID. |
-| `R2_ACCESS_KEY_ID` | with r2 | From the R2 API token. |
-| `R2_SECRET_ACCESS_KEY` | with r2 | From the R2 API token. |
-| `R2_PRIVATE_BUCKET` | with r2 | Bucket for original uploads, for example `seasons-originals`. |
-| `R2_PUBLIC_BUCKET` | with r2 | Bucket for processed media, for example `seasons-media`. |
-| `R2_PUBLIC_URL` | with r2 | Public URL of the public bucket, no trailing slash. |
+| Variable | Required | Secret | What it is |
+| --- | --- | --- | --- |
+| `DATABASE_URL` | yes | **yes** | Postgres connection string. It contains the database password. Set automatically by the Neon integration. |
+| `SITE_URL` | yes | no | The address visitors use, without `/seasons`. For example `https://example.com` or `https://my-seasons.vercel.app`. Passkeys are bound to this domain. |
+| `SETUP_TOKEN` | yes, for the first sign-in | **yes** | A long random string. Anyone who has it can register a passkey and take over the editor until it is used. Each value works once. |
+| `SOURCE_URL` | recommended | no | Your fork's GitHub URL, for the "Seasons is open source" link. |
+| `STORAGE_DRIVER` | yes | no | `r2` for a deployment. `local` stores files on disk and only works in development. |
+| `R2_ACCOUNT_ID` | with r2 | no | Cloudflare account ID. It identifies your account but grants no access on its own. |
+| `R2_ACCESS_KEY_ID` | with r2 | **yes** | From the R2 API token. Keep it with the secret key. |
+| `R2_SECRET_ACCESS_KEY` | with r2 | **yes** | From the R2 API token. With the access key ID, it can read, write and delete everything in both buckets. |
+| `R2_PRIVATE_BUCKET` | with r2 | no | Bucket for original uploads, for example `seasons-originals`. |
+| `R2_PUBLIC_BUCKET` | with r2 | no | Bucket for processed media, for example `seasons-media`. |
+| `R2_PUBLIC_URL` | with r2 | no | Public URL of the public bucket, no trailing slash. |
+
+In Vercel, turn on **Sensitive** for the four secrets. Vercel then never shows their values again, and `vercel env pull` leaves them empty. Never commit them: `.env.local` is ignored by git for this reason. If a secret leaks, replace it: rotate the database password in Neon, delete the R2 API token and make a new one, or set a new `SETUP_TOKEN`.
 
 [`.env.example`](.env.example) lists the same variables.
 
