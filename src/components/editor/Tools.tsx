@@ -17,6 +17,7 @@ interface Props {
   onSticker: (sticker: StickerEntry) => void;
   onMap: (place: Place) => void;
   onRecording: (blob: Blob) => void;
+  onRoute: (file: File) => void;
   playlistUrl: string;
   setPlaylistUrl: (url: string) => void;
   setNotice: (message: string | null) => void;
@@ -28,6 +29,7 @@ type Panel = null | "stickers" | "map" | "voice";
 export function Tools(props: Props) {
   const [panel, setPanel] = useState<Panel>(null);
   const files = useRef<HTMLInputElement>(null);
+  const routeInput = useRef<HTMLInputElement>(null);
   const toggle = (p: Panel) => setPanel((cur) => (cur === p ? null : p));
 
   return (
@@ -77,6 +79,20 @@ export function Tools(props: Props) {
         Map…
       </button>
       {panel === "map" ? <MapPanel {...props} /> : null}
+      <button onClick={() => routeInput.current?.click()} title="Import a GeoJSON file: points are the stops, lines the path">
+        Route map…
+      </button>
+      <input
+        ref={routeInput}
+        type="file"
+        hidden
+        accept=".geojson,.json,application/geo+json,application/json"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) props.onRoute(file);
+        }}
+      />
       <p className="muted small">You can also paste images, text or a Spotify link, or drop photos, videos and audio onto the canvas.</p>
     </>
   );

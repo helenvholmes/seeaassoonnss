@@ -115,7 +115,8 @@ export function removeItem(doc: SeasonDoc, id: string): SeasonDoc {
   return {
     ...doc,
     coverItemId: doc.coverItemId === id ? null : doc.coverItemId,
-    items: doc.items.filter((i) => i.id !== id),
+    // Links to a removed route map go too.
+    items: doc.items.filter((i) => i.id !== id).map((i) => (i.routeStop?.routeId === id ? { ...i, routeStop: null } : i)),
   };
 }
 

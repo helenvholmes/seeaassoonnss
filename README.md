@@ -33,6 +33,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 | Sticker | Upload transparent PNG, WebP or SVG, or reuse one from your sticker library | The image with its transparent background |
 | Map | Search a place or type coordinates | A simple outline map with a dot and a label |
 | Voice note | Record in the browser or upload audio | A small player; nothing plays until they press play |
+| Route map | Import a GeoJSON file (points are the stops, lines the path) | A band of the page where the map stays on screen while the route draws in as they scroll; linked items move the map to their stop |
 
 Nothing makes sound until a visitor clicks.
 

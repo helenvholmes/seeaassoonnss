@@ -24,8 +24,10 @@ import {
   setPlacement,
   singleColumnMobileLayout,
   withMobileLayout,
+  MOBILE_FACTOR,
   type LayerMove,
 } from "./ops";
+import { parseRouteGeoJSON } from "@/lib/route";
 import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
 import { Tools } from "./Tools";
 import type { Place } from "@/lib/geo";
@@ -231,6 +233,24 @@ export function Editor(props: EditorProps) {
       mobile: null,
       content: { stickerId: s.id, mediaId: s.mediaId, width: s.width, height: s.height, widths: s.widths, alt: "" },
     });
+  };
+
+  /** A route map band: right half of the desktop page, full width on mobile, a few screens tall. */
+  const addRoute = async (file: File) => {
+    try {
+      const { stops, line } = parseRouteGeoJSON(JSON.parse(await file.text()));
+      const desktop = place(720, 2700);
+      addAndSelect({
+        id: crypto.randomUUID(),
+        type: "route",
+        desktop,
+        mobile: { x: 0, y: Math.round(desktop.y * MOBILE_FACTOR), w: 390, h: 2400, rotation: 0, z: 0, locked: false },
+        content: { stops, line, color: "#c63d32", borders: true, stepZoom: 3 },
+      });
+      setNotice(null);
+    } catch (e) {
+      setNotice(`${file.name}: ${e instanceof SyntaxError ? "this file is not valid JSON." : (e as Error).message}`);
+    }
   };
 
   const addMap = (p: Place) => {
@@ -539,6 +559,7 @@ export function Editor(props: EditorProps) {
           onSticker={addSticker}
           onMap={addMap}
           onRecording={(blob) => void addVoiceNote(blob)}
+          onRoute={(file) => void addRoute(file)}
           playlistUrl={playlistUrl}
           setPlaylistUrl={setPlaylistUrl}
           setNotice={setNotice}
@@ -616,7 +637,7 @@ export function Editor(props: EditorProps) {
           target={target}
           draggable={!locked}
           resizable={!locked}
-          rotatable={!locked}
+          rotatable={!locked && selected?.type !== "route"}
           keepRatio={shift}
           throttleRotate={shift ? 15 : 0}
           rotationPosition="top"

@@ -3,6 +3,7 @@ import "server-only";
 // dot. Vector outlines from Natural Earth (world-atlas), no tiles and no API key.
 import { geoArea, geoOrthographic, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry, MultiLineString, MultiPolygon, Polygon } from "geojson";
+import { routeProjection, zoomOfScale, type RouteFrame } from "./route";
 import { feature, mesh } from "topojson-client";
 import type { GeometryCollection, Topology } from "topojson-specification";
 
@@ -114,5 +115,42 @@ ${globe}
 <path d="${land}" fill="#e7e7e0" stroke="#a9a9a0" stroke-width="1.2" stroke-linejoin="round"/>
 ${borderPath ? `<path d="${borderPath}" fill="none" stroke="#bdbdb4" stroke-width="0.8" stroke-dasharray="3 3"/>` : ""}
 <circle cx="${half}" cy="${half}" r="9" fill="#1d1d1b" stroke="#fbfbf9" stroke-width="3"/>
+</svg>`;
+}
+
+/** Validates route frame parameters (see lib/route.ts fitRoute). */
+export function parseFrameParams(search: URLSearchParams): (RouteFrame & { k: number; borders: boolean }) | null {
+  const n = (name: string) => Number(search.get(name));
+  const f = { lon: n("lon"), scale: n("scale"), tx: n("tx"), ty: n("ty"), width: n("w"), height: n("h"), k: n("k") || 1 };
+  if (!Object.values(f).every(Number.isFinite)) return null;
+  if (Math.abs(f.lon) > 180 || f.scale <= 0 || f.scale > 1e7) return null;
+  if (f.width < 50 || f.width > 4000 || f.height < 50 || f.height > 4000 || f.k < 1 || f.k > 16) return null;
+  if (Math.abs(f.tx) > 1e8 || Math.abs(f.ty) > 1e8) return null;
+  return { ...f, borders: search.get("borders") === "1" };
+}
+
+/**
+ * Land for a route map, in the route's own projection. The image covers the frame
+ * plus half a frame on every side, so zooming in on a stop near the edge still
+ * shows land. Detail matches the zoom used for stops (k).
+ */
+export async function renderFrameSvg(f: RouteFrame & { k: number; borders: boolean }): Promise<string> {
+  // Detail between the overview and the stop zoom: full detail for the zoomed view
+  // would make the image for a long route several megabytes.
+  const { land: landShape, borders: borderShape } = await loadShapes(resolutionFor(zoomOfScale(f.scale) + Math.log2(f.k) / 2));
+  const x0 = -f.width / 2;
+  const y0 = -f.height / 2;
+  const projection = routeProjection(f)
+    .clipExtent([
+      [x0, y0],
+      [f.width * 1.5, f.height * 1.5],
+    ])
+    .precision(0.5);
+  const path = geoPath(projection).digits(0);
+  const land = path(landShape) ?? "";
+  const borderPath = f.borders ? (path(borderShape) ?? "") : "";
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${y0} ${f.width * 2} ${f.height * 2}" width="${f.width * 2}" height="${f.height * 2}">
+<path d="${land}" fill="#e7e7e0" stroke="#a9a9a0" stroke-width="1" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+${borderPath ? `<path d="${borderPath}" fill="none" stroke="#bdbdb4" stroke-width="0.7" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>` : ""}
 </svg>`;
 }

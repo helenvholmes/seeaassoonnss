@@ -1,13 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, QUOTE_FONTS, slugProblem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, QUOTE_FONTS, slugProblem, type RouteItem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
 import { quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
 import { normalizeRotation, placementOf } from "./ops";
+import { parseRouteGeoJSON } from "@/lib/route";
 
 interface Props {
   id: string;
@@ -46,6 +47,8 @@ function itemLabel(item: Item): string {
       return item.content.caption ? `voice note: ${cut(item.content.caption)}` : "voice note";
     case "quote":
       return item.content.binding ?? `quote: ${cut(item.content.markdown)}`;
+    case "route":
+      return `route map: ${item.content.stops.length} stops`;
   }
 }
 
@@ -288,6 +291,68 @@ function PlacementFields({ item, p, layout, updateItem }: { item: Item; p: Place
   );
 }
 
+function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Props["updateItem"] }) {
+  const c = item.content;
+  const input = useRef<HTMLInputElement>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const set = (patch: Partial<RouteItem["content"]>, field: string) =>
+    updateItem((i) => ({ ...i, content: { ...(i as RouteItem).content, ...patch } }) as Item, `content:${item.id}:${field}`);
+  return (
+    <>
+      <p className="small muted">
+        Place this band where the route should play. While the page scrolls through it, the map stays on screen and the route draws in. Link items to stops (in their settings) to move the map to a stop.
+      </p>
+      <Field label={`Stops (${c.stops.length})${c.line.length ? `, path of ${c.line.length} points` : ""}`}>
+        <div className="route-stops">
+          {c.stops.map((stop, index) => (
+            <input
+              key={index}
+              type="text"
+              value={stop.name}
+              aria-label={`Stop ${index + 1} name`}
+              onChange={(e) => set({ stops: c.stops.map((s, i) => (i === index ? { ...s, name: e.target.value } : s)) }, `stop${index}`)}
+            />
+          ))}
+        </div>
+      </Field>
+      <div className="row">
+        <button onClick={() => input.current?.click()}>Replace with another file…</button>
+        <input
+          ref={input}
+          type="file"
+          hidden
+          accept=".geojson,.json,application/geo+json,application/json"
+          onChange={async (e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            try {
+              const { stops, line } = parseRouteGeoJSON(JSON.parse(await file.text()));
+              set({ stops, line }, "geojson");
+              setMessage(`Loaded ${stops.length} stops. Links to stops keep their numbers.`);
+            } catch (err) {
+              setMessage(err instanceof SyntaxError ? "That file is not valid JSON." : (err as Error).message);
+            }
+          }}
+        />
+      </div>
+      {message ? <span className="small muted">{message}</span> : null}
+      <div className="grid2">
+        <Field label="Route color">
+          <input type="color" value={c.color} onChange={(e) => set({ color: e.target.value }, "color")} />
+        </Field>
+        <Field label={`Zoom on a stop: ${c.stepZoom}×`}>
+          <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
+        </Field>
+      </div>
+      <label className="row small">
+        <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
+        Country borders
+      </label>
+    </>
+  );
+}
+
 function ItemSettings(props: Props & { item: Item }) {
   const { item, doc, updateItem, change, layer, duplicate, remove, layout, setMobileVisible } = props;
   const p = placementOf(item, layout);
@@ -483,6 +548,33 @@ function ItemSettings(props: Props & { item: Item }) {
           </Field>
           <p className="small muted">{formatDuration(item.content.duration)}. Plays only when a visitor presses play.</p>
         </>
+      ) : null}
+
+      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} /> : null}
+
+      {item.type !== "route" && doc.items.some((i) => i.type === "route") ? (
+        <Field label="Route stop (moves the map there when this item is mid-screen)">
+          <select
+            value={item.routeStop ? `${item.routeStop.routeId}:${item.routeStop.index}` : ""}
+            onChange={(e) => {
+              const [routeId, index] = e.target.value.split(":");
+              updateItem((i) => ({ ...i, routeStop: e.target.value ? { routeId, index: Number(index) } : null }));
+            }}
+          >
+            <option value="">none</option>
+            {doc.items
+              .filter((i): i is RouteItem => i.type === "route")
+              .map((route, n, all) => (
+                <optgroup key={route.id} label={all.length > 1 ? `route map ${n + 1}` : "route map"}>
+                  {route.content.stops.map((stop, index) => (
+                    <option key={index} value={`${route.id}:${index}`}>
+                      {index + 1}. {stop.name}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+          </select>
+        </Field>
       ) : null}
 
       <hr />

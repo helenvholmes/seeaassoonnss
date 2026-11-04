@@ -32,8 +32,13 @@ export const placementSchema = z.object({
 });
 export type Placement = z.infer<typeof placementSchema>;
 
+/** Ties an item to a stop on a route map: when it scrolls into view, the map moves there. */
+export const routeStopSchema = z.object({ routeId: z.string().uuid(), index: z.number().int().min(0) });
+export type RouteStopLink = z.infer<typeof routeStopSchema>;
+
 const base = {
   id: z.string().uuid(),
+  routeStop: routeStopSchema.nullable().optional(),
   desktop: placementSchema,
   // Empty = not shown on mobile (once the season has a mobile layout).
   mobile: placementSchema.nullable(),
@@ -150,7 +155,33 @@ export const voiceNoteSchema = z.object({
   }),
 });
 
-export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema]);
+export const ROUTE_MAX_STOPS = 500;
+export const ROUTE_MAX_LINE_POINTS = 5000;
+const lonLat = z.tuple([num.min(-180).max(180), num.min(-85).max(85)]);
+
+/**
+ * A scroll-driven route map. The item's box is a band of the canvas: while the
+ * reader scrolls through it, the map stays fixed on screen and the route draws in.
+ */
+export const routeSchema = z.object({
+  ...base,
+  type: z.literal("route"),
+  content: z.object({
+    /** Ordered places along the route. */
+    stops: z
+      .array(z.object({ name: z.string().max(200), lat: num.min(-85).max(85), lon: num.min(-180).max(180) }))
+      .min(1)
+      .max(ROUTE_MAX_STOPS),
+    /** The drawn path as [lon, lat] pairs. Empty: straight (great-circle) lines between stops. */
+    line: z.array(lonLat).max(ROUTE_MAX_LINE_POINTS),
+    color: z.string().regex(/^#[0-9a-f]{6}$/i),
+    borders: z.boolean(),
+    /** How far the map zooms in on a stop when an item linked to it is in view. */
+    stepZoom: num.min(1).max(16),
+  }),
+});
+
+export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema]);
 export type Item = z.infer<typeof itemSchema>;
 export type PhotoItem = z.infer<typeof photoSchema>;
 export type QuoteItem = z.infer<typeof quoteSchema>;
@@ -159,6 +190,8 @@ export type VideoItem = z.infer<typeof videoSchema>;
 export type StickerItem = z.infer<typeof stickerSchema>;
 export type MapItem = z.infer<typeof mapSchema>;
 export type VoiceNoteItem = z.infer<typeof voiceNoteSchema>;
+export type RouteItem = z.infer<typeof routeSchema>;
+export type RouteContent = RouteItem["content"];
 export type ItemType = Item["type"];
 
 export const seasonDocSchema = z.object({

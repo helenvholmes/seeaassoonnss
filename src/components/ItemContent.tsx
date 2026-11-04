@@ -7,6 +7,7 @@ import { units } from "./geometry";
 import { PlaylistCard } from "./PlaylistCard";
 import { VideoView } from "./items/VideoView";
 import { VoiceNoteView } from "./items/VoiceNoteView";
+import { RouteView } from "./items/RouteView";
 
 export const FONT_STACKS: Record<QuoteItem["content"]["font"], string> = {
   serif: '"EB Garamond", Garamond, "Times New Roman", serif',
@@ -145,5 +146,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
     }
     case "voice_note":
       return <VoiceNoteView item={item} mediaBase={mediaBase} interactive={interactive} />;
+    case "route":
+      return <RouteView item={item} interactive={interactive} layout={layout} placement={placement} />;
   }
 }

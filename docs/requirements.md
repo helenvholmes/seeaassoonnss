@@ -330,7 +330,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 | 2 | Mobile canvas and toggle; mobile preview; index page `/seasons`; share metadata | A phone shows a hand-placed mobile layout |
 | 3 | Video; stickers and sticker library; voice notes; maps | All seven item types work |
 | 4 | README, `.env.example`, seed demo; public repository | A second person deploys a fork from the README alone |
-| 5 (proposed) | Scroll-driven route map; Odyssey season; `/odyssey` on the main site | Odyssey is live at `/odyssey` |
+| 5 | Scroll-driven route map (built); Odyssey season and `/odyssey` on the main site (owner) | Odyssey is live at `/odyssey` |
 | Later | Spotify track list via Web API; Live Photos; slug redirects; undo history beyond one session | Decided case by case |
 
 ## Open questions
@@ -347,9 +347,9 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [ ] Quote fonts: EB Garamond and IBM Plex Mono decided; the sans-serif is still to pick.
 - [x] Design units: 1440 / 390 widths, 960 px breakpoint (proposed), scale cap 1.25× (proposed).
 - [x] License: AGPL-3.0. Sale is allowed; a changed hosted copy must offer its source.
-- [ ] Route data format: GeoJSON, or a CSV export from Google Maps?
-- [ ] Route map layout: a season is one canvas whose page grows without limit. Is the route map a band of the canvas where the map stays fixed while the items placed in that band scroll past, or something else?
-- [ ] Route map on mobile: same behavior on the 390-wide layout, or a simpler static route?
+- [x] Route data format: GeoJSON.
+- [x] Route map layout: a band of the canvas. The map stays fixed while the items placed in that band scroll past.
+- [x] Route map on mobile: same behavior on the 390-wide layout.
 - [ ] Visual references beyond "leafy greens".
 - [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
@@ -433,3 +433,13 @@ Version 1 must replace one Pinterest board with one published season. Everything
 **Nov 4, 2026**
 
 1. Odyssey is back in scope, built with Seasons. This reverses the Nov 3 entry above. The scroll-driven route map returns as part of the Odyssey season, proposed as phase 5.
+
+**Nov 4, 2026 (phase 5 build)**
+
+1. The route map is its own item type, `route`. Its box is a band of the canvas. While the page scrolls through the band, the map panel stays at the top of the screen (CSS `position: sticky`; the canvas uses `overflow: clip` so sticky works). The panel is one screen tall, or the band's height if shorter. Route bands do not rotate.
+2. GeoJSON import: Point features, in file order, are the stops; LineString and MultiLineString features are the path. Names come from `name`, `title` or Google Takeout's `location.name`. A file with only a line gets start and end stops. Limits: 500 stops, 5,000 path points (longer paths are thinned evenly).
+3. Drawing follows the method above: a grey base line, and a colored copy whose `stroke-dashoffset` follows scroll progress through the band. Stops fill in as the line reaches them.
+4. Steps: any item can be linked to a stop ("Route stop" in its settings). When a linked item is at or above the middle of the screen, the map zooms (default 3×, adjustable) to that stop and labels it. Without a linked item in view, the map shows the whole route and labels the last stop reached.
+5. Reduced motion: the whole route shows at once; the map does not zoom or move.
+6. Land comes from the server as SVG for exactly the route's frame (`/seasons/map/frame`), drawn from the same Natural Earth data as Map items, cached forever. The browser and server build the same projection from rounded parameters. Frame sizes are rounded to 40 px so small window changes reuse cached images.
+7. Odyssey itself is a season the owner builds with this; `/odyssey` on the main site is a rewrite or redirect the owner adds there.

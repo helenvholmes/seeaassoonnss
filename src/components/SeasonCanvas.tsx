@@ -18,7 +18,12 @@ export function LayoutCanvas({ doc, mediaBase, layout, className = "" }: { doc: 
       style={{ maxWidth: width * MAX_SCALE, aspectRatio: `${width} / ${height}`, background: doc.background.value }}
     >
       {items.map(({ item, p }) => (
-        <div key={item.id} className={`item item-${item.type}`} style={placementStyle(p, height, width)}>
+        <div
+          key={item.id}
+          className={`item item-${item.type}`}
+          style={placementStyle(p, height, width)}
+          data-route-stop={item.routeStop ? `${item.routeStop.routeId}:${item.routeStop.index}` : undefined}
+        >
           <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive layout={layout} placement={p} />
         </div>
       ))}

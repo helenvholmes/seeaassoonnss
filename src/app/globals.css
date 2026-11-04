@@ -12,7 +12,10 @@ body {
   position: relative;
   width: 100%;
   margin: 0 auto;
-  overflow: hidden; /* The page cuts off parts of items outside the canvas. */
+  /* The page cuts off parts of items outside the canvas. "clip" (unlike "hidden")
+     does not create a scroll container, so route maps can stay fixed (sticky). */
+  overflow: hidden;
+  overflow: clip;
   container-type: inline-size;
 }
 .item { position: absolute; transform-origin: center center; }
@@ -228,3 +231,24 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
   position: absolute; top: 6px; left: 8px;
   font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
 }
+
+/* ---------- Route map ---------- */
+.route-band { position: relative; width: 100%; height: 100%; }
+.route-panel { position: relative; width: 100%; height: min(100svh, 100%); overflow: hidden; background: transparent; }
+.route-sticky { position: sticky; top: 0; }
+.route-panel svg { display: block; width: 100%; height: 100%; }
+.route-move { transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.3, 0.1, 0.2, 1); }
+.route-line-base { fill: none; stroke: #c9c9c2; stroke-linecap: round; stroke-linejoin: round; }
+.route-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.route-stop { fill: #fbfbf9; stroke: #1d1d1b; transition: r 0.3s; }
+@media (prefers-reduced-motion: reduce) { .route-move, .route-stop { transition: none; } }
+.route-label {
+  position: absolute; left: 12px; top: 12px; z-index: 1;
+  font: 13px "IBM Plex Mono", ui-monospace, monospace; background: rgb(251 251 249 / 0.9); padding: 2px 8px;
+}
+.route-band-note {
+  position: absolute; left: 0; right: 0; bottom: 0; top: auto; padding: 6px 8px;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
+}
+.editor .item-route { outline: 1px dashed #b9b9b0; background: repeating-linear-gradient(0deg, transparent 0 22px, rgb(0 0 0 / 0.02) 22px 24px); }
+.route-stops { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
