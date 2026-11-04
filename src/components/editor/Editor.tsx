@@ -30,6 +30,8 @@ import {
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
 import { Tools } from "./Tools";
+import { measure } from "./measure";
+import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
 import { parsePlaylistId } from "@/lib/spotify";
 
@@ -66,6 +68,9 @@ export function Editor(props: EditorProps) {
   const [uploads, setUploads] = useState({ done: 0, total: 0, failed: [] as string[] });
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [shift, setShift] = useState(false);
+  // Alt (Option on a Mac) shows measurements; the hovered item is what they measure against.
+  const [alt, setAlt] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
@@ -355,6 +360,9 @@ export function Editor(props: EditorProps) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       setShift(e.shiftKey);
+      setAlt(e.altKey);
+      // On Windows a lone Alt press would focus the browser menu and swallow the next keys.
+      if (e.key === "Alt") e.preventDefault();
       if (e.type !== "keydown" || isTyping(e.target)) return;
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === "z") {
@@ -379,7 +387,10 @@ export function Editor(props: EditorProps) {
         change((d) => setPlacement(d, selected.id, { x: selectedPlacement.x + dx, y: selectedPlacement.y + dy }, layout), `nudge:${layout}:${selected.id}`);
       }
     };
-    const onBlur = () => setShift(false);
+    const onBlur = () => {
+      setShift(false);
+      setAlt(false);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
     window.addEventListener("blur", onBlur);
@@ -619,12 +630,29 @@ export function Editor(props: EditorProps) {
               style={placementStyle(p, canvasHeight, canvasWidth)}
               onMouseDown={(e) => onItemPress(item, e)}
               onTouchStart={(e) => onItemPress(item, e)}
+              onMouseEnter={() => setHoveredId(item.id)}
+              onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
             >
               <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} />
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
             </div>
           ))}
+          {alt && selectedPlacement ? (
+            <MeasureOverlay
+              m={measure(
+                selectedPlacement,
+                { width: canvasWidth, height: pageEnd },
+                (() => {
+                  const hovered = hoveredId && hoveredId !== selectedId ? doc.items.find((i) => i.id === hoveredId) : null;
+                  return hovered ? placementOf(hovered, layout) : null;
+                })(),
+              )}
+              width={canvasWidth}
+              height={canvasHeight}
+              scale={scale}
+            />
+          ) : null}
           <div className="page-end" style={{ top: `${(pageEnd / canvasHeight) * 100}%` }} aria-hidden>
             <span>end of page · drag items below to make it longer</span>
           </div>

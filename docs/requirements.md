@@ -241,6 +241,7 @@ Optional (build if time allows):
 
 1. Arrow keys move the selected item 1 unit; Shift+arrow moves it 10 units.
 2. Alignment guides while dragging, with a held key to turn them off.
+3. Built: hold Alt (Option) to measure, as in Figma. It shows distances from the selected item to the page edges or to the item under the pointer, and a center line that marks when the selection is centered on the page or on that item.
 
 ### Desktop and mobile
 
@@ -443,3 +444,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 5. Reduced motion: the whole route shows at once; the map does not zoom or move.
 6. Land comes from the server as SVG for exactly the route's frame (`/seasons/map/frame`), drawn from the same Natural Earth data as Map items, cached forever. The browser and server build the same projection from rounded parameters. Frame sizes are rounded to 40 px so small window changes reuse cached images.
 7. Odyssey itself is a season the owner builds with this; `/odyssey` on the main site is a rewrite or redirect the owner adds there.
+
+**Nov 4, 2026 (editor)**
+
+1. Alt measuring: with an item selected, holding Alt shows distances in design units to the page edges, or to the hovered item (the gap between them, or the distances to its edges when one contains the other). A center line marks the page's middle and turns solid with a "centered" tag when the selection is centered within half a unit; the same check runs against the hovered item. Rotated items are measured by their outer box. It updates while dragging.

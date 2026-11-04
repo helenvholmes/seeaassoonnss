@@ -252,3 +252,14 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 }
 .editor .item-route { outline: 1px dashed #b9b9b0; background: repeating-linear-gradient(0deg, transparent 0 22px, rgb(0 0 0 / 0.02) 22px 24px); }
 .route-stops { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+
+/* ---------- Editor: Alt measuring ---------- */
+.measure-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100001; overflow: visible; }
+.measure-overlay * { vector-effect: non-scaling-stroke; }
+.measure-line { stroke: #e5336d; stroke-width: 1; }
+.measure-box { fill: none; stroke: #e5336d; stroke-width: 1; }
+.measure-target { stroke-dasharray: 4 3; }
+.measure-center { stroke: #e5336d; stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.5; }
+.measure-center.is-centered { stroke-dasharray: none; opacity: 1; }
+.measure-tag { fill: #e5336d; }
+.measure-text { fill: #fff; font-family: "IBM Plex Mono", ui-monospace, monospace; }

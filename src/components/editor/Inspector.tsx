@@ -597,7 +597,7 @@ function ItemSettings(props: Props & { item: Item }) {
           Show on mobile
         </label>
       ) : null}
-      <p className="small muted">Shift while resizing keeps the aspect ratio; Shift while rotating snaps to 15°. Arrow keys nudge.</p>
+      <p className="small muted">Shift while resizing keeps the aspect ratio; Shift while rotating snaps to 15°. Arrow keys nudge. Hold Alt (Option) to measure: distances to the page edges, or to an item you point at, and whether this item is centered.</p>
 {p ? (
       <div className="row">
         <button onClick={() => layer("front")} title="Bring to front">
