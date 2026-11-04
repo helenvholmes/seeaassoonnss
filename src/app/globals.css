@@ -263,3 +263,6 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .measure-center.is-centered { stroke-dasharray: none; opacity: 1; }
 .measure-tag { fill: #e5336d; }
 .measure-text { fill: #fff; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.snap-toggle { min-width: 84px; }
+/* Moveable's snap guide lines, in the measuring color. */
+.editor .moveable-line.moveable-guideline { background: #e5336d !important; }

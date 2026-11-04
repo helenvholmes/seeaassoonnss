@@ -31,3 +31,11 @@ test("rotated items are measured by their outer box", () => {
   const b = boxOf(p(0, 0, 100, 100, 45));
   assert.ok(Math.abs(b.x1 - b.x0 - 100 * Math.SQRT2) < 1e-9);
 });
+
+test("exact snapping corrects pixel rounding onto page and item guides", async () => {
+  const { refineSnap } = await import("../src/components/editor/measure.ts");
+  const page = { width: 1440, height: 2000 };
+  assert.deepEqual(refineSnap(p(569.9, 100.4, 300, 50), page, []), { x: 570, y: 100.4 }, "onto the page center");
+  assert.deepEqual(refineSnap(p(901, 300, 100, 50), page, [p(900, 0, 50, 50)]), { x: 900, y: 300 }, "onto another item's left edge");
+  assert.deepEqual(refineSnap(p(880, 300, 100, 50), page, [p(900, 0, 50, 50)]), { x: 880, y: 300 }, "nothing within reach: unchanged");
+});

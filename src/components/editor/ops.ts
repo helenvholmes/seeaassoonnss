@@ -162,7 +162,7 @@ export function normalizeRotation(deg: number): number {
   return Math.round(r * 100) / 100;
 }
 
-/** Rounds geometry to 0.1 unit so saved documents stay readable. */
+/** Rounds geometry to whole design units after a gesture (1 unit is 1 px on a 1440 px desktop screen). */
 export function roundPlacement(p: Placement): Placement {
-  return { ...p, x: round(p.x), y: round(p.y), w: Math.max(1, round(p.w)), h: Math.max(1, round(p.h)), rotation: normalizeRotation(p.rotation) };
+  return { ...p, x: Math.round(p.x), y: Math.round(p.y), w: Math.max(1, Math.round(p.w)), h: Math.max(1, Math.round(p.h)), rotation: normalizeRotation(p.rotation) };
 }

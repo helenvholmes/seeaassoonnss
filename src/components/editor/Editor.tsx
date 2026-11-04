@@ -30,7 +30,7 @@ import {
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
 import { Tools } from "./Tools";
-import { measure } from "./measure";
+import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
 import { parsePlaylistId } from "@/lib/spotify";
@@ -49,6 +49,8 @@ export interface EditorProps {
 }
 
 const SAVE_DELAY = 1000;
+/** Snap by edges and centers, on both axes. */
+const SNAP_DIRECTIONS = { left: true, top: true, right: true, bottom: true, center: true, middle: true };
 
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
@@ -70,6 +72,22 @@ export function Editor(props: EditorProps) {
   const [shift, setShift] = useState(false);
   // Alt (Option on a Mac) shows measurements; the hovered item is what they measure against.
   const [alt, setAlt] = useState(false);
+  // Snapping while dragging and resizing. The setting is remembered in this browser;
+  // holding ⌘ or Ctrl skips it for the current move.
+  const [snapOn, setSnapOn] = useState(true);
+  const [snapSkip, setSnapSkip] = useState(false);
+  useEffect(() => {
+    try {
+      if (localStorage.getItem("seasons:snap") === "off") setSnapOn(false);
+    } catch {}
+  }, []);
+  const toggleSnap = () =>
+    setSnapOn((on) => {
+      try {
+        localStorage.setItem("seasons:snap", on ? "off" : "on");
+      } catch {}
+      return !on;
+    });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
@@ -79,6 +97,7 @@ export function Editor(props: EditorProps) {
   const stageWrapRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
   const moveableRef = useRef<Moveable>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
 
   const canvasWidth = CANVAS_WIDTH[layout];
@@ -361,6 +380,7 @@ export function Editor(props: EditorProps) {
     const onKey = (e: KeyboardEvent) => {
       setShift(e.shiftKey);
       setAlt(e.altKey);
+      setSnapSkip(e.metaKey || e.ctrlKey);
       // On Windows a lone Alt press would focus the browser menu and swallow the next keys.
       if (e.key === "Alt") e.preventDefault();
       if (e.type !== "keydown" || isTyping(e.target)) return;
@@ -390,6 +410,7 @@ export function Editor(props: EditorProps) {
     const onBlur = () => {
       setShift(false);
       setAlt(false);
+      setSnapSkip(false);
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
@@ -469,17 +490,23 @@ export function Editor(props: EditorProps) {
   const startGesture = () => {
     gestureStart.current = latestDoc.current;
   };
-  const endGesture = () => {
+  const endGesture = (moved = false) => {
     const before = gestureStart.current;
     gestureStart.current = null;
     if (!before || !selectedId) return;
+    const snapping = moved && snapOn && !snapSkip;
     setHistory((h) => {
       const item = h.present.items.find((i) => i.id === selectedId);
-      const p = item ? placementOf(item, layout) : null;
+      let p = item ? placementOf(item, layout) : null;
+      if (p && snapping) {
+        const others = h.present.items.filter((i) => i.id !== selectedId).map((i) => placementOf(i, layout)).filter((o): o is Placement => !!o);
+        p = { ...p, ...refineSnap(p, { width: canvasWidth, height: pageHeight(h.present, layout) }, others) };
+      }
       const rounded = p ? setPlacement(h.present, selectedId, roundPlacement(p), layout) : h.present;
       return commitGesture(replace(h, rounded), before);
     });
   };
+
 
   // Moveable's gesture layer listens to mouse and touch events (not pointer events),
   // so selection and drag start on mousedown / touchstart. Selecting and dragging
@@ -521,6 +548,14 @@ export function Editor(props: EditorProps) {
               </button>
             ))}
           </span>
+          <button
+            className={snapOn ? "primary snap-toggle" : "snap-toggle"}
+            aria-pressed={snapOn}
+            onClick={toggleSnap}
+            title="Snap to the page and to other items while dragging and resizing. Hold ⌘ or Ctrl during a move to skip snapping once."
+          >
+            Snap {snapOn ? "on" : "off"}
+          </button>
           <span className={save.kind === "error" ? "error" : "muted"} role="status">
             {saveLabel}
           </span>
@@ -615,6 +650,7 @@ export function Editor(props: EditorProps) {
         }}
       >
         <div
+          ref={canvasRef}
           className="canvas editor-canvas"
           style={{ width: stageWidth, aspectRatio: `${canvasWidth} / ${canvasHeight}`, background: doc.background.value }}
         >
@@ -671,6 +707,17 @@ export function Editor(props: EditorProps) {
           rotationPosition="top"
           origin={false}
           renderDirections={locked ? [] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
+          snappable={snapOn && !snapSkip}
+          snapContainer={canvasRef}
+          snapThreshold={6}
+          snapDirections={SNAP_DIRECTIONS}
+          elementSnapDirections={SNAP_DIRECTIONS}
+          // Page edges and center, and the end of the page.
+          verticalGuidelines={[0, stageWidth / 2, stageWidth]}
+          horizontalGuidelines={[0, pageEnd * scale]}
+          elementGuidelines={sorted.filter(({ item }) => item.id !== selectedId).map(({ item }) => itemRefs.current.get(item.id)).filter((el): el is HTMLDivElement => !!el)}
+          isDisplaySnapDigit={false}
+          isDisplayInnerSnapDigit={false}
           onDragStart={startGesture}
           onDrag={(e) => {
             // Write the DOM at once so Moveable's next measurement matches; React state follows.
@@ -678,7 +725,7 @@ export function Editor(props: EditorProps) {
             e.target.style.top = `${e.top}px`;
             live({ x: e.left / scale, y: e.top / scale });
           }}
-          onDragEnd={endGesture}
+          onDragEnd={() => endGesture(true)}
           onResizeStart={startGesture}
           onResize={(e) => {
             e.target.style.width = `${e.width}px`;
@@ -687,13 +734,13 @@ export function Editor(props: EditorProps) {
             e.target.style.top = `${e.drag.top}px`;
             live({ w: e.width / scale, h: e.height / scale, x: e.drag.left / scale, y: e.drag.top / scale });
           }}
-          onResizeEnd={endGesture}
+          onResizeEnd={() => endGesture()}
           onRotateStart={startGesture}
           onRotate={(e) => {
             e.target.style.transform = `rotate(${e.rotation}deg)`;
             live({ rotation: e.rotation });
           }}
-          onRotateEnd={endGesture}
+          onRotateEnd={() => endGesture()}
         />
       </div>
 

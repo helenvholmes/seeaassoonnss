@@ -110,3 +110,38 @@ export function measure(selected: Placement, page: { width: number; height: numb
   if (Math.abs(centerY(a) - centerY(b)) <= CENTER_TOLERANCE) guides.push({ axis: "y", at: centerY(b), from: left, to: right, centered: true });
   return { selection: a, target: b, lines, guides };
 }
+
+/**
+ * Exact snapping in design units. Moveable snaps in whole screen pixels, which can
+ * leave an item a fraction of a unit off (569.9 instead of 570). After a snapped
+ * move, this nudges the item onto the nearest page or item edge/center within
+ * `tolerance` units, separately on each axis.
+ */
+export function refineSnap(p: Placement, page: { width: number; height: number }, others: Placement[], tolerance = 1.5): { x: number; y: number } {
+  const a = boxOf(p);
+  const xs = [0, page.width / 2, page.width];
+  const ys = [0, page.height];
+  for (const o of others) {
+    const b = boxOf(o);
+    xs.push(b.x0, centerX(b), b.x1);
+    ys.push(b.y0, centerY(b), b.y1);
+  }
+  const nearest = (own: number[], targets: number[]) => {
+    let best = 0;
+    let bestAbs = Infinity;
+    for (const v of own) {
+      for (const t of targets) {
+        const d = t - v;
+        if (Math.abs(d) <= tolerance && Math.abs(d) < bestAbs) {
+          best = d;
+          bestAbs = Math.abs(d);
+        }
+      }
+    }
+    return best;
+  };
+  return {
+    x: p.x + nearest([a.x0, centerX(a), a.x1], xs),
+    y: p.y + nearest([a.y0, centerY(a), a.y1], ys),
+  };
+}

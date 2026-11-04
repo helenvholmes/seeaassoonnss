@@ -240,7 +240,7 @@ The editor is a desktop canvas where the owner places each item by hand, then lo
 Optional (build if time allows):
 
 1. Arrow keys move the selected item 1 unit; Shift+arrow moves it 10 units.
-2. Alignment guides while dragging, with a held key to turn them off.
+2. Built: snapping while dragging and resizing, to the page edges, center and end, and to other items' edges and centers, with guide lines. A Snap button turns it off (remembered per browser); holding ⌘ or Ctrl skips it for one move.
 3. Built: hold Alt (Option) to measure, as in Figma. It shows distances from the selected item to the page edges or to the item under the pointer, and a center line that marks when the selection is centered on the page or on that item.
 
 ### Desktop and mobile
@@ -448,3 +448,5 @@ Version 1 must replace one Pinterest board with one published season. Everything
 **Nov 4, 2026 (editor)**
 
 1. Alt measuring: with an item selected, holding Alt shows distances in design units to the page edges, or to the hovered item (the gap between them, or the distances to its edges when one contains the other). A center line marks the page's middle and turns solid with a "centered" tag when the selection is centered within half a unit; the same check runs against the hovered item. Rotated items are measured by their outer box. It updates while dragging.
+2. Snapping: items snap within 6 screen pixels to the page's left edge, center, right edge and end, and to other items' edges and centers, on both axes, with pink guide lines. After a snapped move the position is corrected to the exact unit (Moveable snaps in whole screen pixels). A "Snap on/off" button in the editor bar turns it off and is remembered in the browser; holding ⌘ or Ctrl during a move skips snapping once.
+3. Positions and sizes are stored in whole design units after a drag, resize or rotate (previously 0.1).
