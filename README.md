@@ -7,6 +7,8 @@ A single-author web app for recording one period of life as one public page: pho
 - **Public pages** at `/seasons/[slug]`, plus an index at `/seasons`. Drafts stay private until you publish.
 - **Cheap to run.** Vercel (Hobby), a free Postgres database and Cloudflare R2's free tier are enough for one person.
 
+The full specification and decision log are in [docs/requirements.md](docs/requirements.md).
+
 ## Contents
 
 - [What's in a season](#whats-in-a-season)
