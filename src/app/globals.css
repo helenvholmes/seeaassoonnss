@@ -266,3 +266,10 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .snap-toggle { min-width: 84px; }
 /* Moveable's snap guide lines, in the measuring color. */
 .editor .moveable-line.moveable-guideline { background: #e5336d !important; }
+
+/* ---------- Photo crop ---------- */
+.photo-frame { position: absolute; inset: 0; overflow: hidden; }
+.photo-cropped, .photo-ghost { position: absolute; max-width: none; display: block; user-select: none; -webkit-user-drag: none; }
+.photo-ghost { opacity: 0.35; pointer-events: none; }
+.editor .item.is-cropping { cursor: grab; outline: 1px solid #e5336d; }
+.editor .item.is-cropping:active { cursor: grabbing; }

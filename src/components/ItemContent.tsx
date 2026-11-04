@@ -4,6 +4,7 @@ import type { Item, Layout, MapItem, Placement, PhotoItem, QuoteItem, SeasonDoc,
 import { BASE_PATH } from "@/lib/client";
 import { CANVAS_WIDTH, MAX_SCALE } from "@/lib/schema";
 import { units } from "./geometry";
+import { photoRect } from "@/lib/crop";
 import { PlaylistCard } from "./PlaylistCard";
 import { VideoView } from "./items/VideoView";
 import { VoiceNoteView } from "./items/VoiceNoteView";
@@ -40,23 +41,50 @@ export function imageUrl(mediaBase: string, mediaId: string, width: number) {
   return `${mediaBase}/media/${mediaId}/${width}.webp`;
 }
 
-function Photo({ item, mediaBase, layout, placement }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement }) {
-  const { mediaId, widths, alt, fit } = item.content;
+function Photo({ item, mediaBase, layout, placement, cropping }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement; cropping?: boolean }) {
+  const { mediaId, widths, alt, fit, width, height, crop } = item.content;
   const largest = widths[widths.length - 1];
-  const share = placement.w / CANVAS_WIDTH[layout];
+  if (fit === "contain") {
+    const share = placement.w / CANVAS_WIDTH[layout];
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        className="item-photo"
+        src={imageUrl(mediaBase, mediaId, largest)}
+        srcSet={widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", ")}
+        sizes={`min(${(share * 100).toFixed(2)}vw, ${Math.ceil(placement.w * MAX_SCALE)}px)`}
+        alt={alt}
+        loading="lazy"
+        decoding="async"
+        draggable={false}
+        style={{ objectFit: "contain" }}
+      />
+    );
+  }
+  // Cover, with the owner's crop: the photo is positioned inside a clipping frame.
+  const rect = photoRect(width, height, placement.w, placement.h, crop);
+  const shown = placement.w * rect.width;
+  const share = shown / CANVAS_WIDTH[layout];
+  const style = { left: `${rect.left * 100}%`, top: `${rect.top * 100}%`, width: `${rect.width * 100}%`, height: `${rect.height * 100}%` };
+  const attrs = {
+    src: imageUrl(mediaBase, mediaId, largest),
+    srcSet: widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", "),
+    sizes: `min(${(share * 100).toFixed(2)}vw, ${Math.ceil(shown * MAX_SCALE)}px)`,
+    decoding: "async" as const,
+    draggable: false,
+  };
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="item-photo"
-      src={imageUrl(mediaBase, mediaId, largest)}
-      srcSet={widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", ")}
-      sizes={`min(${(share * 100).toFixed(2)}vw, ${Math.ceil(placement.w * MAX_SCALE)}px)`}
-      alt={alt}
-      loading="lazy"
-      decoding="async"
-      draggable={false}
-      style={{ objectFit: fit }}
-    />
+    <>
+      {cropping ? (
+        // The whole photo, faint, so the owner sees what the crop hides.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className="photo-ghost" {...attrs} alt="" style={style} />
+      ) : null}
+      <div className="photo-frame">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className="photo-cropped" {...attrs} alt={alt} loading="lazy" style={style} />
+      </div>
+    </>
   );
 }
 
@@ -126,11 +154,11 @@ function Quote({ item, doc, layout, placement }: { item: QuoteItem; doc: SeasonD
 }
 
 /** What an item shows, without its position. The editor and the public page share it. */
-export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: string; interactive: boolean; layout: Layout; placement: Placement }) {
+export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: string; interactive: boolean; layout: Layout; placement: Placement; cropping?: boolean }) {
   const { item, doc, mediaBase, interactive, layout, placement } = props;
   switch (item.type) {
     case "photo":
-      return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} />;
+      return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} cropping={props.cropping} />;
     case "quote":
       return <Quote item={item} doc={doc} layout={layout} placement={placement} />;
     case "playlist":

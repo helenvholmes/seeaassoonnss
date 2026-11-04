@@ -12,6 +12,7 @@ export const MOBILE_BREAKPOINT = 960;
 export const DEFAULT_BACKGROUND = "#fbfbf9";
 /** Not a design limit, only a guard against absurd values. */
 export const MAX_CANVAS_HEIGHT = 10_000_000;
+export const MAX_CROP_ZOOM = 8;
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 const num = z.number().finite();
@@ -44,6 +45,9 @@ const base = {
   mobile: placementSchema.nullable(),
 };
 
+export const cropSchema = z.object({ x: num.min(0).max(1), y: num.min(0).max(1), zoom: num.min(1).max(MAX_CROP_ZOOM) });
+export type Crop = z.infer<typeof cropSchema>;
+
 export const photoSchema = z.object({
   ...base,
   type: z.literal("photo"),
@@ -57,6 +61,13 @@ export const photoSchema = z.object({
     alt: z.string().max(1000),
     /** cover = crop to fill the box; contain = show the whole image. */
     fit: z.enum(["cover", "contain"]),
+    /**
+     * Which part of the photo shows when it fills its box (fit "cover"), as in
+     * Figma's crop. zoom ≥ 1 enlarges it; x and y (0 to 1) choose the part shown:
+     * 0 = left/top edge, 1 = right/bottom edge. Works for any box shape, so the
+     * desktop and mobile layouts share it. Empty = centered, no zoom.
+     */
+    crop: cropSchema.nullable().optional(),
   }),
 });
 

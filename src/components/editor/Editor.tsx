@@ -5,7 +5,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, type Crop, type Item, type Layout, type PhotoItem, type Placement, type SeasonDoc } from "@/lib/schema";
+import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
 import { ItemContent } from "../ItemContent";
@@ -23,6 +24,7 @@ import {
   setMobileVisible,
   setPlacement,
   singleColumnMobileLayout,
+  updateItem,
   withMobileLayout,
   MOBILE_FACTOR,
   type LayerMove,
@@ -89,6 +91,8 @@ export function Editor(props: EditorProps) {
       return !on;
     });
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  // Crop mode for one photo: drag moves the photo inside its box, the wheel zooms.
+  const [cropId, setCropId] = useState<string | null>(null);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
@@ -397,9 +401,12 @@ export function Editor(props: EditorProps) {
       } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selectedPlacement?.locked) {
         e.preventDefault();
         remove();
+      } else if (cropId && (e.key === "Escape" || e.key === "Enter")) {
+        e.preventDefault();
+        setCropId(null);
       } else if (e.key === "Escape") {
         setSelectedId(null);
-      } else if (e.key.startsWith("Arrow") && selected && selectedPlacement && !selectedPlacement.locked) {
+      } else if (e.key.startsWith("Arrow") && !cropId && selected && selectedPlacement && !selectedPlacement.locked) {
         e.preventDefault();
         const step = e.shiftKey ? 10 : 1;
         const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
@@ -481,7 +488,7 @@ export function Editor(props: EditorProps) {
   };
 
   // ---------- Moveable ----------
-  const target = selected && selectedPlacement ? itemRefs.current.get(selected.id) ?? null : null;
+  const target = selected && selectedPlacement && cropId !== selected.id ? itemRefs.current.get(selected.id) ?? null : null;
   const locked = !!selectedPlacement?.locked;
   const live = (patch: Partial<Placement>) => {
     if (!selectedId) return;
@@ -511,9 +518,69 @@ export function Editor(props: EditorProps) {
   // Moveable's gesture layer listens to mouse and touch events (not pointer events),
   // so selection and drag start on mousedown / touchstart. Selecting and dragging
   // happen in one press.
+  // ---------- crop mode ----------
+  const canCrop = (item: Item | null): item is PhotoItem => !!item && item.type === "photo" && item.content.fit === "cover";
+  // Leaving the photo (selecting something else, or nothing) ends crop mode.
+  useEffect(() => {
+    if (cropId && cropId !== selectedId) setCropId(null);
+  }, [cropId, selectedId]);
+
+  const setCrop = (itemId: string, crop: Crop, key: string | null, liveOnly = false) => {
+    const update = (d: SeasonDoc) => updateItem(d, itemId, (i) => (i.type === "photo" ? { ...i, content: { ...i.content, crop } } : i));
+    if (liveOnly) setHistory((h) => replace(h, update(h.present)));
+    else change(update, key);
+  };
+
+  /** Drag inside a photo in crop mode: the photo follows the pointer. */
+  const startCropPan = (item: Item, e: React.MouseEvent) => {
+    const p = placementOf(item, layout);
+    if (!p || item.type !== "photo") return;
+    const startCrop = item.content.crop ?? NO_CROP;
+    const rect = photoRect(item.content.width, item.content.height, p.w, p.h, startCrop);
+    const before = latestDoc.current;
+    const rad = (-p.rotation * Math.PI) / 180;
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const move = (ev: MouseEvent) => {
+      // Pointer movement in the photo's own (unrotated) frame, as fractions of its box.
+      const dx = ev.clientX - sx;
+      const dy = ev.clientY - sy;
+      const lx = (dx * Math.cos(rad) - dy * Math.sin(rad)) / (p.w * scale);
+      const ly = (dx * Math.sin(rad) + dy * Math.cos(rad)) / (p.h * scale);
+      setCrop(item.id, panCrop(startCrop, rect, lx, ly), null, true);
+    };
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      setHistory((h) => commitGesture(h, before));
+    };
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  };
+
+  // The wheel zooms the photo in crop mode (a native listener, so the page does not scroll).
+  useEffect(() => {
+    const stage = stageWrapRef.current;
+    if (!stage || !cropId) return;
+    const onWheel = (ev: WheelEvent) => {
+      const el = itemRefs.current.get(cropId);
+      if (!el || !el.contains(ev.target as Node)) return;
+      ev.preventDefault();
+      const item = latestDoc.current.items.find((i) => i.id === cropId);
+      const p = item ? placementOf(item, layout) : null;
+      if (!item || item.type !== "photo" || !p) return;
+      const c = item.content.crop ?? NO_CROP;
+      const next = zoomCrop(c, item.content.width, item.content.height, p.w, p.h, c.zoom * Math.exp(-ev.deltaY * 0.0015));
+      setCrop(cropId, next, `crop:${cropId}:zoom`);
+    };
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", onWheel);
+  });
+
   const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
     if ("button" in e && e.button !== 0) return;
     e.stopPropagation();
+    if (cropId === item.id && "clientX" in e) return startCropPan(item, e);
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
     if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
@@ -662,14 +729,20 @@ export function Editor(props: EditorProps) {
                 else itemRefs.current.delete(item.id);
               }}
               data-item-id={item.id}
-              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${p.locked ? " is-locked" : ""}`}
-              style={placementStyle(p, canvasHeight, canvasWidth)}
+              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
+              style={{ ...placementStyle(p, canvasHeight, canvasWidth), ...(item.id === cropId ? { zIndex: 100002 } : null) }}
+              onDoubleClick={() => {
+                if (canCrop(item) && !p.locked) {
+                  setSelectedId(item.id);
+                  setCropId(item.id);
+                }
+              }}
               onMouseDown={(e) => onItemPress(item, e)}
               onTouchStart={(e) => onItemPress(item, e)}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
             >
-              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} />
+              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
             </div>
@@ -758,6 +831,8 @@ export function Editor(props: EditorProps) {
           remove={remove}
           mediaBase={mediaBase}
           layout={layout}
+          cropping={!!selectedId && cropId === selectedId}
+          setCropping={(on) => setCropId(on ? selectedId : null)}
           sortOrder={sortOrder}
           onSortOrderChange={setSortOrder}
           select={setSelectedId}

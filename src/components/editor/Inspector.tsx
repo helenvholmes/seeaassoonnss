@@ -3,12 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, QUOTE_FONTS, slugProblem, type RouteItem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, QUOTE_FONTS, slugProblem, type Crop, type PhotoItem, type RouteItem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
 import { quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
 import { normalizeRotation, placementOf } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
+import { isCropped, NO_CROP, zoomCrop } from "@/lib/crop";
 
 interface Props {
   id: string;
@@ -23,6 +24,9 @@ interface Props {
   remove: () => void;
   mediaBase: string;
   layout: Layout;
+  /** Whether the selected photo is in crop mode. */
+  cropping: boolean;
+  setCropping: (on: boolean) => void;
   sortOrder: number | null;
   onSortOrderChange: (n: number | null) => void;
   select: (id: string | null) => void;
@@ -291,6 +295,39 @@ function PlacementFields({ item, p, layout, updateItem }: { item: Item; p: Place
   );
 }
 
+function CropControls({ item, p, cropping, setCropping, updateItem }: { item: PhotoItem; p: Placement | null; cropping: boolean; setCropping: (on: boolean) => void; updateItem: Props["updateItem"] }) {
+  const c = item.content.crop ?? NO_CROP;
+  const setCrop = (crop: Crop | null, key: string) => updateItem((i) => (i.type === "photo" ? { ...i, content: { ...i.content, crop } } : i), key);
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <div className="row">
+        <button className={cropping ? "primary" : ""} aria-pressed={cropping} onClick={() => setCropping(!cropping)} disabled={!p || p.locked}>
+          {cropping ? "Done cropping" : "Crop"}
+        </button>
+        <button className="quiet" disabled={!isCropped(item.content.crop)} onClick={() => setCrop(null, `crop:${item.id}:reset`)}>
+          Reset crop
+        </button>
+      </div>
+      <Field label={`Zoom: ${c.zoom.toFixed(2)}×`}>
+        <input
+          type="range"
+          min={1}
+          max={MAX_CROP_ZOOM}
+          step={0.01}
+          value={c.zoom}
+          disabled={!p}
+          onChange={(e) => p && setCrop(zoomCrop(c, item.content.width, item.content.height, p.w, p.h, Number(e.target.value)), `crop:${item.id}:zoom`)}
+        />
+      </Field>
+      <span className="small muted">
+        {cropping
+          ? "Drag the photo to choose what shows. Scroll to zoom. Esc or Enter when done."
+          : "Double-click the photo to crop it: drag to move it inside its box, scroll to zoom."}
+      </span>
+    </div>
+  );
+}
+
 function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Props["updateItem"] }) {
   const c = item.content;
   const input = useRef<HTMLInputElement>(null);
@@ -375,6 +412,7 @@ function ItemSettings(props: Props & { item: Item }) {
               <option value="contain">Show the whole photo</option>
             </select>
           </Field>
+          {item.content.fit === "cover" ? <CropControls item={item} p={p} cropping={props.cropping} setCropping={props.setCropping} updateItem={updateItem} /> : null}
           <div className="row">
             <button
               onClick={() => {
