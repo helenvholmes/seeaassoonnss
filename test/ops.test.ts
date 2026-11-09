@@ -4,7 +4,8 @@ import { addItem, duplicateItem, moveLayer, normalizeRotation, removeItem, scale
 import { commit, commitGesture, createHistory, redo, replace, undo, HISTORY_LIMIT } from "../src/components/editor/history.ts";
 import { emptySeasonDoc, seasonDocSchema, slugify, slugProblem, type Item } from "../src/lib/schema.ts";
 import { targetWidths } from "../src/lib/widths.ts";
-import { parsePlaylistId } from "../src/lib/spotify.ts";
+import { slugFollowsTitle, titleSlug } from "../src/lib/schema.ts";
+import { parseSpotifyLink } from "../src/lib/spotify.ts";
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 function quote(n: number): Item {
@@ -85,13 +86,21 @@ test("image widths", () => {
   assert.deepEqual(targetWidths(2048), [640, 1280, 2048]);
 });
 
-test("spotify playlist links", () => {
+test("spotify playlist and song links", () => {
   const pid = "37i9dQZF1DXcBWIGoYBM5M";
-  assert.equal(parsePlaylistId(`https://open.spotify.com/playlist/${pid}?si=abc`), pid);
-  assert.equal(parsePlaylistId(`https://open.spotify.com/intl-de/playlist/${pid}`), pid);
-  assert.equal(parsePlaylistId(`spotify:playlist:${pid}`), pid);
-  assert.equal(parsePlaylistId(`https://open.spotify.com/album/${pid}`), null);
-  assert.equal(parsePlaylistId(`https://evil.example/playlist/${pid}`), null);
+  const playlist = { kind: "playlist", id: pid };
+  assert.deepEqual(parseSpotifyLink(`https://open.spotify.com/playlist/${pid}?si=abc`), playlist);
+  assert.deepEqual(parseSpotifyLink(`https://open.spotify.com/intl-de/playlist/${pid}`), playlist);
+  assert.deepEqual(parseSpotifyLink(`spotify:playlist:${pid}`), playlist);
+  const tid = "4cOdK2wGLETKBW3PvgPWqT";
+  const track = { kind: "track", id: tid };
+  assert.deepEqual(parseSpotifyLink(`https://open.spotify.com/track/${tid}?si=xyz`), track);
+  assert.deepEqual(parseSpotifyLink(`https://open.spotify.com/intl-fr/track/${tid}`), track);
+  assert.deepEqual(parseSpotifyLink(`https://open.spotify.com/embed/track/${tid}`), track);
+  assert.deepEqual(parseSpotifyLink(`spotify:track:${tid}`), track);
+  assert.equal(parseSpotifyLink(`https://open.spotify.com/album/${pid}`), null);
+  assert.equal(parseSpotifyLink(`https://evil.example/playlist/${pid}`), null);
+  assert.equal(parseSpotifyLink(`http://open.spotify.com/track/${tid}`), null);
 });
 
 test("new items get a scaled mobile placement on top", () => {
@@ -136,4 +145,15 @@ test("phase 1 seasons get the scaled layout; single column stacks in reading ord
   assert.equal(a.h, 171);
   assert.equal(col.mobileHeight, 24 + 342 + 24 + 171 + 24);
   assert.ok(seasonDocSchema.safeParse(scaledMobileLayout(doc)).success);
+});
+
+test("a slug follows the title only while it looks made from it", () => {
+  assert.equal(titleSlug("Leafy Greens!"), "leafy-greens");
+  assert.equal(titleSlug("  "), "season");
+  assert.ok(slugFollowsTitle("leafy-greens", "Leafy greens"));
+  assert.ok(slugFollowsTitle("leafy-greens-2", "Leafy greens"));
+  assert.ok(slugFollowsTitle("untitled-season", "Leafy greens"), "a new season's slug follows");
+  assert.ok(slugFollowsTitle("untitled-season-3", "Leafy greens"));
+  assert.ok(!slugFollowsTitle("greens", "Leafy greens"), "a hand-picked slug stays");
+  assert.ok(!slugFollowsTitle("leafy-greens-extra", "Leafy greens"));
 });

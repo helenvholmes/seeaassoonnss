@@ -65,8 +65,8 @@ export function Tools(props: Props) {
           props.onPlaylist(props.playlistUrl);
         }}
       >
-        <input type="url" placeholder="Spotify playlist link" value={props.playlistUrl} onChange={(e) => props.setPlaylistUrl(e.target.value)} />
-        <button disabled={!props.playlistUrl}>Playlist</button>
+        <input type="url" placeholder="Spotify link" value={props.playlistUrl} onChange={(e) => props.setPlaylistUrl(e.target.value)} />
+        <button disabled={!props.playlistUrl}>Playlist or song</button>
       </form>
       <button className={panel === "stickers" ? "primary" : ""} onClick={() => toggle("stickers")} aria-expanded={panel === "stickers"}>
         Stickers…

@@ -4,19 +4,21 @@ import { useState } from "react";
 import type { PlaylistItem } from "@/lib/schema";
 
 /**
- * A custom card built from oEmbed data. Spotify's own iframe cannot be styled, so it
+ * A custom card for a Spotify playlist or song, built from oEmbed data. Spotify's own iframe cannot be styled, so it
  * loads only after a click; nothing plays before that.
  */
 export function PlaylistCard({ item, interactive }: { item: PlaylistItem; interactive: boolean }) {
   const [open, setOpen] = useState(false);
   const { spotifyId, title, coverUrl, caption, url } = item.content;
+  const kind = item.content.kind ?? "playlist";
+  const noun = kind === "track" ? "song" : "playlist";
 
   if (open && interactive) {
     return (
       <iframe
         className="playlist-embed"
-        title={`Spotify playlist: ${title}`}
-        src={`https://open.spotify.com/embed/playlist/${spotifyId}`}
+        title={`Spotify ${noun}: ${title}`}
+        src={`https://open.spotify.com/embed/${kind}/${spotifyId}`}
         allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
         loading="lazy"
       />
@@ -32,8 +34,8 @@ export function PlaylistCard({ item, interactive }: { item: PlaylistItem; intera
         <div className="playlist-cover playlist-cover-empty" />
       )}
       <span className="playlist-text">
-        <span className="playlist-label">playlist ▸</span>
-        <span className="playlist-title">{title || "Spotify playlist"}</span>
+        <span className="playlist-label">{noun} ▸</span>
+        <span className="playlist-title">{title || `Spotify ${noun}`}</span>
         {caption ? <span className="playlist-caption">{caption}</span> : null}
       </span>
     </>

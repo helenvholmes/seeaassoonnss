@@ -19,6 +19,8 @@ interface Props {
   item: Item | null;
   slug: string;
   onSlugChange: (slug: string) => void;
+  /** Whether the slug still follows the title (a draft whose slug was never set by hand). */
+  slugAuto: boolean;
   change: (next: SeasonDoc | ((d: SeasonDoc) => SeasonDoc), key?: string | null) => void;
   updateItem: (fn: (item: Item) => Item, key?: string) => void;
   layer: (move: LayerMove) => void;
@@ -53,7 +55,7 @@ function itemLabel(item: Item): string {
     case "sticker":
       return item.content.alt ? `sticker: ${cut(item.content.alt)}` : "sticker";
     case "playlist":
-      return `playlist: ${cut(item.content.title)}`;
+      return `${item.content.kind === "track" ? "song" : "playlist"}: ${cut(item.content.title)}`;
     case "map":
       return `map: ${cut(item.content.label || `${item.content.lat}, ${item.content.lon}`)}`;
     case "voice_note":
@@ -241,12 +243,14 @@ function CoverField({ doc, change, mediaBase }: Props) {
 }
 
 function SeasonSettings(props: Props) {
-  const { id, doc, slug, onSlugChange, change, layout } = props;
+  const { id, doc, slug, onSlugChange, change, layout, slugAuto } = props;
   const router = useRouter();
   const [slugDraft, setSlugDraft] = useState(slug);
   const [slugMessage, setSlugMessage] = useState<string | null>(null);
   const set = <K extends keyof SeasonDoc>(key: K, value: SeasonDoc[K]) => change((d) => ({ ...d, [key]: value }), `season:${key}`);
   const problem = slugDraft === slug ? null : slugProblem(slugDraft);
+  // Keep the field in step when the slug follows the title.
+  useEffect(() => setSlugDraft(slug), [slug]);
 
   return (
     <div className="stack">
@@ -279,7 +283,13 @@ function SeasonSettings(props: Props) {
             Save
           </button>
         </div>
-        {problem ? <span className="small error">{problem}</span> : slugMessage ? <span className="small muted">{slugMessage}</span> : null}
+        {problem ? (
+          <span className="small error">{problem}</span>
+        ) : slugMessage ? (
+          <span className="small muted">{slugMessage}</span>
+        ) : slugAuto ? (
+          <span className="small muted">Follows the title until you publish or set a slug here.</span>
+        ) : null}
       </Field>
       <SortOrderField id={id} sortOrder={props.sortOrder} onSortOrderChange={props.onSortOrderChange} />
       <Field label="Month">
@@ -697,7 +707,7 @@ function ItemSettings(props: Props & { item: Item }) {
 
   return (
     <div className="stack">
-      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type === "model_3d" ? "3D model" : item.type.replace("_", " ")}</p>
+      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type === "model_3d" ? "3D model" : item.type === "playlist" && item.content.kind === "track" ? "song" : item.type.replace("_", " ")}</p>
 
       {item.type === "photo" ? (
         <>
@@ -815,7 +825,7 @@ function ItemSettings(props: Props & { item: Item }) {
             <input type="text" value={item.content.title} onChange={(e) => content({ title: e.target.value }, "title")} />
           </Field>
           <Field label="Caption">
-            <input type="text" placeholder="for walking home" value={item.content.caption} onChange={(e) => content({ caption: e.target.value }, "caption")} />
+            <input type="text" placeholder={item.content.kind === "track" ? "the artist, or why this song" : "for walking home"} value={item.content.caption} onChange={(e) => content({ caption: e.target.value }, "caption")} />
           </Field>
           <a className="small" href={item.content.url} target="_blank" rel="noreferrer">
             Open on Spotify
