@@ -68,6 +68,13 @@ export const photoSchema = z.object({
      * desktop and mobile layouts share it. Empty = centered, no zoom.
      */
     crop: cropSchema.nullable().optional(),
+    /**
+     * Background-image parallax (fit "cover" only): on the public page the photo
+     * covers the screen and stays fixed while the page scrolls, so the box shows it
+     * like a window, with a slight drift. The crop then applies to that screen-sized
+     * photo. Empty = off.
+     */
+    parallax: z.boolean().optional(),
   }),
 });
 

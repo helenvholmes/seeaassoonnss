@@ -25,7 +25,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 
 | Item | How you add it | What visitors see |
 | --- | --- | --- |
-| Photo | Upload JPEG, PNG, HEIC or WebP; double-click to crop (drag to move the photo in its box, scroll to zoom) | The photo, sized for their screen. All location data is removed. |
+| Photo | Upload JPEG, PNG, HEIC or WebP; double-click to crop (drag to move the photo in its box, scroll to zoom); optionally turn on **Parallax background** | The photo, sized for their screen. All location data is removed. With parallax, the photo fills the screen and stays put while the page scrolls past its box, like a view through a window. |
 | Video | Upload MP4, MOV or WebM (no GIF) | A silent loop while on screen; sound after a click |
 | Quote | Type Markdown (bold, italic, links) | Text in EB Garamond, IBM Plex Mono or a sans-serif |
 | Title, subtitle | Quote items that show the season's title or subtitle | |
