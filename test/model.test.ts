@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { Document, NodeIO } from "@gltf-transform/core";
 import sharp from "sharp";
-import { compressModel, isGlb } from "../src/lib/gltf.ts";
+import { compressModel, isGlb, usesDraco } from "../src/lib/gltf.ts";
 
 async function sampleGlb(textureSide: number): Promise<Uint8Array> {
   const doc = new Document();
@@ -60,4 +60,25 @@ test("compresses a model: smaller file, textures resized to the limit, same vert
 
 test("refuses files that are not .glb", async () => {
   await assert.rejects(compressModel(new TextEncoder().encode('{"asset":{"version":"2.0"}}')), /not a glTF binary/);
+});
+
+test("tells Draco-compressed .glb files apart, so only they load the Draco decoder", async () => {
+  const doc = new Document();
+  const buffer = doc.createBuffer();
+  const prim = doc.createPrimitive().setAttribute("POSITION", doc.createAccessor().setType("VEC3").setArray(new Float32Array([0, 0, 0, 1, 0, 0, 0, 1, 0])).setBuffer(buffer));
+  doc.createScene().addChild(doc.createNode().setMesh(doc.createMesh().addPrimitive(prim)));
+  const plain = await new NodeIO().writeBinary(doc);
+  assert.equal(usesDraco(plain), false);
+  // A GLB whose JSON names the Draco extension.
+  const json = new TextEncoder().encode(JSON.stringify({ asset: { version: "2.0" }, extensionsUsed: ["KHR_draco_mesh_compression"] }).padEnd(80, " "));
+  const glb = new Uint8Array(20 + json.length);
+  const view = new DataView(glb.buffer);
+  view.setUint32(0, 0x46546c67, true);
+  view.setUint32(4, 2, true);
+  view.setUint32(8, glb.length, true);
+  view.setUint32(12, json.length, true);
+  view.setUint32(16, 0x4e4f534a, true);
+  glb.set(json, 20);
+  assert.equal(usesDraco(glb), true);
+  assert.equal(usesDraco(new Uint8Array(4)), false);
 });

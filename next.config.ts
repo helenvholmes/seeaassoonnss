@@ -5,8 +5,13 @@ const nextConfig: NextConfig = {
   basePath: "/seasons",
   poweredByHeader: false,
   serverExternalPackages: ["sharp", "draco3dgltf", "meshoptimizer"],
-  // p5.js is served from this app (see app/vendor), so forks need no CDN.
-  outputFileTracingIncludes: { "/vendor/[file]": ["./node_modules/p5/lib/p5.min.js"] },
+  // Files loaded at run time that the bundler cannot see: p5.js (served from this
+  // app, see app/vendor, so forks need no CDN) and the Draco decoder's WebAssembly,
+  // used by every route that can compress a 3D model.
+  outputFileTracingIncludes: {
+    "/vendor/[file]": ["./node_modules/p5/lib/p5.min.js"],
+    "/api/**/*": ["./node_modules/draco3dgltf/*.wasm"],
+  },
   async redirects() {
     // A copy deployed on its own (without a main site in front) has nothing at "/".
     return [{ source: "/", destination: "/seasons", basePath: false, permanent: false }];

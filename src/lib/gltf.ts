@@ -42,21 +42,47 @@ export interface CompressedModel {
 }
 
 let ioPromise: Promise<NodeIO> | null = null;
+let dracoIoPromise: Promise<NodeIO> | null = null;
 
-function io(): Promise<NodeIO> {
-  ioPromise ??= (async () => {
+function baseIo(): NodeIO {
+  return new NodeIO()
+    .setLogger(new Logger(Logger.Verbosity.ERROR))
+    .registerExtensions(ALL_EXTENSIONS)
+    .registerDependencies({ "meshopt.encoder": MeshoptEncoder, "meshopt.decoder": MeshoptDecoder });
+}
+
+/**
+ * The reader and writer. The Draco decoder (a WebAssembly file) loads only for
+ * uploads that are Draco-compressed, so other models never depend on it.
+ */
+function io(draco: boolean): Promise<NodeIO> {
+  if (!draco) {
+    ioPromise ??= Promise.all([MeshoptEncoder.ready, MeshoptDecoder.ready]).then(baseIo);
+    return ioPromise;
+  }
+  dracoIoPromise ??= (async () => {
     await Promise.all([MeshoptEncoder.ready, MeshoptDecoder.ready]);
-    return new NodeIO()
-      .setLogger(new Logger(Logger.Verbosity.ERROR))
-      .registerExtensions(ALL_EXTENSIONS)
-      .registerDependencies({
-        "meshopt.encoder": MeshoptEncoder,
-        "meshopt.decoder": MeshoptDecoder,
-        // Uploads may already be Draco-compressed (many exporters do this); they are decoded and re-packed with meshopt.
-        "draco3d.decoder": await draco3d.createDecoderModule(),
-      });
+    let decoder: unknown;
+    try {
+      decoder = await draco3d.createDecoderModule();
+    } catch (e) {
+      dracoIoPromise = null;
+      throw new ModelError(`This model is Draco-compressed, and the Draco decoder could not load on the server (${(e as Error).message}). Export it without Draco compression and try again.`);
+    }
+    // Uploads may already be Draco-compressed (many exporters do this); they are decoded and re-packed with meshopt.
+    return baseIo().registerDependencies({ "draco3d.decoder": decoder });
   })();
-  return ioPromise;
+  return dracoIoPromise;
+}
+
+/** Whether a .glb says it uses Draco mesh compression (read from its JSON chunk). */
+export function usesDraco(glb: Uint8Array): boolean {
+  if (glb.length < 20) return false;
+  const view = new DataView(glb.buffer, glb.byteOffset, glb.byteLength);
+  const jsonLength = view.getUint32(12, true);
+  if (view.getUint32(16, true) !== 0x4e4f534a) return false; // "JSON"
+  const json = new TextDecoder().decode(glb.subarray(20, Math.min(glb.length, 20 + jsonLength)));
+  return json.includes("KHR_draco_mesh_compression");
 }
 
 export function isGlb(buf: Uint8Array): boolean {
@@ -77,7 +103,7 @@ export class ModelError extends Error {}
 
 export async function compressModel(input: Uint8Array, textureSize: TextureSize = DEFAULT_TEXTURE_SIZE): Promise<CompressedModel> {
   if (!isGlb(input)) throw new ModelError("This is not a glTF binary (.glb) file. Export the model as .glb (glTF 2.0 binary).");
-  const nodeIO = await io();
+  const nodeIO = await io(usesDraco(input));
   let doc: Document;
   try {
     doc = await nodeIO.readBinary(input);
