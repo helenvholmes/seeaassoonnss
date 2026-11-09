@@ -363,7 +363,7 @@ License: GNU AGPL-3.0 (`AGPL-3.0-only`). The full text is in [`LICENSE`](../LICE
 4. The repository includes no personal content, no stickers, no model files and no real keys.
 5. A seed command makes one demo season with placeholder items, including a 3D model built by the script, a type effect, cursor follow and a sketch background, and adds three example sketches to the sketch library.
 6. **Who runs a copy.** Seasons stays single-owner. The owner may run copies for friends or family; each of them gets their own deployment (own database, storage and passkey), not an account on the owner's. Anyone else forks the repository.
-7. **Public demo.** As with BookBox, a demo deployment shows what Seasons does: a separate deployment with the seeded demo season published. Its editor stays locked to its owner.
+7. **Public demo.** As with BookBox, a demo deployment shows what Seasons does: a separate deployment with the seeded demo season published. Its editor stays locked to its owner; visitors cannot try it (decided Nov 9). An open editor would let anyone upload files to public storage and publish pages on the owner's domain, which would need moderation, upload quotas and regular resets to run safely.
 
 ## Visual references and prior art
 
@@ -424,7 +424,8 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [x] 3D on phones: show the 3D background and items.
 - [x] 3D model limits: 50 MB upload; compressed on upload (WebP textures at most 2048 px, or 1024 px by choice; meshopt geometry); warning above 5 MB. See [3D model compression](#3d-model-compression).
 - [x] p5.js backgrounds: the owner writes or pastes their own sketches, stored in their own database. They run in a sandboxed frame. The repository ships three examples for the demo.
-- [ ] Demo deployment: where does the public demo run (its own Vercel project and database), and should visitors be able to try the editor there? Today the demo shows published seasons only; the editor stays owner-only.
+- [x] Demo editor: visitors cannot use the editor on the demo. The demo shows published seasons only.
+- [ ] Demo deployment: where does the public demo run (its own Vercel project, database and R2 buckets)?
 - [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
 ## Sources
@@ -547,3 +548,6 @@ Version 1 must replace one Pinterest board with one published season. Everything
 7. Limits: 6 model items per season plus one background; 200,000 characters per sketch.
 8. The public bucket's CORS rule now needs `GET` as well as `PUT`, because 3D models are fetched by script. Existing forks must add it.
 
+**Nov 9, 2026 (demo)**
+
+1. Visitors cannot use the editor on the public demo. It shows the published demo season only.
