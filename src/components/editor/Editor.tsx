@@ -5,11 +5,13 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, type Crop, type Item, type Layout, type PhotoItem, type Placement, type SeasonDoc } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
 import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
-import { ItemContent } from "../ItemContent";
+import { ItemContent, modelPoster } from "../ItemContent";
+import { BackgroundLayer } from "../BackgroundLayer";
+import { modelUrl } from "../items/model-url";
 import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
 import { Inspector } from "./Inspector";
 import {
@@ -21,6 +23,7 @@ import {
   removeItem,
   roundPlacement,
   scaledMobileLayout,
+  scatterLayout,
   setMobileVisible,
   setPlacement,
   singleColumnMobileLayout,
@@ -30,7 +33,7 @@ import {
   type LayerMove,
 } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
-import { isAcceptedImage, isAcceptedVideo, isAudio, rejectionReason, uploadAudio, uploadImage, uploadVideo, type StickerEntry } from "./upload";
+import { formatBytes, isAcceptedImage, isAcceptedVideo, isAudio, isModelFile, modelReport, rejectionReason, uploadAudio, uploadImage, uploadImageBlob, uploadModel, uploadVideo, type StickerEntry, type UploadedModel } from "./upload";
 import { Tools } from "./Tools";
 import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
@@ -69,6 +72,9 @@ export function Editor(props: EditorProps) {
   const [published, setPublished] = useState<SeasonDoc | null>(props.initialPublished);
   const [save, setSave] = useState<SaveState>({ kind: "saved" });
   const [notice, setNotice] = useState<string | null>(null);
+  // Information that is not an error, such as what model compression did.
+  const [info, setInfo] = useState<string | null>(null);
+  const [sketchError, setSketchError] = useState<string | null>(null);
   const [uploads, setUploads] = useState({ done: 0, total: 0, failed: [] as string[] });
   const [videoProgress, setVideoProgress] = useState<string | null>(null);
   const [shift, setShift] = useState(false);
@@ -168,7 +174,11 @@ export function Editor(props: EditorProps) {
     const el = stageWrapRef.current;
     if (!el) return;
     // The mobile canvas shows at a comfortable zoom; the desktop canvas fills the stage.
-    const measure = () => setStageWidth(layout === "mobile" ? Math.min(520, Math.max(320, el.clientWidth - 64)) : Math.max(320, el.clientWidth - 64));
+    const measure = () => {
+      setStageWidth(layout === "mobile" ? Math.min(520, Math.max(320, el.clientWidth - 64)) : Math.max(320, el.clientWidth - 64));
+      // A background layer fills one screen of the stage (see .bg-layer-screen).
+      el.style.setProperty("--stage-height", `${el.clientHeight - 64}px`);
+    };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
@@ -291,8 +301,93 @@ export function Editor(props: EditorProps) {
     });
   };
 
+  // ---------- 3D models ----------
+  /** Changes a model's content, on an item or on the background (target "background"). */
+  const setModelContent = (target: string, patch: Partial<ModelContent>, undoable: boolean | string) => {
+    const update = (d: SeasonDoc): SeasonDoc => {
+      if (target !== "background") return updateItem(d, target, (i) => (i.type === "model_3d" ? { ...i, content: { ...i.content, ...patch } } : i));
+      const layer = d.backgroundLayer;
+      return layer?.kind === "model" ? { ...d, backgroundLayer: { ...layer, model: { ...layer.model, ...patch } } } : d;
+    };
+    if (undoable) change(update, typeof undoable === "string" ? undoable : null);
+    else setHistory((h) => replace(h, update(h.present)));
+  };
+
+  /** Draws a still of the model in the browser and stores it as its poster. */
+  const drawPoster = async (target: string, content: ModelContent, undoable: boolean) => {
+    try {
+      const { renderModelPoster } = await import("./model-poster");
+      const img = await uploadImageBlob(await renderModelPoster(modelUrl(mediaBase, content.mediaId), content));
+      setModelContent(target, { posterMediaId: img.mediaId, posterWidths: img.widths }, undoable);
+    } catch (e) {
+      setNotice(`The poster image was not made: ${(e as Error).message}`);
+    }
+  };
+
+  // Models without a poster (for example from the demo season, made on the server) get one when the season opens.
+  const posterPass = useRef(false);
+  useEffect(() => {
+    if (posterPass.current) return;
+    posterPass.current = true;
+    const d = latestDoc.current;
+    const missing: [string, ModelContent][] = [
+      ...d.items.filter((i) => i.type === "model_3d" && !i.content.posterMediaId).map((i) => [i.id, i.content as ModelContent] as [string, ModelContent]),
+      ...(d.backgroundLayer?.kind === "model" && !d.backgroundLayer.model.posterMediaId ? [["background", d.backgroundLayer.model] as [string, ModelContent]] : []),
+    ];
+    void (async () => {
+      for (const [target, content] of missing) await drawPoster(target, content, false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const newModelContent = (m: UploadedModel): ModelContent => ({
+    mediaId: m.mediaId,
+    posterMediaId: null,
+    posterWidths: [],
+    bytes: m.bytes,
+    scale: 1,
+    rotation: [0, 0, 0],
+    spin: 0,
+    follow: false,
+    animate: m.hasAnimation,
+    hasAnimation: m.hasAnimation,
+    alt: "",
+  });
+
+  /** Uploads and compresses a .glb, for a new item or for the background. */
+  const addModel = async (file: File, textureSize: 1024 | 2048, target: "item" | "background" = "item") => {
+    if (target === "item" && latestDoc.current.items.filter((i) => i.type === "model_3d").length >= MAX_MODEL_ITEMS) {
+      setNotice(`A season can hold at most ${MAX_MODEL_ITEMS} 3D models (each one needs its own WebGL context in the browser).`);
+      return;
+    }
+    if (!isModelFile(file)) {
+      setNotice(`${file.name}: 3D models must be glTF binary files (.glb).`);
+      return;
+    }
+    setUploads((u) => ({ ...u, total: u.total + 1 }));
+    setInfo(`compressing ${file.name}…`);
+    try {
+      const m = await uploadModel(file, textureSize);
+      const content = newModelContent(m);
+      const id = crypto.randomUUID();
+      if (target === "item") addAndSelect({ id, type: "model_3d", desktop: place(420, 420), mobile: null, content });
+      else change((d) => ({ ...d, backgroundLayer: { kind: "model", model: content } }));
+      setUploads((u) => ({ ...u, done: u.done + 1 }));
+      const warn = m.bytes > MODEL_WARN_BYTES ? ` Still large (${formatBytes(m.bytes)}): it will load slowly on phones. Try 1024 px textures, or simplify the model.` : "";
+      setInfo(`${file.name}: ${modelReport(m)}.${m.warnings.length ? ` ${m.warnings.join(" ")}` : ""}${warn}`);
+      await drawPoster(target === "item" ? id : "background", content, false);
+    } catch (e) {
+      failUpload(file.name, e);
+      setInfo(null);
+    }
+  };
+
   /** Photos (3 at a time), videos (one at a time; compression is heavy) and audio files. */
   const uploadFiles = async (files: File[], at?: { x: number; y: number }) => {
+    // A .glb dropped or pasted becomes a 3D model item.
+    for (const f of files.filter(isModelFile)) void addModel(f, 2048);
+    files = files.filter((f) => !isModelFile(f));
+    if (!files.length) return;
     const images = files.filter(isAcceptedImage);
     const videos = files.filter((f) => !isAcceptedImage(f) && isAcceptedVideo(f));
     const audios = files.filter((f) => !isAcceptedImage(f) && !isAcceptedVideo(f) && isAudio(f));
@@ -673,6 +768,7 @@ export function Editor(props: EditorProps) {
           onMap={addMap}
           onRecording={(blob) => void addVoiceNote(blob)}
           onRoute={(file) => void addRoute(file)}
+          onModel={(file, textureSize) => void addModel(file, textureSize)}
           playlistUrl={playlistUrl}
           setPlaylistUrl={setPlaylistUrl}
           setNotice={setNotice}
@@ -684,6 +780,11 @@ export function Editor(props: EditorProps) {
           </p>
         ) : null}
         {videoProgress ? <p className="small">{videoProgress}</p> : null}
+        {info ? (
+          <p className="small muted size-report" onClick={() => setInfo(null)}>
+            {info}
+          </p>
+        ) : null}
         {uploads.failed.length ? (
           <div className="small error">
             {uploads.failed.map((f, i) => (
@@ -721,6 +822,15 @@ export function Editor(props: EditorProps) {
           className="canvas editor-canvas"
           style={{ width: stageWidth, aspectRatio: `${canvasWidth} / ${canvasHeight}`, background: doc.background.value }}
         >
+          {doc.backgroundLayer ? (
+            <BackgroundLayer
+              layer={doc.backgroundLayer}
+              mediaBase={mediaBase}
+              live={false}
+              poster={doc.backgroundLayer.kind === "model" ? modelPoster(mediaBase, doc.backgroundLayer.model) : null}
+              onSketchError={setSketchError}
+            />
+          ) : null}
           {sorted.map(({ item, p }) => (
             <div
               key={item.id}
@@ -842,6 +952,12 @@ export function Editor(props: EditorProps) {
           onSortOrderChange={setSortOrder}
           select={setSelectedId}
           setMobileVisible={(itemId, visible) => change((d) => setMobileVisible(d, itemId, visible))}
+          addBackgroundModel={(file, textureSize) => void addModel(file, textureSize, "background")}
+          setModelContent={setModelContent}
+          redrawPoster={(target, content) => void drawPoster(target, content, true)}
+          scatter={(s: Scatter) => change((d) => scatterLayout(d, layout, s))}
+          sketchError={sketchError}
+          clearSketchError={() => setSketchError(null)}
           resetMobile={(kind) => {
             const what = kind === "scaled" ? "the desktop layout scaled down" : "a single column";
             if (!confirm(`Replace the whole mobile layout with ${what}?`)) return;

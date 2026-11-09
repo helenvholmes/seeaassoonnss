@@ -37,9 +37,21 @@ export type Placement = z.infer<typeof placementSchema>;
 export const routeStopSchema = z.object({ routeId: z.string().uuid(), index: z.number().int().min(0) });
 export type RouteStopLink = z.infer<typeof routeStopSchema>;
 
+/** Most 3D model items one season may hold: each one is a WebGL context, and browsers allow about 16. */
+export const MAX_MODEL_ITEMS = 6;
+/** Above this size (bytes, after compression) the editor warns that a 3D model will be slow on phones. */
+export const MODEL_WARN_BYTES = 5 * 1024 * 1024;
+/** Largest p5.js sketch, in characters. */
+export const MAX_SKETCH_CODE = 200_000;
+
 const base = {
   id: z.string().uuid(),
   routeStop: routeStopSchema.nullable().optional(),
+  /**
+   * Cursor follow, 0 to 1: the item drifts toward the cursor by up to
+   * FOLLOW_DISTANCE design units times this. On touch screens it moves with scroll.
+   */
+  follow: num.min(0).max(1).optional(),
   desktop: placementSchema,
   // Empty = not shown on mobile (once the season has a mobile layout).
   mobile: placementSchema.nullable(),
@@ -79,6 +91,13 @@ export const photoSchema = z.object({
 });
 
 export const QUOTE_FONTS = ["serif", "mono", "sans"] as const;
+/**
+ * Generative type. repel: letters move away from the cursor. wave: letters ripple
+ * as the page scrolls. gather: letters start scattered and come together as the
+ * quote reaches the middle of the screen.
+ */
+export const QUOTE_EFFECTS = ["none", "repel", "wave", "gather"] as const;
+export type QuoteEffect = (typeof QUOTE_EFFECTS)[number];
 
 export const quoteSchema = z.object({
   ...base,
@@ -94,6 +113,7 @@ export const quoteSchema = z.object({
     color: z.string().regex(/^#[0-9a-f]{6}$/i),
     /** Show the season title or subtitle instead of the markdown. */
     binding: z.enum(["title", "subtitle"]).nullable(),
+    effect: z.enum(QUOTE_EFFECTS).optional(),
   }),
 });
 
@@ -199,7 +219,38 @@ export const routeSchema = z.object({
   }),
 });
 
-export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema]);
+/** How a 3D model is shown: shared by model items and a 3D season background. */
+export const modelContentSchema = z.object({
+  /** The processed model, stored as media/<mediaId>/model.glb. */
+  mediaId: z.string().uuid(),
+  /** A still of the model, stored like a photo. Shown before the model loads and when WebGL is missing. */
+  posterMediaId: z.string().uuid().nullable(),
+  posterWidths: z.array(z.number().int().positive()),
+  /** Size of model.glb in bytes. */
+  bytes: z.number().int().nonnegative(),
+  /** 1 = the model just fills its box. */
+  scale: num.min(0.05).max(10),
+  /** Turn of the model in degrees, around its x, y and z axes. */
+  rotation: z.tuple([num, num, num]),
+  /** Slow turn around the vertical axis, degrees per second (0 = still). */
+  spin: num.min(-360).max(360),
+  /** Turns toward the cursor (with scroll on touch screens). */
+  follow: z.boolean(),
+  /** Plays the model's first animation, if it has one. */
+  animate: z.boolean(),
+  hasAnimation: z.boolean(),
+  /** Description for screen readers. */
+  alt: z.string().max(1000),
+});
+export type ModelContent = z.infer<typeof modelContentSchema>;
+
+export const modelSchema = z.object({
+  ...base,
+  type: z.literal("model_3d"),
+  content: modelContentSchema,
+});
+
+export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema, modelSchema]);
 export type Item = z.infer<typeof itemSchema>;
 export type PhotoItem = z.infer<typeof photoSchema>;
 export type QuoteItem = z.infer<typeof quoteSchema>;
@@ -209,8 +260,36 @@ export type StickerItem = z.infer<typeof stickerSchema>;
 export type MapItem = z.infer<typeof mapSchema>;
 export type VoiceNoteItem = z.infer<typeof voiceNoteSchema>;
 export type RouteItem = z.infer<typeof routeSchema>;
+export type ModelItem = z.infer<typeof modelSchema>;
 export type RouteContent = RouteItem["content"];
 export type ItemType = Item["type"];
+
+/**
+ * Something behind all items, filling the screen while the page scrolls: one 3D
+ * model, or a p5.js sketch. The season keeps its own copy of the sketch code, so
+ * the page only changes on Publish.
+ */
+export const backgroundLayerSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("model"), model: modelContentSchema }),
+  z.object({
+    kind: z.literal("sketch"),
+    /** The library entry it came from (empty if written here). */
+    sketchId: z.string().uuid().nullable(),
+    name: z.string().max(200),
+    code: z.string().max(MAX_SKETCH_CODE),
+  }),
+]);
+export type BackgroundLayer = z.infer<typeof backgroundLayerSchema>;
+
+/** Seeded random placement: the same seed always gives the same layout. */
+export const scatterSchema = z.object({
+  seed: z.number().int().min(0).max(2 ** 31 - 1),
+  /** Random scale range for photos, videos, stickers and 3D models. */
+  minScale: num.min(0.1).max(5),
+  maxScale: num.min(0.1).max(5),
+});
+export type Scatter = z.infer<typeof scatterSchema>;
+export const DEFAULT_SCATTER: Scatter = { seed: 1, minScale: 0.7, maxScale: 1.3 };
 
 export const seasonDocSchema = z.object({
   title: z.string().max(200),
@@ -218,6 +297,9 @@ export const seasonDocSchema = z.object({
   period: z.string().max(200),
   coverItemId: z.string().uuid().nullable(),
   background: z.object({ type: z.literal("color"), value: z.string().regex(/^#[0-9a-f]{6}$/i) }),
+  /** One 3D model or p5.js sketch behind all items, at most. */
+  backgroundLayer: backgroundLayerSchema.nullable().default(null),
+  scatter: scatterSchema.default(DEFAULT_SCATTER),
   /** Optional month the season belongs to, "YYYY-MM". Orders the index. */
   month: z.string().regex(MONTH_PATTERN).nullable().default(null),
   /**
@@ -231,7 +313,10 @@ export const seasonDocSchema = z.object({
    * mobile placement yet, and the page uses the scaled-down desktop layout.
    */
   mobileLayout: z.boolean().default(false),
-  items: z.array(itemSchema).max(500),
+  items: z
+    .array(itemSchema)
+    .max(500)
+    .refine((items) => items.filter((i) => i.type === "model_3d").length <= MAX_MODEL_ITEMS, `A season can hold at most ${MAX_MODEL_ITEMS} 3D models.`),
 });
 export type SeasonDoc = z.infer<typeof seasonDocSchema>;
 
@@ -240,7 +325,7 @@ export const CANVAS_WIDTH: Record<Layout, number> = { desktop: DESKTOP_WIDTH, mo
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Paths used by the app itself, so no season can take them. */
-export const RESERVED_SLUGS = new Set(["edit", "api", "local-media", "map", "_next"]);
+export const RESERVED_SLUGS = new Set(["edit", "api", "local-media", "map", "vendor", "_next"]);
 
 export function slugProblem(slug: string): string | null {
   if (!slug) return "Slug is empty.";
@@ -269,6 +354,8 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     coverItemId: null,
     month: null,
     background: { type: "color", value: DEFAULT_BACKGROUND },
+    backgroundLayer: null,
+    scatter: DEFAULT_SCATTER,
     desktopHeight: 900,
     mobileHeight: Math.round(900 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
     mobileLayout: true,

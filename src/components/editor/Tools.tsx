@@ -18,13 +18,14 @@ interface Props {
   onMap: (place: Place) => void;
   onRecording: (blob: Blob) => void;
   onRoute: (file: File) => void;
+  onModel: (file: File, textureSize: 1024 | 2048) => void;
   playlistUrl: string;
   setPlaylistUrl: (url: string) => void;
   setNotice: (message: string | null) => void;
   mediaBase: string;
 }
 
-type Panel = null | "stickers" | "map" | "voice";
+type Panel = null | "stickers" | "map" | "voice" | "model";
 
 export function Tools(props: Props) {
   const [panel, setPanel] = useState<Panel>(null);
@@ -93,8 +94,42 @@ export function Tools(props: Props) {
           if (file) props.onRoute(file);
         }}
       />
+      <button className={panel === "model" ? "primary" : ""} onClick={() => toggle("model")} aria-expanded={panel === "model"}>
+        3D model…
+      </button>
+      {panel === "model" ? <ModelPanel onModel={props.onModel} /> : null}
       <p className="muted small">You can also paste images, text or a Spotify link, or drop photos, videos and audio onto the canvas.</p>
     </>
+  );
+}
+
+/** Upload a .glb for a 3D item. Shared with the background settings. */
+export function ModelPanel({ onModel, label = "Upload .glb…" }: { onModel: Props["onModel"]; label?: string }) {
+  const [textureSize, setTextureSize] = useState<1024 | 2048>(2048);
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <div className="tool-panel">
+      <label className="field">
+        <span>Largest texture</span>
+        <select value={textureSize} onChange={(e) => setTextureSize(Number(e.target.value) as 1024 | 2048)}>
+          <option value={2048}>2048 px (sharp; for large or close-up models)</option>
+          <option value={1024}>1024 px (about ⅓ the size; for small items)</option>
+        </select>
+      </label>
+      <button onClick={() => input.current?.click()}>{label}</button>
+      <input
+        ref={input}
+        type="file"
+        hidden
+        accept=".glb,model/gltf-binary"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          e.target.value = "";
+          if (file) onModel(file, textureSize);
+        }}
+      />
+      <span className="small muted">glTF binary (.glb), up to 50 MB. Textures become WebP and geometry is packed with meshopt; the original is kept privately.</span>
+    </div>
   );
 }
 

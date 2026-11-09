@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
-import type { Item, Layout, MapItem, Placement, PhotoItem, QuoteItem, SeasonDoc, StickerItem } from "@/lib/schema";
+import type { Item, Layout, MapItem, ModelContent, Placement, PhotoItem, QuoteItem, SeasonDoc, StickerItem } from "@/lib/schema";
 import { BASE_PATH } from "@/lib/client";
 import { CANVAS_WIDTH, MAX_SCALE } from "@/lib/schema";
 import { units } from "./geometry";
@@ -10,6 +10,7 @@ import { VideoView } from "./items/VideoView";
 import { VoiceNoteView } from "./items/VoiceNoteView";
 import { RouteView } from "./items/RouteView";
 import { ParallaxPhoto } from "./items/ParallaxPhoto";
+import { ModelView } from "./items/ModelView";
 
 export const FONT_STACKS: Record<QuoteItem["content"]["font"], string> = {
   serif: '"EB Garamond", Garamond, "Times New Roman", serif',
@@ -40,6 +41,16 @@ export function SafeMarkdown({ text }: { text: string }) {
 
 export function imageUrl(mediaBase: string, mediaId: string, width: number) {
   return `${mediaBase}/media/${mediaId}/${width}.webp`;
+}
+
+/** Image attributes for a 3D model's poster, or null if it has none yet. */
+export function modelPoster(mediaBase: string, c: ModelContent) {
+  if (!c.posterMediaId || !c.posterWidths.length) return null;
+  const widths = c.posterWidths;
+  return {
+    src: imageUrl(mediaBase, c.posterMediaId, widths[Math.min(1, widths.length - 1)]),
+    srcSet: widths.map((w) => `${imageUrl(mediaBase, c.posterMediaId!, w)} ${w}w`).join(", "),
+  };
 }
 
 function Photo({ item, mediaBase, layout, placement, cropping, interactive }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement; cropping?: boolean; interactive: boolean }) {
@@ -135,7 +146,7 @@ function MapView({ item, layout }: { item: MapItem; layout: Layout }) {
   );
 }
 
-function Quote({ item, doc, layout, placement }: { item: QuoteItem; doc: SeasonDoc; layout: Layout; placement: Placement }) {
+function Quote({ item, doc, layout, placement, interactive }: { item: QuoteItem; doc: SeasonDoc; layout: Layout; placement: Placement; interactive: boolean }) {
   const c = item.content;
   const style = {
     fontFamily: FONT_STACKS[c.font],
@@ -151,10 +162,28 @@ function Quote({ item, doc, layout, placement }: { item: QuoteItem; doc: SeasonD
     );
   }
   const text = c.binding === "subtitle" ? doc.subtitle : c.markdown;
-  return (
-    <div className="item-quote" style={style}>
+  const body = (
+    <>
       <SafeMarkdown text={text} />
       {c.source && !c.binding ? <p className="item-quote-source">— {c.source}</p> : null}
+    </>
+  );
+  const effect = c.effect && c.effect !== "none" && interactive ? c.effect : null;
+  if (!effect) {
+    return (
+      <div className="item-quote" style={style}>
+        {body}
+      </div>
+    );
+  }
+  // Generative type: screen readers read the plain copy; the moving copy is split
+  // into letters by the motion layer (components/MotionLayer.tsx).
+  return (
+    <div className="item-quote" style={style}>
+      <div className="sr-only">{body}</div>
+      <div data-effect={effect} aria-hidden>
+        {body}
+      </div>
     </div>
   );
 }
@@ -166,7 +195,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
     case "photo":
       return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} cropping={props.cropping} interactive={interactive} />;
     case "quote":
-      return <Quote item={item} doc={doc} layout={layout} placement={placement} />;
+      return <Quote item={item} doc={doc} layout={layout} placement={placement} interactive={interactive} />;
     case "playlist":
       return <PlaylistCard item={item} interactive={interactive} />;
     case "sticker":
@@ -182,5 +211,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
       return <VoiceNoteView item={item} mediaBase={mediaBase} interactive={interactive} />;
     case "route":
       return <RouteView item={item} interactive={interactive} layout={layout} placement={placement} />;
+    case "model_3d":
+      return <ModelView content={item.content} mediaBase={mediaBase} live={interactive} poster={modelPoster(mediaBase, item.content)} />;
   }
 }

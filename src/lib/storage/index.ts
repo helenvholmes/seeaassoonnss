@@ -35,13 +35,15 @@ export const originalKey = (mediaId: string) => `originals/${mediaId}`;
 export const imageKey = (mediaId: string, width: number) => `media/${mediaId}/${width}.webp`;
 export const videoKey = (mediaId: string) => `media/${mediaId}/video.mp4`;
 export const audioKey = (mediaId: string) => `media/${mediaId}/audio.mp3`;
+export const modelKey = (mediaId: string) => `media/${mediaId}/model.glb`;
 
 /** Every key the app writes; anything else is refused. */
-export const KEY_PATTERN = /^(originals\/[0-9a-f-]{36}|media\/[0-9a-f-]{36}\/(\d+\.webp|video\.mp4|audio\.mp3))$/;
+export const KEY_PATTERN = /^(originals\/[0-9a-f-]{36}|media\/[0-9a-f-]{36}\/(\d+\.webp|video\.mp4|audio\.mp3|model\.glb))$/;
 
 export function contentTypeForKey(key: string): string {
   if (key.endsWith(".webp")) return "image/webp";
   if (key.endsWith(".mp4")) return "video/mp4";
   if (key.endsWith(".mp3")) return "audio/mpeg";
+  if (key.endsWith(".glb")) return "model/gltf-binary";
   return "application/octet-stream";
 }

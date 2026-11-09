@@ -7,7 +7,7 @@ export interface Check {
 }
 
 /** Tables the current migrations create. A missing one means migrations did not run. */
-const TABLES = ["seasons", "media", "passkeys", "sessions", "auth_challenges", "used_setup_tokens", "stickers"];
+const TABLES = ["seasons", "media", "passkeys", "sessions", "auth_challenges", "used_setup_tokens", "stickers", "sketches"];
 
 const env = (name: string) => Boolean(process.env[name]?.trim());
 
@@ -77,13 +77,42 @@ async function checkDatabase(): Promise<{ database: Check; tables: Check }> {
   }
 }
 
+/**
+ * Asks each bucket whether a browser on SITE_URL may upload to it, the way the
+ * browser asks before an upload (a CORS preflight). Needs no keys.
+ */
+async function checkUploadCors(siteOrigin: string | null): Promise<Check> {
+  const account = process.env.R2_ACCOUNT_ID?.trim();
+  const buckets = [process.env.R2_PRIVATE_BUCKET?.trim(), process.env.R2_PUBLIC_BUCKET?.trim()].filter((b): b is string => !!b);
+  if (process.env.STORAGE_DRIVER?.trim() !== "r2" || !account || buckets.length < 2 || !siteOrigin) return { ok: true, detail: "not checked (R2 settings incomplete)" };
+  const refused: string[] = [];
+  for (const bucket of buckets) {
+    try {
+      const res: Response = await fetch(`https://${account}.r2.cloudflarestorage.com/${encodeURIComponent(bucket)}/health-check`, {
+        method: "OPTIONS",
+        headers: { Origin: siteOrigin, "Access-Control-Request-Method": "PUT", "Access-Control-Request-Headers": "content-type" },
+        signal: AbortSignal.timeout(5000),
+      });
+      const allowed: string | null = res.headers.get("access-control-allow-origin");
+      if (!res.ok || (allowed !== "*" && allowed !== siteOrigin)) refused.push(bucket);
+    } catch {
+      refused.push(bucket);
+    }
+  }
+  return refused.length
+    ? { ok: false, detail: `${refused.join(" and ")} does not allow uploads from ${siteOrigin}. Add it to AllowedOrigins in the bucket's CORS rule (README, step 2). The editor must be opened at that address too.` }
+    : { ok: true, detail: `both buckets allow uploads from ${siteOrigin}` };
+}
+
 export async function healthReport() {
   const { database, tables } = await checkDatabase();
+  const site = checkSiteUrl();
   const checks = {
-    siteUrl: checkSiteUrl(),
+    siteUrl: site,
     database,
     tables,
     storage: checkStorage(),
+    uploads: await checkUploadCors(site.ok ? site.detail : null),
     setupToken: env("SETUP_TOKEN") ? { ok: true, detail: "set" } : { ok: true, detail: "not set (only needed to register a passkey)" },
   };
   return { ok: Object.values(checks).every((c) => c.ok), checks };

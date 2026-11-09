@@ -1,6 +1,6 @@
 # Seasons — Requirements
 
-Oct 28, 2026 · @Dbeueudvdbd Djeisisheneke · Updated Nov 3, 2026 (see [Decision log](#decision-log))
+Oct 28, 2026 · @Dbeueudvdbd Djeisisheneke · Updated Nov 9, 2026 (see [Decision log](#decision-log))
 
 ## Overview
 
@@ -28,8 +28,8 @@ The app must make one season fast to assemble and strange to look at, and must c
 ### Non-goals
 
 1. Multiple users, collaborators, comments or likes.
-2. Automatic or random layout generation.
-3. Visual effects: filters, grain, torn edges, tape, animation.
+2. Automatic layout generation without the owner's control. (Seeded random placement that the owner starts, reseeds and locks is in scope; see [Generative and 3D layer](#generative-and-3d-layer).)
+3. Photo effects: filters, grain, torn edges, tape. (Motion is limited to the effects in [Generative and 3D layer](#generative-and-3d-layer).)
 4. Export to image, PDF, video or print. The URL is the only output.
 5. Reading photo metadata (date, place) for layout.
 6. Autoplay of audio. (Videos loop silently; see [Item types](#item-types).)
@@ -55,6 +55,8 @@ Visitors reach season pages through the main site's rewrite. The owner uses the 
 | Media processing | In the browser: HEIC to JPEG, video compression. On the server: image resize and metadata removal (for example sharp) | Decided |
 | Editor canvas | Client-side drag, rotate, resize library (for example react-moveable) | Proposed |
 | Maps | D3 and TopoJSON vector outlines; no tile provider, no API key | Decided |
+| Generative 2D | p5.js 2.x, global mode, in a sandboxed iframe; served from the app | Decided (phase 6) |
+| 3D | React Three Fiber and three.js; glTF binary (`.glb`) models compressed with glTF Transform and meshopt | Decided (phase 6) |
 
 ### Backend scope
 
@@ -62,10 +64,12 @@ A small backend is acceptable. It does these tasks only:
 
 1. Passkey registration and sign-in.
 2. Signed upload URLs for media storage.
-3. Image processing after upload (video is compressed in the browser).
+3. Image and 3D model processing after upload (video is compressed in the browser).
 4. Read and write of season data.
 5. Server-side fetch of Spotify playlist data (see [Item types](#item-types)).
 6. Cache refresh of a public page after the owner saves.
+7. The owner's p5.js sketch library (read and write).
+8. Serving p5.js to sketch frames.
 
 ### Passkey rules
 
@@ -112,7 +116,7 @@ Each season row holds two copies of the document:
 | `sort_order` | integer or empty | Optional manual position on the index page |
 | `created_at`, `updated_at` | timestamp | |
 
-Two other small tables: `stickers` (the sticker library) and `passkeys`.
+Other small tables: `stickers` (the sticker library), `sketches` (the p5.js sketch library) and `passkeys`.
 
 The document shapes follow.
 
@@ -124,11 +128,13 @@ The document shapes follow.
 | `subtitle` | markdown | Short description. Example: "moodboard for… who knows, really?" |
 | `period` | free text | Owner sets any words. Example: "fall 2026" or "after the move" |
 | `cover_item_id` | item reference | Image for the index page |
-| `background` | color or image reference | Page background |
+| `background` | color, image reference, or (proposed) 3D scene or p5.js sketch | Page background |
 | `month` | `YYYY-MM` or empty | Optional month the season belongs to. Orders the index |
 | `desktop_height` | number | Minimum page length in design units. The page grows to fit its lowest item |
 | `mobile_height` | number | Minimum page length in design units. The page grows to fit its lowest item |
 | `mobile_layout` | boolean | False only for seasons made before phase 2; they show the scaled desktop layout on mobile until opened in the editor |
+| `backgroundLayer` | 3D model, p5.js sketch, or empty | Behind all items. A sketch layer holds its own copy of the code |
+| `scatter` | seed, minimum scale, maximum scale | Last random layout settings (see [Generative and 3D layer](#generative-and-3d-layer)) |
 | `items` | list of items | See below |
 
 ### Item
@@ -136,10 +142,11 @@ The document shapes follow.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID | |
-| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note` |
+| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`, `model_3d` |
 | `content` | JSON | Different per type (see [Item types](#item-types)) |
 | `desktop` | placement | Position on the desktop canvas |
 | `mobile` | placement or empty | Empty = item is not shown on mobile |
+| `follow` | number 0–1, optional | Cursor follow strength |
 
 ### Placement
 
@@ -166,7 +173,7 @@ The alternative is a canvas that changes shape with the screen. That alternative
 
 ## Item types
 
-Seven item types are in scope. No item plays sound until a visitor clicks it. Videos loop silently.
+Eight item types are in scope. The route map is a separate item type (see [Scroll-driven route map](#scroll-driven-route-map)). No item plays sound until a visitor clicks it. Videos loop silently.
 
 | Type | Input | Content stored | Display |
 | --- | --- | --- | --- |
@@ -177,6 +184,7 @@ Seven item types are in scope. No item plays sound until a visitor clicks it. Vi
 | Sticker | Upload transparent PNG, WebP or SVG; reuse from a sticker library | Image, library reference | Image with transparent background |
 | Map | Place search or coordinates | Latitude, longitude, zoom, label | Vector outline drawn with D3 and TopoJSON, a dot and a label; no tiles |
 | Voice note | Record in the browser or upload audio | Audio file, duration, optional caption, waveform (optional) | Small player; plays on click |
+| 3D model | Upload a glTF binary file (`.glb`), up to 50 MB | Compressed model file, size, scale, rotation (x, y, z), spin speed, turn toward cursor on or off, play animation on or off, poster image, alt text | 3D view in its box (React Three Fiber); poster image while loading and if WebGL is not available |
 
 **Quote rules.** Markdown only: bold, italic, links, line breaks. No raw HTML. Quotes can come from any source: own writing, lyrics, books, messages. Preset fonts: EB Garamond (serif), IBM Plex Mono (monospace) and one plain sans-serif (to be picked). Each must look right in lowercase with the `//` prefix.
 
@@ -220,6 +228,62 @@ Odyssey is built with Seasons: it is one season, and the route map is part of it
 
 1. Odyssey is a season in Seasons, for example at `/seasons/odyssey`.
 2. The owner's main website has an `/odyssey` route that shows that season with the scroll-driven route map, through a rewrite or redirect to the season page.
+
+## Generative and 3D layer
+
+Seasons uses p5.js for 2D generative backgrounds and React Three Fiber for 3D. Spline is not a requirement. All 3D models use the open glTF format, so a fork does not need a paid tool. Built in phase 6.
+
+### Effects
+
+1. **Random placement:** the editor places every unlocked item of the current layout (desktop or mobile) at a random position. A seed keeps the same layout; the owner can change the seed, and lock the items to keep. Route maps and hidden items do not move.
+2. **Random scale:** photos, videos, stickers and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
+3. **Background objects:** one 3D model or one p5.js sketch can be the season background, behind all items. It fills the screen and stays there while the page scrolls.
+4. **Cursor follow:** any item can drift toward the cursor (strength 0–100%, at most 40 design units). 3D models can also turn toward it. On touch devices, the "cursor" moves down the screen with the scroll position.
+5. **Type:** quotes can use one of three effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), or start scattered and gather as the quote reaches the middle of the screen (gather).
+6. **Embedded 3D items:** a 3D model is an item on the canvas. It has position, size, rotation and z-order, the same as other items. Inside its box it can be scaled, tilted, turned and rolled, spin slowly, and play its own animation.
+
+### Tools
+
+1. **p5.js 2.x** in a sandboxed iframe (`sandbox="allow-scripts"`, `srcdoc`), in p5's global mode, so sketches can be pasted from the p5.js web editor. The iframe gives stronger isolation than instance mode inside a React component: the sketch runs in an opaque origin and cannot read the page, the owner's session cookie or storage, or call the app's API as the owner. p5.js is served from the deployment itself (`/seasons/vendor/p5.min.js`), not a CDN.
+2. **React Three Fiber** (`@react-three/fiber`) with three.js's own GLTFLoader and meshopt decoder. drei is not used: nothing in it was needed, and leaving it out keeps the bundle smaller.
+3. **Generative type** uses DOM and CSS, not p5: each letter is its own element. The text stays real text, a plain copy is kept for screen readers, and fonts render as everywhere else on the page.
+4. **Models:** glTF binary files (`.glb`), compressed on upload with glTF Transform and meshopt (see [3D model compression](#3d-model-compression)), kept in media storage.
+
+### Rules
+
+1. **Reduced motion:** when the visitor's system has "reduce motion" on, effects stop and items stay in their seeded positions. Sketches draw one frame and stop. 3D models stand still.
+2. **Performance:** p5.js and 3D code load only on seasons that use them (three.js comes in a separate chunk; the season page without it is 152 kB on first load). One background per season. At most 6 model items per season, because each live model needs a WebGL context and browsers allow about 16. A model's live view starts only near the screen and is removed far from it, which frees its context.
+3. **Fallback:** if WebGL is not available, or a model fails to load, its poster image shows. The poster is drawn in the editor's browser with the same camera and light as the live view.
+4. **Phones:** 3D backgrounds and items run on phones too (decided Nov 9), at a pixel ratio of at most 2.
+5. **Sketches belong to the owner.** Sketches are code that the owner writes or pastes. They live in the owner's own database: a sketch library for reuse, and a copy inside each season that uses one, so editing a library sketch never changes a published page until it is chosen again and published. The repository ships three example sketches (`src/lib/demo-sketches.ts`), which the demo season adds to the library.
+
+### 3D model compression
+
+Measured on Nov 9, 2026 with five Khronos glTF sample models, rendered with three.js before and after at 600 × 600 px. "Changed pixels" are pixels whose color moved by more than 16 of 255 on any channel; PSNR above about 40 dB is generally invisible.
+
+| Model | Original | Textures | 2048 px + meshopt | Changed pixels | 1024 px + meshopt | Changed pixels |
+| --- | --- | --- | --- | --- | --- | --- |
+| DamagedHelmet | 3.6 MB | 3.1 MB (5 × 2048 px) | 1.7 MB (−52%) | 0.15% (42 dB) | 0.66 MB (−82%) | 1.0% (38 dB) |
+| Lantern | 9.1 MB | 8.9 MB (4 × 2048 px) | 1.2 MB (−87%) | 0.02% (51 dB) | 0.37 MB (−96%) | 0.03% (49 dB) |
+| BoomBox | 10.1 MB | 9.9 MB (4 × 2048 px) | 0.62 MB (−94%) | 1.0% (35 dB) | 0.23 MB (−98%) | 2.5% (30 dB) |
+| Avocado | 7.7 MB | 7.7 MB (3 × 2048 px) | 0.22 MB (−97%) | 0.02% (48 dB) | 0.08 MB (−99%) | 0.02% (46 dB) |
+| Fox (animated) | 0.16 MB | 0.03 MB (1024 px) | 0.11 MB (−31%) | 0.14% (48 dB) | 0.11 MB | 0.14% (48 dB) |
+
+What this shows:
+
+1. **Textures are the file.** In four of five models, textures were 85–99% of the bytes. Geometry compression alone (meshopt, textures untouched) saved only 1–9% on those four.
+2. **2048 px WebP textures look the same** as the originals at page size. Differences are a few pixels on fine, high-contrast detail (BoomBox's speaker grille).
+3. **1024 px textures** cut the file by another two thirds. Fine detail softens when the model is large on screen or zoomed in (helmet visor lines, grille); small items look the same.
+4. **Geometry**: meshopt stores positions in 14 bits per axis (a grid of about 0.06 mm on a model 1 m across), normals in 10 bits and texture coordinates in 12. No change was visible on any model. Animated and skinned models (Fox) keep working.
+5. **Draco** gave files within about 10% of meshopt. Meshopt was chosen because its decoder is about 20 KB of JavaScript bundled with the app, while Draco's is about 300 KB of WebAssembly that three.js loads from a CDN by default, and decodes slower.
+
+**Decided (Nov 9):**
+
+1. Every model is compressed on upload: textures to WebP (quality 85), at most 2048 px by default; geometry with meshopt; unused data removed; redundant animation keyframes dropped. Re-encoding textures also removes any EXIF or GPS data inside embedded JPEG textures.
+2. The owner can pick 1024 px textures per upload, for small items or backgrounds that do not need the detail.
+3. The original upload is kept in the private bucket, so a model can be processed again with other settings.
+4. Upload limit 50 MB. After compression, the editor shows the size before and after, and warns above 5 MB that the page will load slowly on phones.
+5. Draco-compressed uploads are accepted (decoded on the server and re-packed with meshopt). KTX2 (Basis) textures are left as they are.
 
 ## Editor
 
@@ -293,10 +357,13 @@ License: GNU AGPL-3.0 (`AGPL-3.0-only`). The full text is in [`LICENSE`](../LICE
 
 ### Fork requirements
 
-1. A `.env.example` file lists every required variable: database URL, R2 keys and bucket names, setup token, site URL, source URL.
-2. The README gives deploy steps for Vercel, one Postgres provider and Cloudflare R2.
-3. The repository includes no personal content, no stickers and no real keys.
-4. A seed command makes one demo season with placeholder items.
+1. The public bucket's CORS rule allows `GET` as well as `PUT` from the site, so pages can load 3D models. `npm run doctor` checks it.
+2. A `.env.example` file lists every required variable: database URL, R2 keys and bucket names, setup token, site URL, source URL.
+3. The README gives deploy steps for Vercel, one Postgres provider and Cloudflare R2.
+4. The repository includes no personal content, no stickers, no model files and no real keys.
+5. A seed command makes one demo season with placeholder items, including a 3D model built by the script, a type effect, cursor follow and a sketch background, and adds three example sketches to the sketch library.
+6. **Who runs a copy.** Seasons stays single-owner. The owner may run copies for friends or family; each of them gets their own deployment (own database, storage and passkey), not an account on the owner's. Anyone else forks the repository.
+7. **Public demo.** As with BookBox, a demo deployment shows what Seasons does: a separate deployment with the seeded demo season published. Its editor stays locked to its owner; visitors cannot try it (decided Nov 9). An open editor would let anyone upload files to public storage and publish pages on the owner's domain, which would need moderation, upload quotas and regular resets to run safely.
 
 ## Visual references and prior art
 
@@ -329,9 +396,10 @@ Version 1 must replace one Pinterest board with one published season. Everything
 | --- | --- | --- |
 | 1 | Passkey sign-in; season create, edit, draft, publish; photos, quotes, playlist card; desktop canvas with drag, rotate, resize, z-order, lock; season page at `/seasons/[slug]`; rewrite from main site | "leafy greens" is rebuilt and live on the owner's site |
 | 2 | Mobile canvas and toggle; mobile preview; index page `/seasons`; share metadata | A phone shows a hand-placed mobile layout |
-| 3 | Video; stickers and sticker library; voice notes; maps | All seven item types work |
+| 3 | Video; stickers and sticker library; voice notes; maps | The first seven item types work (3D model is phase 6) |
 | 4 | README, `.env.example`, seed demo; public repository | A second person deploys a fork from the README alone |
 | 5 | Scroll-driven route map (built); Odyssey season and `/odyssey` on the main site (owner) | Odyssey is live at `/odyssey` |
+| 6 | Seeded random placement and scale; cursor follow; generative type; 3D model item (glTF); 3D or p5.js background (built Nov 9) | One season has a 3D background, a 3D item and a seeded random layout |
 | Later | Spotify track list via Web API; Live Photos; slug redirects; undo history beyond one session | Decided case by case |
 
 ## Open questions
@@ -352,6 +420,12 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [x] Route map layout: a band of the canvas. The map stays fixed while the items placed in that band scroll past.
 - [x] Route map on mobile: same behavior on the 390-wide layout.
 - [ ] Visual references beyond "leafy greens".
+- [x] Random placement: all unlocked items, in whichever layout the editor shows (desktop or mobile).
+- [x] 3D on phones: show the 3D background and items.
+- [x] 3D model limits: 50 MB upload; compressed on upload (WebP textures at most 2048 px, or 1024 px by choice; meshopt geometry); warning above 5 MB. See [3D model compression](#3d-model-compression).
+- [x] p5.js backgrounds: the owner writes or pastes their own sketches, stored in their own database. They run in a sandboxed frame. The repository ships three examples for the demo.
+- [x] Demo editor: visitors cannot use the editor on the demo. The demo shows published seasons only.
+- [ ] Demo deployment: where does the public demo run (its own Vercel project, database and R2 buckets)?
 - [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
 ## Sources
@@ -368,6 +442,9 @@ Version 1 must replace one Pinterest board with one published season. Everything
 10. [GNU: Selling Free Software](https://www.gnu.org/philosophy/selling)
 11. [BookBox repository](https://github.com/helenvholmes/bookbox)
 12. [choosealicense.com: AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/)
+13. p5.js 2.x reference (typography: variable fonts, text to contours)
+14. React Three Fiber and drei documentation
+15. Khronos: glTF 2.0 specification
 
 ## Decision log
 
@@ -452,3 +529,26 @@ Version 1 must replace one Pinterest board with one published season. Everything
 3. Positions and sizes are stored in whole design units after a drag, resize or rotate (previously 0.1).
 4. Photo crop, as in Figma: double-click a photo (or press Crop in its settings) to enter crop mode. The whole photo shows faintly around its box; dragging moves the photo inside the box, the wheel or a slider zooms (1× to 8×), Esc or Enter ends it, Reset crop clears it. The crop is stored with the photo as `crop: { x, y, zoom }`: x and y (0 to 1) choose which part shows (0 = left/top edge, 1 = right/bottom edge) and zoom enlarges it. Because it is independent of the box's shape, desktop and mobile share it and the box is always filled. It applies to photos set to "Crop to fill the box".
 5. Parallax background (photos set to "Crop to fill the box"): a checkbox stores `parallax: true` with the photo. On the public page and in Preview the photo covers the whole screen (plus 10% above and below) and stays fixed while the page scrolls, so its box shows it like a window; while the box crosses the screen the photo also drifts down by 20% of the screen height. The crop applies to that screen-sized photo. It is done with a scroll handler rather than `position: fixed`, so it also works in rotated boxes. With reduced motion, or before scripts load, the photo just fills its box. The editor canvas shows the still photo with a "parallax" badge.
+
+**Nov 9, 2026**
+
+1. New generative and 3D layer: seeded random placement and scale, background objects (one 3D scene or p5.js sketch), cursor follow (scroll on touch devices), generative type, and a 3D model item (`.glb`, React Three Fiber). Spline is not required.
+2. Proposed as phase 6. The updated requirements call it phase 5, but phase 5 is already the scroll-driven route map (built).
+3. Two non-goals are narrowed so they don't conflict with it: random layout is allowed when the owner starts it, sets the seed and can lock items; visual-effect non-goals now cover photo effects only.
+4. Item types: eight, adding the 3D model. The route map stays its own item type.
+5. The rest of the Oct 28 base in the updated requirements (GPL-3.0, GIF upload, framework and storage still open, Odyssey on the main site) is replaced by the decisions recorded above and does not change them.
+
+**Nov 9, 2026 (phase 6 build)**
+
+1. Answers: random placement moves all unlocked items; 3D runs on phones; models are compressed on upload (measurements and reasons in [3D model compression](#3d-model-compression)); the owner writes their own p5.js sketches, stored in their own database.
+2. Seasons stays single-owner. Friends or family who want seasons get their own deployment. A public demo deployment, as for BookBox, shows the seeded demo season.
+3. p5.js runs in global mode in a sandboxed iframe instead of instance mode in a React component: stronger isolation for owner-written code, and sketches paste straight from the p5.js web editor. The page passes the cursor in as messages, so `mouseX` and `mouseY` work; `seasons.scroll` gives scroll progress. Write routes refuse requests with any origin other than `SITE_URL`, which includes a sketch frame's `null` origin.
+4. A season stores its own copy of a sketch's code. Editing the library copy never changes a published page.
+5. drei is not used. Generative type is DOM and CSS, not p5, so it stays readable text.
+6. The doc's `layout_seed` is stored as `scatter` (seed plus scale range). The scatter area is the minimum page length, or the bottom of the lowest item that stays put, so one seed always gives one layout.
+7. Limits: 6 model items per season plus one background; 200,000 characters per sketch.
+8. The public bucket's CORS rule now needs `GET` as well as `PUT`, because 3D models are fetched by script. Existing forks must add it.
+
+**Nov 9, 2026 (demo)**
+
+1. Visitors cannot use the editor on the public demo. It shows the published demo season only.
