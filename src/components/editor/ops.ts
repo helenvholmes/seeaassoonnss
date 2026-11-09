@@ -200,39 +200,61 @@ export const SCATTER_BASE_WIDTH: Record<Layout, number> = { desktop: 360, mobile
  * minScale and maxScale times the base width (keeping their aspect ratio).
  * Locked items, hidden items and route maps stay where they are. Each item's
  * random numbers come from the seed and the item's id, so the same seed gives
- * the same layout, and adding an item does not move the others. Items spread
- * over the page's minimum length, or down to the lowest item that stays put if
- * that is lower; never over where the scattered items happen to be, so
- * scattering twice with one seed gives the same result.
+ * the same layout.
+ *
+ * Items spread over the page's minimum length, or down to the lowest item that
+ * stays put if that is lower, and further when they would cover more than
+ * SCATTER_COVERAGE of that area: with many items the page grows so they do not
+ * pile up. The area depends only on the items' sizes after scaling, never on
+ * where they happen to be, so scattering twice with one seed gives the same result.
  */
-export function scatterArea(doc: SeasonDoc, layout: Layout): { width: number; height: number } {
+export const SCATTER_COVERAGE = 0.35;
+
+/** Each scattered item's random numbers: two for its position, and its new size. */
+function scatterDraw(item: Item, p: Placement, layout: Layout, scatter: Scatter) {
+  const lo = Math.min(scatter.minScale, scatter.maxScale);
+  const hi = Math.max(scatter.minScale, scatter.maxScale);
+  const rand = seededRandom(hash(`${scatter.seed}:${layout}:${item.id}`));
+  let { w, h } = p;
+  if (SCALED.has(item.type)) {
+    w = SCATTER_BASE_WIDTH[layout] * (lo + (hi - lo) * rand());
+    h = w * (p.h / p.w);
+  }
+  return { w, h, rx: rand(), ry: rand() };
+}
+
+const scatters = (item: Item, p: Placement): boolean => !p.locked && item.type !== "route";
+
+export function scatterArea(doc: SeasonDoc, layout: Layout, scatter: Scatter = doc.scatter): { width: number; height: number } {
+  const width = CANVAS_WIDTH[layout];
   let height = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  let covered = 0;
   for (const item of doc.items) {
     const p = placementOf(item, layout);
-    if (p && (p.locked || item.type === "route")) height = Math.max(height, bottomOf(p));
+    if (!p) continue;
+    if (scatters(item, p)) {
+      const { w, h } = scatterDraw(item, p, layout, scatter);
+      covered += Math.min(w, width) * h;
+    } else {
+      height = Math.max(height, bottomOf(p));
+      if (item.type !== "route") covered += p.w * p.h;
+    }
   }
-  return { width: CANVAS_WIDTH[layout], height };
+  return { width, height: Math.ceil(Math.max(height, covered / (width * SCATTER_COVERAGE))) };
 }
 
 export function scatterLayout(doc: SeasonDoc, layout: Layout, scatter: Scatter): SeasonDoc {
-  const { width, height } = scatterArea(doc, layout);
-  const lo = Math.min(scatter.minScale, scatter.maxScale);
-  const hi = Math.max(scatter.minScale, scatter.maxScale);
+  const { width, height } = scatterArea(doc, layout, scatter);
   return {
     ...doc,
     scatter,
     items: doc.items.map((item) => {
       const p = placementOf(item, layout);
-      if (!p || p.locked || item.type === "route") return item;
-      const rand = seededRandom(hash(`${scatter.seed}:${layout}:${item.id}`));
-      let { w, h } = p;
-      if (SCALED.has(item.type)) {
-        w = SCATTER_BASE_WIDTH[layout] * (lo + (hi - lo) * rand());
-        h = w * (p.h / p.w);
-      }
+      if (!p || !scatters(item, p)) return item;
+      const { w, h, rx, ry } = scatterDraw(item, p, layout, scatter);
       // Keep the item on the page when it is narrower or shorter than the page.
-      const x = (width - Math.min(w, width)) * rand();
-      const y = (height - Math.min(h, height)) * rand();
+      const x = (width - Math.min(w, width)) * rx;
+      const y = (height - Math.min(h, height)) * ry;
       const next = roundPlacement({ ...p, x, y, w, h });
       return layout === "desktop" ? { ...item, desktop: next } : { ...item, mobile: next };
     }),
