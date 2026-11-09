@@ -192,6 +192,8 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 
 **Sticker library.** Each uploaded sticker goes into a library for reuse in any season. The repository can ship with no stickers, so forks start empty.
 
+**Sticker packs (added Nov 9).** The editor also offers four built-in packs of free illustrations: botanical plates (CC0 / public-domain prints from the Cleveland Museum of Art and the Art Institute of Chicago, cut out of their paper), Open Doodles, Open Peeps and Humaaans (Pablo Stanley; CC0 or free for any use). They live in `public/sticker-packs/` with a manifest in `src/lib/sticker-packs.json` and credits in `public/sticker-packs/CREDITS.md`. Picking one uploads it like any sticker, so it joins the owner's library and storage; adding it again reuses that copy. unDraw was considered and left out: its license forbids redistributing its illustrations as packs.
+
 ### Spotify playlist: limits and proposal
 
 1. The standard Spotify embed is an iframe. Its own options are size and a color theme (Spotify community, Iframe API theme). The app cannot change the styles inside the iframe.

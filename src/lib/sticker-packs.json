@@ -1,0 +1,1210 @@
+[
+ {
+  "id": "botanical",
+  "name": "Botanical plates",
+  "credit": "Public-domain (CC0) prints from the Cleveland Museum of Art and the Art Institute of Chicago: Pierre-Joseph Redouté and others, 1700s–1800s. Cut out of their paper for Seasons.",
+  "license": "CC0 / public domain",
+  "items": [
+   {
+    "id": "pasture-rose-rosa-carolina-corymbosa",
+    "file": "pasture-rose-rosa-carolina-corymbosa.webp",
+    "name": "Pasture Rose (Rosa Carolina Corymbosa)",
+    "alt": "Botanical illustration: Pasture Rose (Rosa Carolina Corymbosa)"
+   },
+   {
+    "id": "lillium-pomponium-turban-lily-plate-7-from-les-liliacees",
+    "file": "lillium-pomponium-turban-lily-plate-7-from-les-liliacees.webp",
+    "name": "Lillium Pomponium (Turban Lily), plate 7 from Les Liliacées",
+    "alt": "Botanical illustration: Lillium Pomponium (Turban Lily), plate 7 from Les Liliacées"
+   },
+   {
+    "id": "les-liliacees-ornithogalum-longibracteatum",
+    "file": "les-liliacees-ornithogalum-longibracteatum.webp",
+    "name": "Les Liliacées: Ornithogalum longibracteatum",
+    "alt": "Botanical illustration: Les Liliacées: Ornithogalum longibracteatum"
+   },
+   {
+    "id": "the-roses-rosa-gallica-purpurea-velutina-parva",
+    "file": "the-roses-rosa-gallica-purpurea-velutina-parva.webp",
+    "name": "The Roses: Rosa Gallica Purpurea Velutina Parva",
+    "alt": "Botanical illustration: The Roses: Rosa Gallica Purpurea Velutina Parva"
+   },
+   {
+    "id": "star-glory-morning-glory",
+    "file": "star-glory-morning-glory.webp",
+    "name": "Star-glory Morning-glory",
+    "alt": "Botanical illustration: Star-glory Morning-glory"
+   },
+   {
+    "id": "crown-imperial-fritillary",
+    "file": "crown-imperial-fritillary.webp",
+    "name": "Crown Imperial Fritillary",
+    "alt": "Botanical illustration: Crown Imperial Fritillary"
+   },
+   {
+    "id": "primula-auricula",
+    "file": "primula-auricula.webp",
+    "name": "Primula auricula",
+    "alt": "Botanical illustration: Primula auricula"
+   },
+   {
+    "id": "gold-banded-iris",
+    "file": "gold-banded-iris.webp",
+    "name": "Gold-banded Iris",
+    "alt": "Botanical illustration: Gold-banded Iris"
+   },
+   {
+    "id": "les-liliacees-amaryllis-lutes",
+    "file": "les-liliacees-amaryllis-lutes.webp",
+    "name": "Les Liliacées: Amaryllis Lutes",
+    "alt": "Botanical illustration: Les Liliacées: Amaryllis Lutes"
+   },
+   {
+    "id": "geranium",
+    "file": "geranium.webp",
+    "name": "Geranium",
+    "alt": "Botanical illustration: Geranium"
+   },
+   {
+    "id": "choix-des-plus-belles-fleurs-plus-beaux-fruits-grenade",
+    "file": "choix-des-plus-belles-fleurs-plus-beaux-fruits-grenade.webp",
+    "name": "Choix des plus belles fleurs...plus beaux fruits: Grenade",
+    "alt": "Botanical illustration: Choix des plus belles fleurs...plus beaux fruits: Grenade"
+   },
+   {
+    "id": "les-liliacees-cypripedium-calceolus",
+    "file": "les-liliacees-cypripedium-calceolus.webp",
+    "name": "Les Liliacées: Cypripedium calceolus",
+    "alt": "Botanical illustration: Les Liliacées: Cypripedium calceolus"
+   },
+   {
+    "id": "les-liliacees-crocus-sativus",
+    "file": "les-liliacees-crocus-sativus.webp",
+    "name": "Les Liliacées: Crocus Sativus",
+    "alt": "Botanical illustration: Les Liliacées: Crocus Sativus"
+   },
+   {
+    "id": "reine-claude-plum",
+    "file": "reine-claude-plum.webp",
+    "name": "Reine Claude Plum",
+    "alt": "Botanical illustration: Reine Claude Plum"
+   },
+   {
+    "id": "choix-des-plus-belles-fleurs-plus-beaux-fruits-passiflore-ai",
+    "file": "choix-des-plus-belles-fleurs-plus-beaux-fruits-passiflore-ai.webp",
+    "name": "Choix des plus belles fleurs...plus beaux fruits: Passiflore ailee",
+    "alt": "Botanical illustration: Choix des plus belles fleurs...plus beaux fruits: Passiflore ailee"
+   },
+   {
+    "id": "provence-or-french-rose",
+    "file": "provence-or-french-rose.webp",
+    "name": "Provence or French Rose",
+    "alt": "Botanical illustration: Provence or French Rose"
+   },
+   {
+    "id": "choix-des-plus-belles-fleurs-plus-beaux-fruits-figue-violett",
+    "file": "choix-des-plus-belles-fleurs-plus-beaux-fruits-figue-violett.webp",
+    "name": "Choix des plus belles fleurs...plus beaux fruits: Figue Violette",
+    "alt": "Botanical illustration: Choix des plus belles fleurs...plus beaux fruits: Figue Violette"
+   },
+   {
+    "id": "les-liliacees-scilla-amaena",
+    "file": "les-liliacees-scilla-amaena.webp",
+    "name": "Les Liliacées: Scilla amaena",
+    "alt": "Botanical illustration: Les Liliacées: Scilla amaena"
+   },
+   {
+    "id": "les-roses-rosa-gallica",
+    "file": "les-roses-rosa-gallica.webp",
+    "name": "Les Roses: Rosa Gallica",
+    "alt": "Botanical illustration: Les Roses: Rosa Gallica"
+   },
+   {
+    "id": "study-of-a-tulip-perregoen-machieu",
+    "file": "study-of-a-tulip-perregoen-machieu.webp",
+    "name": "Study of a Tulip (Perregoen Machieu)",
+    "alt": "Botanical illustration: Study of a Tulip (Perregoen Machieu)"
+   },
+   {
+    "id": "de-poolse-muts",
+    "file": "de-poolse-muts.webp",
+    "name": "De Poolse Muts",
+    "alt": "Botanical illustration: De Poolse Muts"
+   },
+   {
+    "id": "study-of-a-tulip-wit-en-root-boode",
+    "file": "study-of-a-tulip-wit-en-root-boode.webp",
+    "name": "Study of a Tulip (Wit en root boode)",
+    "alt": "Botanical illustration: Study of a Tulip (Wit en root boode)"
+   },
+   {
+    "id": "the-botanical-magazine-or-flower-garden-displayed-garden-hya",
+    "file": "the-botanical-magazine-or-flower-garden-displayed-garden-hya.webp",
+    "name": "The Botanical Magazine or Flower Garden Displayed: Garden Hyacinth",
+    "alt": "Botanical illustration: The Botanical Magazine or Flower Garden Displayed: Garden Hyacinth"
+   },
+   {
+    "id": "plantae-selectae-no-5-anona",
+    "file": "plantae-selectae-no-5-anona.webp",
+    "name": "Plantae Selectae: No. 5 - Anona",
+    "alt": "Botanical illustration: Plantae Selectae: No. 5 - Anona"
+   },
+   {
+    "id": "phytanthoza-iconographia-no-1017",
+    "file": "phytanthoza-iconographia-no-1017.webp",
+    "name": "Phytanthoza iconographia: No. 1017",
+    "alt": "Botanical illustration: Phytanthoza iconographia: No. 1017"
+   },
+   {
+    "id": "phytanthoza-iconographia-no-703",
+    "file": "phytanthoza-iconographia-no-703.webp",
+    "name": "Phytanthoza iconographia: No. 703",
+    "alt": "Botanical illustration: Phytanthoza iconographia: No. 703"
+   },
+   {
+    "id": "the-botanical-magazine-or-flower-garden-displayed-smooth-sta",
+    "file": "the-botanical-magazine-or-flower-garden-displayed-smooth-sta.webp",
+    "name": "The Botanical Magazine or Flower Garden Displayed: Smooth-stalked Martagon, Turk's Cap Lily",
+    "alt": "Botanical illustration: The Botanical Magazine or Flower Garden Displayed: Smooth-stalked Martagon, Turk's Cap Lily"
+   },
+   {
+    "id": "the-botanical-magazine-or-flower-garden-displayed-plate-931-",
+    "file": "the-botanical-magazine-or-flower-garden-displayed-plate-931-.webp",
+    "name": "The Botanical Magazine or Flower Garden Displayed: Plate 931, Phytolacca Decandra. Virginian Poke. [Phytolaca Americana]",
+    "alt": "Botanical illustration: The Botanical Magazine or Flower Garden Displayed: Plate 931, Phytolacca Decandra. Virginian Poke. [Phytolaca Americana]"
+   },
+   {
+    "id": "the-botanical-magazine-or-flower-garden-displayed-plate-892-",
+    "file": "the-botanical-magazine-or-flower-garden-displayed-plate-892-.webp",
+    "name": "The Botanical Magazine or Flower Garden Displayed: Plate 892, Althaea Flexuosa. Seringapatam A Hollyhock . [Althea rosea]",
+    "alt": "Botanical illustration: The Botanical Magazine or Flower Garden Displayed: Plate 892, Althaea Flexuosa. Seringapatam A Hollyhock . [Althea rosea]"
+   },
+   {
+    "id": "the-botanical-magazine-or-flower-garden-displayed-plate-929-",
+    "file": "the-botanical-magazine-or-flower-garden-displayed-plate-929-.webp",
+    "name": "The Botanical Magazine or Flower Garden Displayed: Plate 929, Symphyum Asperrim. Prickley Comfrey. [Symphytum asperum]",
+    "alt": "Botanical illustration: The Botanical Magazine or Flower Garden Displayed: Plate 929, Symphyum Asperrim. Prickley Comfrey. [Symphytum asperum]"
+   },
+   {
+    "id": "butterfly",
+    "file": "butterfly.webp",
+    "name": "Butterfly",
+    "alt": "Botanical illustration: Butterfly"
+   },
+   {
+    "id": "rose-bush-and-butterfly",
+    "file": "rose-bush-and-butterfly.webp",
+    "name": "Rose Bush and Butterfly",
+    "alt": "Botanical illustration: Rose Bush and Butterfly"
+   },
+   {
+    "id": "ferns-of-great-britain-and-ireland-polypodium-phegopteris",
+    "file": "ferns-of-great-britain-and-ireland-polypodium-phegopteris.webp",
+    "name": "Ferns of Great Britain and Ireland: Polypodium Phegopteris",
+    "alt": "Botanical illustration: Ferns of Great Britain and Ireland: Polypodium Phegopteris"
+   },
+   {
+    "id": "mushrooms",
+    "file": "mushrooms.webp",
+    "name": "Mushrooms",
+    "alt": "Botanical illustration: Mushrooms"
+   }
+  ]
+ },
+ {
+  "id": "open-doodles",
+  "name": "Open Doodles",
+  "credit": "Open Doodles by Pablo Stanley (opendoodles.com). Free for any use, no credit required; credited here anyway.",
+  "license": "Free for commercial and personal use",
+  "items": [
+   {
+    "id": "ballet",
+    "file": "ballet.svg",
+    "name": "Ballet",
+    "alt": "Doodle: ballet"
+   },
+   {
+    "id": "bikini",
+    "file": "bikini.svg",
+    "name": "Bikini",
+    "alt": "Doodle: bikini"
+   },
+   {
+    "id": "chilling",
+    "file": "chilling.svg",
+    "name": "Chilling",
+    "alt": "Doodle: chilling"
+   },
+   {
+    "id": "clumsy",
+    "file": "clumsy.svg",
+    "name": "Clumsy",
+    "alt": "Doodle: clumsy"
+   },
+   {
+    "id": "coffee",
+    "file": "coffee.svg",
+    "name": "Coffee",
+    "alt": "Doodle: coffee"
+   },
+   {
+    "id": "dancing",
+    "file": "dancing.svg",
+    "name": "Dancing",
+    "alt": "Doodle: dancing"
+   },
+   {
+    "id": "dog-jump",
+    "file": "dog-jump.svg",
+    "name": "Dog jump",
+    "alt": "Doodle: dog jump"
+   },
+   {
+    "id": "doggie",
+    "file": "doggie.svg",
+    "name": "Doggie",
+    "alt": "Doodle: doggie"
+   },
+   {
+    "id": "float",
+    "file": "float.svg",
+    "name": "Float",
+    "alt": "Doodle: float"
+   },
+   {
+    "id": "groovy",
+    "file": "groovy.svg",
+    "name": "Groovy",
+    "alt": "Doodle: groovy"
+   },
+   {
+    "id": "ice-cream",
+    "file": "ice-cream.svg",
+    "name": "Ice cream",
+    "alt": "Doodle: ice cream"
+   },
+   {
+    "id": "jumping",
+    "file": "jumping.svg",
+    "name": "Jumping",
+    "alt": "Doodle: jumping"
+   },
+   {
+    "id": "laying",
+    "file": "laying.svg",
+    "name": "Laying",
+    "alt": "Doodle: laying"
+   },
+   {
+    "id": "levitate",
+    "file": "levitate.svg",
+    "name": "Levitate",
+    "alt": "Doodle: levitate"
+   },
+   {
+    "id": "loving",
+    "file": "loving.svg",
+    "name": "Loving",
+    "alt": "Doodle: loving"
+   },
+   {
+    "id": "meditating",
+    "file": "meditating.svg",
+    "name": "Meditating",
+    "alt": "Doodle: meditating"
+   },
+   {
+    "id": "moshing",
+    "file": "moshing.svg",
+    "name": "Moshing",
+    "alt": "Doodle: moshing"
+   },
+   {
+    "id": "petting",
+    "file": "petting.svg",
+    "name": "Petting",
+    "alt": "Doodle: petting"
+   },
+   {
+    "id": "plant",
+    "file": "plant.svg",
+    "name": "Plant",
+    "alt": "Doodle: plant"
+   },
+   {
+    "id": "reading-side",
+    "file": "reading-side.svg",
+    "name": "Reading side",
+    "alt": "Doodle: reading side"
+   },
+   {
+    "id": "reading",
+    "file": "reading.svg",
+    "name": "Reading",
+    "alt": "Doodle: reading"
+   },
+   {
+    "id": "roller-skating",
+    "file": "roller-skating.svg",
+    "name": "Roller skating",
+    "alt": "Doodle: roller skating"
+   },
+   {
+    "id": "rolling",
+    "file": "rolling.svg",
+    "name": "Rolling",
+    "alt": "Doodle: rolling"
+   },
+   {
+    "id": "running",
+    "file": "running.svg",
+    "name": "Running",
+    "alt": "Doodle: running"
+   },
+   {
+    "id": "selfie",
+    "file": "selfie.svg",
+    "name": "Selfie",
+    "alt": "Doodle: selfie"
+   },
+   {
+    "id": "sitting-reading",
+    "file": "sitting-reading.svg",
+    "name": "Sitting reading",
+    "alt": "Doodle: sitting reading"
+   },
+   {
+    "id": "sitting",
+    "file": "sitting.svg",
+    "name": "Sitting",
+    "alt": "Doodle: sitting"
+   },
+   {
+    "id": "sleek",
+    "file": "sleek.svg",
+    "name": "Sleek",
+    "alt": "Doodle: sleek"
+   },
+   {
+    "id": "sprinting",
+    "file": "sprinting.svg",
+    "name": "Sprinting",
+    "alt": "Doodle: sprinting"
+   },
+   {
+    "id": "strolling",
+    "file": "strolling.svg",
+    "name": "Strolling",
+    "alt": "Doodle: strolling"
+   },
+   {
+    "id": "swinging",
+    "file": "swinging.svg",
+    "name": "Swinging",
+    "alt": "Doodle: swinging"
+   },
+   {
+    "id": "unboxing",
+    "file": "unboxing.svg",
+    "name": "Unboxing",
+    "alt": "Doodle: unboxing"
+   },
+   {
+    "id": "zombieing",
+    "file": "zombieing.svg",
+    "name": "Zombieing",
+    "alt": "Doodle: zombieing"
+   }
+  ]
+ },
+ {
+  "id": "open-peeps",
+  "name": "Open Peeps",
+  "credit": "Open Peeps by Pablo Stanley (openpeeps.com), CC0.",
+  "license": "CC0",
+  "items": [
+   {
+    "id": "full-figure-1",
+    "file": "full-figure-1.svg",
+    "name": "Full figure 1",
+    "alt": "Hand-drawn person: full figure 1"
+   },
+   {
+    "id": "full-figure-2",
+    "file": "full-figure-2.svg",
+    "name": "Full figure 2",
+    "alt": "Hand-drawn person: full figure 2"
+   },
+   {
+    "id": "full-figure-3",
+    "file": "full-figure-3.svg",
+    "name": "Full figure 3",
+    "alt": "Hand-drawn person: full figure 3"
+   },
+   {
+    "id": "full-figure-4",
+    "file": "full-figure-4.svg",
+    "name": "Full figure 4",
+    "alt": "Hand-drawn person: full figure 4"
+   },
+   {
+    "id": "full-figure-5",
+    "file": "full-figure-5.svg",
+    "name": "Full figure 5",
+    "alt": "Hand-drawn person: full figure 5"
+   },
+   {
+    "id": "full-figure-6",
+    "file": "full-figure-6.svg",
+    "name": "Full figure 6",
+    "alt": "Hand-drawn person: full figure 6"
+   },
+   {
+    "id": "full-figure-7",
+    "file": "full-figure-7.svg",
+    "name": "Full figure 7",
+    "alt": "Hand-drawn person: full figure 7"
+   },
+   {
+    "id": "portrait-1",
+    "file": "portrait-1.svg",
+    "name": "Portrait 1",
+    "alt": "Hand-drawn person: portrait 1"
+   },
+   {
+    "id": "portrait-2",
+    "file": "portrait-2.svg",
+    "name": "Portrait 2",
+    "alt": "Hand-drawn person: portrait 2"
+   },
+   {
+    "id": "portrait-3",
+    "file": "portrait-3.svg",
+    "name": "Portrait 3",
+    "alt": "Hand-drawn person: portrait 3"
+   },
+   {
+    "id": "portrait-8",
+    "file": "portrait-8.svg",
+    "name": "Portrait 8",
+    "alt": "Hand-drawn person: portrait 8"
+   },
+   {
+    "id": "portrait-12",
+    "file": "portrait-12.svg",
+    "name": "Portrait 12",
+    "alt": "Hand-drawn person: portrait 12"
+   },
+   {
+    "id": "portrait-13",
+    "file": "portrait-13.svg",
+    "name": "Portrait 13",
+    "alt": "Hand-drawn person: portrait 13"
+   },
+   {
+    "id": "portrait-14",
+    "file": "portrait-14.svg",
+    "name": "Portrait 14",
+    "alt": "Hand-drawn person: portrait 14"
+   },
+   {
+    "id": "portrait-15",
+    "file": "portrait-15.svg",
+    "name": "Portrait 15",
+    "alt": "Hand-drawn person: portrait 15"
+   },
+   {
+    "id": "portrait-17",
+    "file": "portrait-17.svg",
+    "name": "Portrait 17",
+    "alt": "Hand-drawn person: portrait 17"
+   },
+   {
+    "id": "portrait-18",
+    "file": "portrait-18.svg",
+    "name": "Portrait 18",
+    "alt": "Hand-drawn person: portrait 18"
+   },
+   {
+    "id": "portrait-19",
+    "file": "portrait-19.svg",
+    "name": "Portrait 19",
+    "alt": "Hand-drawn person: portrait 19"
+   },
+   {
+    "id": "portrait-20",
+    "file": "portrait-20.svg",
+    "name": "Portrait 20",
+    "alt": "Hand-drawn person: portrait 20"
+   },
+   {
+    "id": "portrait-21",
+    "file": "portrait-21.svg",
+    "name": "Portrait 21",
+    "alt": "Hand-drawn person: portrait 21"
+   },
+   {
+    "id": "portrait-22",
+    "file": "portrait-22.svg",
+    "name": "Portrait 22",
+    "alt": "Hand-drawn person: portrait 22"
+   },
+   {
+    "id": "portrait-23",
+    "file": "portrait-23.svg",
+    "name": "Portrait 23",
+    "alt": "Hand-drawn person: portrait 23"
+   },
+   {
+    "id": "portrait-26",
+    "file": "portrait-26.svg",
+    "name": "Portrait 26",
+    "alt": "Hand-drawn person: portrait 26"
+   },
+   {
+    "id": "portrait-27",
+    "file": "portrait-27.svg",
+    "name": "Portrait 27",
+    "alt": "Hand-drawn person: portrait 27"
+   },
+   {
+    "id": "portrait-29",
+    "file": "portrait-29.svg",
+    "name": "Portrait 29",
+    "alt": "Hand-drawn person: portrait 29"
+   },
+   {
+    "id": "portrait-31",
+    "file": "portrait-31.svg",
+    "name": "Portrait 31",
+    "alt": "Hand-drawn person: portrait 31"
+   },
+   {
+    "id": "portrait-32",
+    "file": "portrait-32.svg",
+    "name": "Portrait 32",
+    "alt": "Hand-drawn person: portrait 32"
+   },
+   {
+    "id": "portrait-40",
+    "file": "portrait-40.svg",
+    "name": "Portrait 40",
+    "alt": "Hand-drawn person: portrait 40"
+   },
+   {
+    "id": "portrait-41",
+    "file": "portrait-41.svg",
+    "name": "Portrait 41",
+    "alt": "Hand-drawn person: portrait 41"
+   },
+   {
+    "id": "portrait-43",
+    "file": "portrait-43.svg",
+    "name": "Portrait 43",
+    "alt": "Hand-drawn person: portrait 43"
+   },
+   {
+    "id": "portrait-44",
+    "file": "portrait-44.svg",
+    "name": "Portrait 44",
+    "alt": "Hand-drawn person: portrait 44"
+   },
+   {
+    "id": "portrait-46",
+    "file": "portrait-46.svg",
+    "name": "Portrait 46",
+    "alt": "Hand-drawn person: portrait 46"
+   },
+   {
+    "id": "portrait-47",
+    "file": "portrait-47.svg",
+    "name": "Portrait 47",
+    "alt": "Hand-drawn person: portrait 47"
+   },
+   {
+    "id": "portrait-50",
+    "file": "portrait-50.svg",
+    "name": "Portrait 50",
+    "alt": "Hand-drawn person: portrait 50"
+   },
+   {
+    "id": "portrait-52",
+    "file": "portrait-52.svg",
+    "name": "Portrait 52",
+    "alt": "Hand-drawn person: portrait 52"
+   },
+   {
+    "id": "portrait-53",
+    "file": "portrait-53.svg",
+    "name": "Portrait 53",
+    "alt": "Hand-drawn person: portrait 53"
+   },
+   {
+    "id": "portrait-55",
+    "file": "portrait-55.svg",
+    "name": "Portrait 55",
+    "alt": "Hand-drawn person: portrait 55"
+   },
+   {
+    "id": "portrait-57",
+    "file": "portrait-57.svg",
+    "name": "Portrait 57",
+    "alt": "Hand-drawn person: portrait 57"
+   },
+   {
+    "id": "portrait-63",
+    "file": "portrait-63.svg",
+    "name": "Portrait 63",
+    "alt": "Hand-drawn person: portrait 63"
+   },
+   {
+    "id": "portrait-65",
+    "file": "portrait-65.svg",
+    "name": "Portrait 65",
+    "alt": "Hand-drawn person: portrait 65"
+   },
+   {
+    "id": "portrait-66",
+    "file": "portrait-66.svg",
+    "name": "Portrait 66",
+    "alt": "Hand-drawn person: portrait 66"
+   },
+   {
+    "id": "portrait-69",
+    "file": "portrait-69.svg",
+    "name": "Portrait 69",
+    "alt": "Hand-drawn person: portrait 69"
+   },
+   {
+    "id": "portrait-71",
+    "file": "portrait-71.svg",
+    "name": "Portrait 71",
+    "alt": "Hand-drawn person: portrait 71"
+   },
+   {
+    "id": "portrait-73",
+    "file": "portrait-73.svg",
+    "name": "Portrait 73",
+    "alt": "Hand-drawn person: portrait 73"
+   },
+   {
+    "id": "portrait-75",
+    "file": "portrait-75.svg",
+    "name": "Portrait 75",
+    "alt": "Hand-drawn person: portrait 75"
+   },
+   {
+    "id": "portrait-76",
+    "file": "portrait-76.svg",
+    "name": "Portrait 76",
+    "alt": "Hand-drawn person: portrait 76"
+   },
+   {
+    "id": "portrait-79",
+    "file": "portrait-79.svg",
+    "name": "Portrait 79",
+    "alt": "Hand-drawn person: portrait 79"
+   },
+   {
+    "id": "portrait-80",
+    "file": "portrait-80.svg",
+    "name": "Portrait 80",
+    "alt": "Hand-drawn person: portrait 80"
+   },
+   {
+    "id": "portrait-82",
+    "file": "portrait-82.svg",
+    "name": "Portrait 82",
+    "alt": "Hand-drawn person: portrait 82"
+   },
+   {
+    "id": "portrait-85",
+    "file": "portrait-85.svg",
+    "name": "Portrait 85",
+    "alt": "Hand-drawn person: portrait 85"
+   },
+   {
+    "id": "portrait-86",
+    "file": "portrait-86.svg",
+    "name": "Portrait 86",
+    "alt": "Hand-drawn person: portrait 86"
+   },
+   {
+    "id": "portrait-87",
+    "file": "portrait-87.svg",
+    "name": "Portrait 87",
+    "alt": "Hand-drawn person: portrait 87"
+   },
+   {
+    "id": "portrait-91",
+    "file": "portrait-91.svg",
+    "name": "Portrait 91",
+    "alt": "Hand-drawn person: portrait 91"
+   },
+   {
+    "id": "portrait-92",
+    "file": "portrait-92.svg",
+    "name": "Portrait 92",
+    "alt": "Hand-drawn person: portrait 92"
+   },
+   {
+    "id": "portrait-95",
+    "file": "portrait-95.svg",
+    "name": "Portrait 95",
+    "alt": "Hand-drawn person: portrait 95"
+   },
+   {
+    "id": "portrait-98",
+    "file": "portrait-98.svg",
+    "name": "Portrait 98",
+    "alt": "Hand-drawn person: portrait 98"
+   },
+   {
+    "id": "sitting-1",
+    "file": "sitting-1.svg",
+    "name": "Sitting 1",
+    "alt": "Hand-drawn person: sitting 1"
+   },
+   {
+    "id": "sitting-2",
+    "file": "sitting-2.svg",
+    "name": "Sitting 2",
+    "alt": "Hand-drawn person: sitting 2"
+   },
+   {
+    "id": "sitting-4",
+    "file": "sitting-4.svg",
+    "name": "Sitting 4",
+    "alt": "Hand-drawn person: sitting 4"
+   },
+   {
+    "id": "sitting-5",
+    "file": "sitting-5.svg",
+    "name": "Sitting 5",
+    "alt": "Hand-drawn person: sitting 5"
+   },
+   {
+    "id": "sitting-6",
+    "file": "sitting-6.svg",
+    "name": "Sitting 6",
+    "alt": "Hand-drawn person: sitting 6"
+   },
+   {
+    "id": "sitting-7",
+    "file": "sitting-7.svg",
+    "name": "Sitting 7",
+    "alt": "Hand-drawn person: sitting 7"
+   },
+   {
+    "id": "sitting-9",
+    "file": "sitting-9.svg",
+    "name": "Sitting 9",
+    "alt": "Hand-drawn person: sitting 9"
+   },
+   {
+    "id": "sitting-10",
+    "file": "sitting-10.svg",
+    "name": "Sitting 10",
+    "alt": "Hand-drawn person: sitting 10"
+   },
+   {
+    "id": "sitting-11",
+    "file": "sitting-11.svg",
+    "name": "Sitting 11",
+    "alt": "Hand-drawn person: sitting 11"
+   },
+   {
+    "id": "sitting-12",
+    "file": "sitting-12.svg",
+    "name": "Sitting 12",
+    "alt": "Hand-drawn person: sitting 12"
+   },
+   {
+    "id": "sitting-14",
+    "file": "sitting-14.svg",
+    "name": "Sitting 14",
+    "alt": "Hand-drawn person: sitting 14"
+   },
+   {
+    "id": "sitting-15",
+    "file": "sitting-15.svg",
+    "name": "Sitting 15",
+    "alt": "Hand-drawn person: sitting 15"
+   },
+   {
+    "id": "sitting-17",
+    "file": "sitting-17.svg",
+    "name": "Sitting 17",
+    "alt": "Hand-drawn person: sitting 17"
+   },
+   {
+    "id": "sitting-18",
+    "file": "sitting-18.svg",
+    "name": "Sitting 18",
+    "alt": "Hand-drawn person: sitting 18"
+   },
+   {
+    "id": "standing-1",
+    "file": "standing-1.svg",
+    "name": "Standing 1",
+    "alt": "Hand-drawn person: standing 1"
+   },
+   {
+    "id": "standing-2",
+    "file": "standing-2.svg",
+    "name": "Standing 2",
+    "alt": "Hand-drawn person: standing 2"
+   },
+   {
+    "id": "standing-3",
+    "file": "standing-3.svg",
+    "name": "Standing 3",
+    "alt": "Hand-drawn person: standing 3"
+   },
+   {
+    "id": "standing-4",
+    "file": "standing-4.svg",
+    "name": "Standing 4",
+    "alt": "Hand-drawn person: standing 4"
+   },
+   {
+    "id": "standing-5",
+    "file": "standing-5.svg",
+    "name": "Standing 5",
+    "alt": "Hand-drawn person: standing 5"
+   },
+   {
+    "id": "standing-6",
+    "file": "standing-6.svg",
+    "name": "Standing 6",
+    "alt": "Hand-drawn person: standing 6"
+   },
+   {
+    "id": "standing-7",
+    "file": "standing-7.svg",
+    "name": "Standing 7",
+    "alt": "Hand-drawn person: standing 7"
+   },
+   {
+    "id": "standing-8",
+    "file": "standing-8.svg",
+    "name": "Standing 8",
+    "alt": "Hand-drawn person: standing 8"
+   },
+   {
+    "id": "standing-9",
+    "file": "standing-9.svg",
+    "name": "Standing 9",
+    "alt": "Hand-drawn person: standing 9"
+   },
+   {
+    "id": "standing-10",
+    "file": "standing-10.svg",
+    "name": "Standing 10",
+    "alt": "Hand-drawn person: standing 10"
+   },
+   {
+    "id": "standing-11",
+    "file": "standing-11.svg",
+    "name": "Standing 11",
+    "alt": "Hand-drawn person: standing 11"
+   },
+   {
+    "id": "standing-12",
+    "file": "standing-12.svg",
+    "name": "Standing 12",
+    "alt": "Hand-drawn person: standing 12"
+   },
+   {
+    "id": "standing-13",
+    "file": "standing-13.svg",
+    "name": "Standing 13",
+    "alt": "Hand-drawn person: standing 13"
+   },
+   {
+    "id": "standing-14",
+    "file": "standing-14.svg",
+    "name": "Standing 14",
+    "alt": "Hand-drawn person: standing 14"
+   },
+   {
+    "id": "standing-15",
+    "file": "standing-15.svg",
+    "name": "Standing 15",
+    "alt": "Hand-drawn person: standing 15"
+   },
+   {
+    "id": "standing-16",
+    "file": "standing-16.svg",
+    "name": "Standing 16",
+    "alt": "Hand-drawn person: standing 16"
+   },
+   {
+    "id": "standing-17",
+    "file": "standing-17.svg",
+    "name": "Standing 17",
+    "alt": "Hand-drawn person: standing 17"
+   },
+   {
+    "id": "standing-18",
+    "file": "standing-18.svg",
+    "name": "Standing 18",
+    "alt": "Hand-drawn person: standing 18"
+   },
+   {
+    "id": "standing-19",
+    "file": "standing-19.svg",
+    "name": "Standing 19",
+    "alt": "Hand-drawn person: standing 19"
+   },
+   {
+    "id": "standing-20",
+    "file": "standing-20.svg",
+    "name": "Standing 20",
+    "alt": "Hand-drawn person: standing 20"
+   },
+   {
+    "id": "standing-21",
+    "file": "standing-21.svg",
+    "name": "Standing 21",
+    "alt": "Hand-drawn person: standing 21"
+   },
+   {
+    "id": "standing-22",
+    "file": "standing-22.svg",
+    "name": "Standing 22",
+    "alt": "Hand-drawn person: standing 22"
+   },
+   {
+    "id": "standing-23",
+    "file": "standing-23.svg",
+    "name": "Standing 23",
+    "alt": "Hand-drawn person: standing 23"
+   },
+   {
+    "id": "standing-24",
+    "file": "standing-24.svg",
+    "name": "Standing 24",
+    "alt": "Hand-drawn person: standing 24"
+   },
+   {
+    "id": "standing-25",
+    "file": "standing-25.svg",
+    "name": "Standing 25",
+    "alt": "Hand-drawn person: standing 25"
+   },
+   {
+    "id": "standing-26",
+    "file": "standing-26.svg",
+    "name": "Standing 26",
+    "alt": "Hand-drawn person: standing 26"
+   },
+   {
+    "id": "standing-27",
+    "file": "standing-27.svg",
+    "name": "Standing 27",
+    "alt": "Hand-drawn person: standing 27"
+   },
+   {
+    "id": "standing-28",
+    "file": "standing-28.svg",
+    "name": "Standing 28",
+    "alt": "Hand-drawn person: standing 28"
+   },
+   {
+    "id": "standing-29",
+    "file": "standing-29.svg",
+    "name": "Standing 29",
+    "alt": "Hand-drawn person: standing 29"
+   },
+   {
+    "id": "standing-30",
+    "file": "standing-30.svg",
+    "name": "Standing 30",
+    "alt": "Hand-drawn person: standing 30"
+   },
+   {
+    "id": "sit-stand-walk",
+    "file": "sit-stand-walk.svg",
+    "name": "Sit stand walk",
+    "alt": "Hand-drawn person: sit stand walk"
+   },
+   {
+    "id": "group-1",
+    "file": "group-1.svg",
+    "name": "Group 1",
+    "alt": "Hand-drawn person: group 1"
+   },
+   {
+    "id": "group-2",
+    "file": "group-2.svg",
+    "name": "Group 2",
+    "alt": "Hand-drawn person: group 2"
+   },
+   {
+    "id": "group-3",
+    "file": "group-3.svg",
+    "name": "Group 3",
+    "alt": "Hand-drawn person: group 3"
+   },
+   {
+    "id": "group-4",
+    "file": "group-4.svg",
+    "name": "Group 4",
+    "alt": "Hand-drawn person: group 4"
+   }
+  ]
+ },
+ {
+  "id": "humaaans",
+  "name": "Humaaans",
+  "credit": "Humaaans by Pablo Stanley (humaaans.com), CC0. Figures composed from the body parts in the humaaans npm package (MIT).",
+  "license": "CC0",
+  "items": [
+   {
+    "id": "jacket-beard",
+    "file": "jacket-beard.svg",
+    "name": "Jacket beard",
+    "alt": "Flat illustration of a person: jacket beard"
+   },
+   {
+    "id": "jogging-caesar",
+    "file": "jogging-caesar.svg",
+    "name": "Jogging caesar",
+    "alt": "Flat illustration of a person: jogging caesar"
+   },
+   {
+    "id": "jogging-pony",
+    "file": "jogging-pony.svg",
+    "name": "Jogging pony",
+    "alt": "Flat illustration of a person: jogging pony"
+   },
+   {
+    "id": "pointing-hijab",
+    "file": "pointing-hijab.svg",
+    "name": "Pointing hijab",
+    "alt": "Flat illustration of a person: pointing hijab"
+   },
+   {
+    "id": "pointing-no-hair",
+    "file": "pointing-no-hair.svg",
+    "name": "Pointing no hair",
+    "alt": "Flat illustration of a person: pointing no hair"
+   },
+   {
+    "id": "pointing-up-curly",
+    "file": "pointing-up-curly.svg",
+    "name": "Pointing up curly",
+    "alt": "Flat illustration of a person: pointing up curly"
+   },
+   {
+    "id": "shorts-rad",
+    "file": "shorts-rad.svg",
+    "name": "Shorts rad",
+    "alt": "Flat illustration of a person: shorts rad"
+   },
+   {
+    "id": "sitting-afro",
+    "file": "sitting-afro.svg",
+    "name": "Sitting afro",
+    "alt": "Flat illustration of a person: sitting afro"
+   },
+   {
+    "id": "sitting-beard",
+    "file": "sitting-beard.svg",
+    "name": "Sitting beard",
+    "alt": "Flat illustration of a person: sitting beard"
+   },
+   {
+    "id": "sitting-hijab",
+    "file": "sitting-hijab.svg",
+    "name": "Sitting hijab",
+    "alt": "Flat illustration of a person: sitting hijab"
+   },
+   {
+    "id": "sitting-long",
+    "file": "sitting-long.svg",
+    "name": "Sitting long",
+    "alt": "Flat illustration of a person: sitting long"
+   },
+   {
+    "id": "sitting-pony",
+    "file": "sitting-pony.svg",
+    "name": "Sitting pony",
+    "alt": "Flat illustration of a person: sitting pony"
+   },
+   {
+    "id": "sitting-turban",
+    "file": "sitting-turban.svg",
+    "name": "Sitting turban",
+    "alt": "Flat illustration of a person: sitting turban"
+   },
+   {
+    "id": "sitting-wavy",
+    "file": "sitting-wavy.svg",
+    "name": "Sitting wavy",
+    "alt": "Flat illustration of a person: sitting wavy"
+   },
+   {
+    "id": "skirt-long",
+    "file": "skirt-long.svg",
+    "name": "Skirt long",
+    "alt": "Flat illustration of a person: skirt long"
+   },
+   {
+    "id": "sprinting-airy",
+    "file": "sprinting-airy.svg",
+    "name": "Sprinting airy",
+    "alt": "Flat illustration of a person: sprinting airy"
+   },
+   {
+    "id": "sprinting-short",
+    "file": "sprinting-short.svg",
+    "name": "Sprinting short",
+    "alt": "Flat illustration of a person: sprinting short"
+   },
+   {
+    "id": "standing-top",
+    "file": "standing-top.svg",
+    "name": "Standing top",
+    "alt": "Flat illustration of a person: standing top"
+   },
+   {
+    "id": "trench-coat-wavy",
+    "file": "trench-coat-wavy.svg",
+    "name": "Trench coat wavy",
+    "alt": "Flat illustration of a person: trench coat wavy"
+   },
+   {
+    "id": "walking-afro",
+    "file": "walking-afro.svg",
+    "name": "Walking afro",
+    "alt": "Flat illustration of a person: walking afro"
+   },
+   {
+    "id": "walking-chongo",
+    "file": "walking-chongo.svg",
+    "name": "Walking chongo",
+    "alt": "Flat illustration of a person: walking chongo"
+   },
+   {
+    "id": "walking-turban",
+    "file": "walking-turban.svg",
+    "name": "Walking turban",
+    "alt": "Flat illustration of a person: walking turban"
+   },
+   {
+    "id": "wheelchair-curly",
+    "file": "wheelchair-curly.svg",
+    "name": "Wheelchair curly",
+    "alt": "Flat illustration of a person: wheelchair curly"
+   },
+   {
+    "id": "wheelchair-short",
+    "file": "wheelchair-short.svg",
+    "name": "Wheelchair short",
+    "alt": "Flat illustration of a person: wheelchair short"
+   }
+  ]
+ }
+]
