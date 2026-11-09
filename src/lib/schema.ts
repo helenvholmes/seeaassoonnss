@@ -122,7 +122,9 @@ export const playlistSchema = z.object({
   type: z.literal("playlist"),
   content: z.object({
     url: z.string().url(),
-    /** Spotify playlist id, used for the embed. */
+    /** A playlist or a single song. Empty = playlist (seasons from before songs). */
+    kind: z.enum(["playlist", "track"]).optional(),
+    /** Spotify playlist or track id, used for the embed. */
     spotifyId: z.string().regex(/^[A-Za-z0-9]+$/),
     title: z.string().max(500),
     coverUrl: z.string().url().nullable(),
@@ -333,6 +335,22 @@ export function slugProblem(slug: string): string | null {
   if (!SLUG_PATTERN.test(slug)) return "Use lowercase letters, numbers and single hyphens.";
   if (RESERVED_SLUGS.has(slug)) return `"${slug}" is reserved.`;
   return null;
+}
+
+/** The slug a title gives: its slugified form, or "season" when nothing is left. */
+export function titleSlug(title: string): string {
+  return slugify(title) || "season";
+}
+
+/**
+ * Whether a slug looks made from the title rather than chosen by hand: the
+ * title's slug, that slug with a number added (when it was taken), or the
+ * slug of a new, untitled season.
+ */
+export function slugFollowsTitle(slug: string, title: string): boolean {
+  const base = titleSlug(title);
+  const auto = (b: string) => slug === b || (slug.startsWith(`${b}-`) && /^\d+$/.test(slug.slice(b.length + 1)));
+  return auto(base) || auto("untitled-season") || auto("season");
 }
 
 export function slugify(text: string): string {

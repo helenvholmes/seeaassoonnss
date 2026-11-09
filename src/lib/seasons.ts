@@ -1,6 +1,6 @@
 import "server-only";
 import { sql } from "./db";
-import { emptySeasonDoc, seasonDocSchema, slugify, slugProblem, type SeasonDoc } from "./schema";
+import { emptySeasonDoc, seasonDocSchema, slugProblem, titleSlug, type SeasonDoc } from "./schema";
 
 export type SeasonStatus = "draft" | "published";
 
@@ -109,7 +109,7 @@ export async function setSortOrder(id: string, sortOrder: number | null): Promis
 export async function createSeason(title: string): Promise<SeasonRow> {
   const clean = title.trim() || "untitled season";
   const doc = emptySeasonDoc(clean);
-  const baseSlug = slugify(clean) || "season";
+  const baseSlug = titleSlug(clean);
   for (let n = 1; n < 100; n++) {
     const slug = n === 1 ? baseSlug : `${baseSlug}-${n}`;
     if (slugProblem(slug)) continue;

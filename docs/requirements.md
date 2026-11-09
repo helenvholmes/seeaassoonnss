@@ -180,7 +180,7 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 | Photo | Upload from device (JPEG, PNG, HEIC, WebP), 10–25 per season | Image sizes, alt text, original aspect ratio | Image; optional crop inside its box |
 | Video | Upload (MP4, MOV, WebM); no GIF | Compressed MP4, poster frame | Plays muted on loop; sound only on click. With reduced motion turned on, shows the poster frame until clicked (proposed) |
 | Quote | Markdown text, optional source line | Markdown, source | Text box; owner picks from a few preset fonts |
-| Playlist | Link to an existing Spotify playlist | Playlist URL, title, cover image, owner caption | Custom card (see below) |
+| Playlist | Link to an existing Spotify playlist or a single song (track) | URL, kind (playlist or song), title, cover image, owner caption | Custom card (see below) |
 | Sticker | Upload transparent PNG, WebP or SVG; reuse from a sticker library | Image, library reference | Image with transparent background |
 | Map | Place search or coordinates | Latitude, longitude, zoom, label | Vector outline drawn with D3 and TopoJSON, a dot and a label; no tiles |
 | Voice note | Record in the browser or upload audio | Audio file, duration, optional caption, waveform (optional) | Small player; plays on click |
@@ -195,7 +195,7 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 ### Spotify playlist: limits and proposal
 
 1. The standard Spotify embed is an iframe. Its own options are size and a color theme (Spotify community, Iframe API theme). The app cannot change the styles inside the iframe.
-2. The Spotify oEmbed endpoint returns a title, a thumbnail image and the embed code for a Spotify URL, with no sign-in (Spotify oEmbed guide). The reference lists shows, episodes, artists, albums and tracks (oEmbed reference). **Tested Nov 3, 2026: playlist URLs work** and return `title`, `thumbnail_url` and `iframe_url`.
+2. The Spotify oEmbed endpoint returns a title, a thumbnail image and the embed code for a Spotify URL, with no sign-in (Spotify oEmbed guide). The reference lists shows, episodes, artists, albums and tracks (oEmbed reference). **Tested Nov 3, 2026: playlist URLs work** and return `title`, `thumbnail_url` and `iframe_url`. **Tested Nov 9, 2026: track URLs work the same way**; the title is the song name only, with no artist, so the owner can put the artist in the caption.
 3. A full track list needs the Spotify Web API. Since February 2026, a Development Mode app needs the app owner to have Spotify Premium, and playlist items are available only for playlists the user owns or collaborates on (Spotify migration guide).
 
 **Decided for version 1:** the server gets title and cover image through oEmbed. oEmbed gives no owner name or track count, so the owner types an optional caption instead (for example "for walking home"). The page shows a custom-styled card with that data. A click on the card opens the standard Spotify embed in place (or opens Spotify). The track list via the Web API is a later phase.

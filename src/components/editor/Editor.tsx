@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, DEFAULT_SCATTER } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, DEFAULT_SCATTER, slugFollowsTitle, slugProblem, titleSlug } from "@/lib/schema";
 import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
@@ -38,7 +38,7 @@ import { Tools } from "./Tools";
 import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
-import { parsePlaylistId } from "@/lib/spotify";
+import { parseSpotifyLink, type SpotifyInfo } from "@/lib/spotify";
 
 type SaveState = { kind: "saved" } | { kind: "pending" } | { kind: "saving" } | { kind: "error"; message: string; fatal: boolean };
 
@@ -69,7 +69,36 @@ export function Editor(props: EditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [slug, setSlug] = useState(props.initialSlug);
   const [status, setStatus] = useState(props.initialStatus);
+  // While a draft's slug was made from its title, it follows the title. It stops
+  // once the owner sets a slug by hand; a published season never changes address on its own.
+  const [slugAuto, setSlugAuto] = useState(() => slugFollowsTitle(props.initialSlug, props.initialDoc.title));
   const [published, setPublished] = useState<SeasonDoc | null>(props.initialPublished);
+
+  useEffect(() => {
+    if (!slugAuto || status !== "draft") return;
+    const base = titleSlug(doc.title);
+    // Already the title's slug, or that slug with a number because it was taken.
+    if (slug === base || (slug.startsWith(`${base}-`) && /^\d+$/.test(slug.slice(base.length + 1)))) return;
+    let stop = false;
+    const timer = setTimeout(async () => {
+      for (let n = 1; n <= 20 && !stop; n++) {
+        const next = n === 1 ? base : `${base}-${n}`;
+        if (slugProblem(next)) continue;
+        try {
+          await api(`/seasons/${id}`, { method: "PATCH", body: { slug: next } });
+          if (!stop) setSlug(next);
+          return;
+        } catch (e) {
+          // Taken by another season: try the next number. Anything else: leave the slug as it is.
+          if ((e as Error & { status?: number }).status !== 409) return;
+        }
+      }
+    }, 800);
+    return () => {
+      stop = true;
+      clearTimeout(timer);
+    };
+  }, [doc.title, slug, slugAuto, status, id]);
   const [save, setSave] = useState<SaveState>({ kind: "saved" });
   const [notice, setNotice] = useState<string | null>(null);
   // Information that is not an error, such as what model compression did.
@@ -228,12 +257,12 @@ export function Editor(props: EditorProps) {
   };
 
   const addPlaylist = async (url: string) => {
-    if (!parsePlaylistId(url)) {
-      setNotice("That is not a Spotify playlist link.");
+    if (!parseSpotifyLink(url)) {
+      setNotice("That is not a Spotify playlist or song link.");
       return;
     }
     try {
-      const info = await api<{ url: string; spotifyId: string; title: string; coverUrl: string | null }>("/spotify", { body: { url } });
+      const info = await api<SpotifyInfo>("/spotify", { body: { url } });
       addAndSelect({ id: crypto.randomUUID(), type: "playlist", desktop: place(300, 400), mobile: null, content: { ...info, caption: "" } });
       setPlaylistUrl("");
       setNotice(null);
@@ -536,7 +565,7 @@ export function Editor(props: EditorProps) {
       const text = e.clipboardData.getData("text/plain").trim();
       if (!text) return;
       e.preventDefault();
-      if (parsePlaylistId(text)) void addPlaylist(text);
+      if (parseSpotifyLink(text)) void addPlaylist(text);
       else addQuote(text);
     };
     window.addEventListener("paste", onPaste);
@@ -944,7 +973,11 @@ export function Editor(props: EditorProps) {
           doc={doc}
           item={selected}
           slug={slug}
-          onSlugChange={setSlug}
+          onSlugChange={(next: string) => {
+            setSlug(next);
+            setSlugAuto(false);
+          }}
+          slugAuto={slugAuto && status === "draft"}
           change={change}
           updateItem={updateSelected}
           layer={layer}
