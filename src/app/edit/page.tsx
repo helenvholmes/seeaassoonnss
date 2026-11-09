@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { NewSeason, OwnerActions } from "@/components/owner/OwnerActions";
+import { DemoSeason, NewSeason, OwnerActions } from "@/components/owner/OwnerActions";
 import { isOwner } from "@/lib/auth/session";
 import { listSeasons } from "@/lib/seasons";
 
@@ -33,6 +33,7 @@ export default async function EditIndex() {
           </li>
         ))}
       </ul>
+      <DemoSeason />
       <OwnerActions />
     </main>
   );

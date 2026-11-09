@@ -255,7 +255,7 @@ Seasons uses p5.js for 2D generative backgrounds and React Three Fiber for 3D. S
 2. **Performance:** p5.js and 3D code load only on seasons that use them (three.js comes in a separate chunk; the season page without it is 152 kB on first load). One background per season. At most 6 model items per season, because each live model needs a WebGL context and browsers allow about 16. A model's live view starts only near the screen and is removed far from it, which frees its context.
 3. **Fallback:** if WebGL is not available, or a model fails to load, its poster image shows. The poster is drawn in the editor's browser with the same camera and light as the live view.
 4. **Phones:** 3D backgrounds and items run on phones too (decided Nov 9), at a pixel ratio of at most 2.
-5. **Sketches belong to the owner.** Sketches are code that the owner writes or pastes. They live in the owner's own database: a sketch library for reuse, and a copy inside each season that uses one, so editing a library sketch never changes a published page until it is chosen again and published. The repository ships three example sketches (`scripts/sketches/`), which `npm run seed` adds to the library.
+5. **Sketches belong to the owner.** Sketches are code that the owner writes or pastes. They live in the owner's own database: a sketch library for reuse, and a copy inside each season that uses one, so editing a library sketch never changes a published page until it is chosen again and published. The repository ships three example sketches (`src/lib/demo-sketches.ts`), which the demo season adds to the library.
 
 ### 3D model compression
 

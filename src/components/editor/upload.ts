@@ -56,7 +56,13 @@ async function put(kind: Kind, blob: Blob, contentType: string): Promise<string>
     "/media/upload-url",
     { body: { kind, contentType, size: blob.size } },
   );
-  const res = await fetch(upload.url, { method: upload.method, headers: upload.headers, body: blob, credentials: "same-origin" });
+  let res: Response;
+  try {
+    res = await fetch(upload.url, { method: upload.method, headers: upload.headers, body: blob, credentials: "same-origin" });
+  } catch {
+    // The browser hides the reason ("NetworkError", "Failed to fetch"). By far the usual one: the bucket's CORS rule.
+    throw new Error(`storage refused the upload. Add ${location.origin} to AllowedOrigins in the CORS rule of both R2 buckets (README, step 2), or check your connection.`);
+  }
   if (!res.ok) throw new Error(`Upload failed (HTTP ${res.status}).`);
   return mediaId;
 }

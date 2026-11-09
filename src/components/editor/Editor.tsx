@@ -324,6 +324,22 @@ export function Editor(props: EditorProps) {
     }
   };
 
+  // Models without a poster (for example from the demo season, made on the server) get one when the season opens.
+  const posterPass = useRef(false);
+  useEffect(() => {
+    if (posterPass.current) return;
+    posterPass.current = true;
+    const d = latestDoc.current;
+    const missing: [string, ModelContent][] = [
+      ...d.items.filter((i) => i.type === "model_3d" && !i.content.posterMediaId).map((i) => [i.id, i.content as ModelContent] as [string, ModelContent]),
+      ...(d.backgroundLayer?.kind === "model" && !d.backgroundLayer.model.posterMediaId ? [["background", d.backgroundLayer.model] as [string, ModelContent]] : []),
+    ];
+    void (async () => {
+      for (const [target, content] of missing) await drawPoster(target, content, false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const newModelContent = (m: UploadedModel): ModelContent => ({
     mediaId: m.mediaId,
     posterMediaId: null,

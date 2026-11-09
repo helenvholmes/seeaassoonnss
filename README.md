@@ -129,13 +129,9 @@ Each setup token works once. Nobody can register a passkey without it, so a stra
 
 ### 6. Make your first season
 
-In the editor, click **New season**. Or, to see an example first, create a demo season with placeholder items (from your computer, after step 4):
+In the editor, click **New season**. Or, to see an example first, click **Create demo season**: it makes a draft at `/seasons/demo` with placeholder photos, a 3D pear, a type effect, cursor follow and a p5.js sketch background, and adds three example sketches to your sketch library. Publish it to see it as visitors would, or delete it from its season settings.
 
-```bash
-npm run seed
-```
-
-It prints a link to the demo in the editor. Publish it to see `/seasons/demo`, or delete it from the season settings.
+`npm run seed`, run from your computer with the deployment's settings in `.env.local`, does the same.
 
 ## Environment variables
 
@@ -194,7 +190,7 @@ Open `https://<your site>/seasons/api/health` first. It says which part of the s
 | "The setup token is wrong" | `SETUP_TOKEN` in Vercel differs from what you typed, or you changed it without redeploying. |
 | "This setup token was already used" | Each token works once. Set a new `SETUP_TOKEN`, redeploy, and register again. This is also how you recover if you lose every passkey. |
 | The passkey prompt fails or shows an error about the domain | You are not on the domain in `SITE_URL`. Open the editor at exactly that address. |
-| Uploads fail with "Upload failed" | The bucket's CORS rule does not list your site's address. See [step 2](#2-set-up-media-storage-in-cloudflare-r2). |
+| Uploads fail with "storage refused the upload" (or "NetworkError") | The CORS rule of a bucket does not list the address the editor is open at, for example `https://<project>.vercel.app`. The error names that address: add it to `AllowedOrigins` on **both** buckets. See [step 2](#2-set-up-media-storage-in-cloudflare-r2). `/seasons/api/health` checks this for the address in `SITE_URL`. |
 | Photos upload but do not show | `R2_PUBLIC_URL` is wrong, or public access is off on the public bucket. |
 | 3D models show only their poster | The public bucket's CORS rule lacks `GET`, or the browser has no WebGL. `npm run doctor` checks the first. |
 | A sketch background stays empty | The sketch has an error: the editor shows it under the code. Sketches must use p5.js 2 and global mode (`function setup()`, `function draw()`). |
