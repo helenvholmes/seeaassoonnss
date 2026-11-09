@@ -15,9 +15,11 @@ export const PARALLAX_DRIFT = 0.1;
  *
  * This is done with a scroll handler instead of `position: fixed`, because fixed
  * elements inside a rotated item would be placed relative to the item, not the screen.
- * With reduced motion the photo simply fills its box.
+ * In a rotated item the layer is turned back by `rotation` about the box's center,
+ * so the photo stays level and still on screen. With reduced motion the photo
+ * simply fills its box.
  */
-export function ParallaxPhoto({ attrs, alt, width, height, crop }: { attrs: ImgHTMLAttributes<HTMLImageElement>; alt: string; width: number; height: number; crop: Crop | null | undefined }) {
+export function ParallaxPhoto({ attrs, alt, width, height, crop, rotation = 0 }: { attrs: ImgHTMLAttributes<HTMLImageElement>; alt: string; width: number; height: number; crop: Crop | null | undefined; rotation?: number }) {
   const frame = useRef<HTMLDivElement>(null);
   const layer = useRef<HTMLDivElement>(null);
   const img = useRef<HTMLImageElement>(null);
@@ -47,8 +49,9 @@ export function ParallaxPhoto({ attrs, alt, width, height, crop }: { attrs: ImgH
       const r = box.getBoundingClientRect();
       const bw = box.offsetWidth;
       const bh = box.offsetHeight;
-      const top = r.top + r.height / 2 - bh / 2;
-      const left = r.left + r.width / 2 - bw / 2;
+      const cx = r.left + r.width / 2;
+      const cy = r.top + r.height / 2;
+      const top = cy - bh / 2;
       // Hidden (the other layout) or off screen: nothing to show.
       if (!bw || top > vh || top + bh < 0) return;
       const layerH = vh * (1 + 2 * PARALLAX_DRIFT);
@@ -63,9 +66,12 @@ export function ParallaxPhoto({ attrs, alt, width, height, crop }: { attrs: ImgH
       // 0 when the box's top enters at the bottom of the screen, 1 when its bottom leaves at the top.
       const progress = Math.min(1, Math.max(0, (vh - top) / (vh + bh)));
       const drift = (-PARALLAX_DRIFT + 2 * PARALLAX_DRIFT * progress) * vh;
-      // Screen position of the layer: from -2·drift (start) to 0 (end), so it always covers the screen.
-      const y = -PARALLAX_DRIFT * vh + drift - top;
-      l.style.transform = `translate3d(${-left}px, ${y}px, 0)`;
+      // Screen position of the layer's top: from -2·drift (start) to 0 (end), so it always covers the screen.
+      const screenTop = -PARALLAX_DRIFT * vh + drift;
+      // Map the screen to the box's own frame: move to the box's center, undo its
+      // rotation, then offset by the center's screen position. Unrotated, this is
+      // translate(-left, screenTop - top).
+      l.style.transform = `translate(${bw / 2}px, ${bh / 2}px) rotate(${-rotation}deg) translate(${-cx}px, ${screenTop - cy}px)`;
       l.classList.add("is-moving");
     };
     const schedule = () => {
@@ -84,7 +90,7 @@ export function ParallaxPhoto({ attrs, alt, width, height, crop }: { attrs: ImgH
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [width, height, crop]);
+  }, [width, height, crop, rotation]);
 
   // Before the script runs (and with reduced motion), the photo fills its box (see globals.css).
   return (

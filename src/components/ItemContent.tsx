@@ -65,7 +65,7 @@ function Photo({ item, mediaBase, layout, placement, cropping, interactive }: { 
   if (parallax && interactive) {
     // The photo covers the screen, so it needs the full set of sizes.
     const attrs = { src: imageUrl(mediaBase, mediaId, largest), srcSet: widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", "), decoding: "async" as const, draggable: false };
-    return <ParallaxPhoto attrs={attrs} alt={alt} width={width} height={height} crop={crop} />;
+    return <ParallaxPhoto attrs={attrs} alt={alt} width={width} height={height} crop={crop} rotation={placement.rotation} />;
   }
   // Cover, with the owner's crop: the photo is positioned inside a clipping frame.
   const rect = photoRect(width, height, placement.w, placement.h, crop);
