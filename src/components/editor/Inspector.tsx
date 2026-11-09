@@ -6,7 +6,7 @@ import { api } from "@/lib/client";
 import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, slugProblem, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
 import { ModelPanel } from "./Tools";
 import { formatBytes } from "./upload";
-import { quoteSize } from "../ItemContent";
+import { imageUrl, quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
 import { normalizeRotation, placementOf } from "./ops";
@@ -200,6 +200,46 @@ function MobileSettings({ doc, resetMobile, setMobileVisible, select }: Props) {
   );
 }
 
+/** Picks the photo shown for this season on the index page and in link previews. */
+function CoverField({ doc, change, mediaBase }: Props) {
+  const photos = doc.items.filter((i): i is PhotoItem => i.type === "photo");
+  const chosen = photos.find((p) => p.id === doc.coverItemId) ?? null;
+  const shown = chosen ?? photos[0] ?? null;
+  return (
+    <Field label="Cover image">
+      {photos.length ? (
+        <>
+          <div className="cover-picker" role="radiogroup" aria-label="Cover image">
+            {photos.map((p) => (
+              <button
+                key={p.id}
+                role="radio"
+                aria-checked={p.id === shown?.id}
+                aria-label={p.content.alt || "photo"}
+                className={p.id === shown?.id ? "cover-choice is-chosen" : "cover-choice"}
+                onClick={() => change((d) => ({ ...d, coverItemId: p.id }), "season:cover")}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageUrl(mediaBase, p.content.mediaId, p.content.widths[0])} alt="" loading="lazy" draggable={false} />
+              </button>
+            ))}
+          </div>
+          <span className="small muted">
+            {chosen ? "Shown on the seasons index and in link previews. " : "None chosen, so the first photo is used. "}
+            {chosen ? (
+              <button className="quiet" style={{ padding: 0, textDecoration: "underline" }} onClick={() => change((d) => ({ ...d, coverItemId: null }), "season:cover")}>
+                Use the first photo instead
+              </button>
+            ) : null}
+          </span>
+        </>
+      ) : (
+        <span className="small muted">Add a photo to choose a cover. It is shown on the seasons index and in link previews.</span>
+      )}
+    </Field>
+  );
+}
+
 function SeasonSettings(props: Props) {
   const { id, doc, slug, onSlugChange, change, layout } = props;
   const router = useRouter();
@@ -246,6 +286,7 @@ function SeasonSettings(props: Props) {
         <MonthInput value={doc.month ?? null} onChange={(m) => change((d) => ({ ...d, month: m }), "season:month")} />
         <span className="small muted">Orders the index page (newest first). Shown when the period is empty.</span>
       </Field>
+      <CoverField {...props} />
       <Field label={`Minimum page length (${layout}, ${layout === "desktop" ? 1440 : 390} wide)`}>
         <NumberInput
           value={layout === "desktop" ? doc.desktopHeight : doc.mobileHeight}
@@ -466,7 +507,7 @@ function ScatterSettings({ doc, scatter, layout }: Props) {
         <button onClick={() => run(Math.floor(Math.random() * 1_000_000))}>New seed</button>
       </div>
       <span className="small muted">
-        Size 1× is the width a new photo gets ({layout === "desktop" ? 360 : 180} units). Items spread over the minimum page length ({layout === "desktop" ? doc.desktopHeight : doc.mobileHeight}); raise it above for a longer spread.
+        Size 1× is the width a new photo gets ({layout === "desktop" ? 360 : 180} units). Items spread over at least the minimum page length ({layout === "desktop" ? doc.desktopHeight : doc.mobileHeight}); with many items the page grows so they don&apos;t pile up. The Shuffle button at the top does the same with a new seed.
       </span>
     </div>
   );
@@ -670,19 +711,21 @@ function ItemSettings(props: Props & { item: Item }) {
             </select>
           </Field>
           {item.content.fit === "cover" ? <CropControls item={item} p={p} cropping={props.cropping} setCropping={props.setCropping} updateItem={updateItem} /> : null}
-          {item.content.fit === "cover" ? (
-            <div className="stack" style={{ gap: 4 }}>
-              <label className="row small">
-                <input type="checkbox" checked={!!item.content.parallax} onChange={(e) => content<PhotoItem>({ parallax: e.target.checked || undefined }, "parallax")} />
-                Parallax background
-              </label>
-              <span className="small muted">
-                {item.content.parallax
-                  ? "On the page, the photo fills the screen and stays put while the page scrolls past this box, like a view through a window. The crop applies to the screen-sized photo. Try it in Preview."
-                  : "Show the photo like a fixed background seen through this box as the page scrolls."}
-              </span>
-            </div>
-          ) : null}
+          <div className="stack" style={{ gap: 4 }}>
+            <label className="row small">
+              <input
+                type="checkbox"
+                checked={!!item.content.parallax && item.content.fit === "cover"}
+                onChange={(e) => content<PhotoItem>(e.target.checked ? { parallax: true, fit: "cover" } : { parallax: undefined }, "parallax")}
+              />
+              Parallax background
+            </label>
+            <span className="small muted">
+              {item.content.parallax && item.content.fit === "cover"
+                ? "On the page, the photo fills the screen and stays put while the page scrolls past this box, like a view through a window. The crop applies to the screen-sized photo. Try it in Preview."
+                : "Show the photo like a fixed background seen through this box as the page scrolls. Turning this on sets Fit to \"Crop to fill the box\"."}
+            </span>
+          </div>
           <div className="row">
             <button
               onClick={() => {

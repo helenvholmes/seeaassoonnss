@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, DEFAULT_SCATTER } from "@/lib/schema";
 import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
@@ -717,6 +717,12 @@ export function Editor(props: EditorProps) {
             title="Snap to the page and to other items while dragging and resizing. Hold ⌘ or Ctrl during a move to skip snapping once."
           >
             Snap {snapOn ? "on" : "off"}
+          </button>
+          <button
+            onClick={() => change((d) => scatterLayout(d, layout, { ...(d.scatter ?? DEFAULT_SCATTER), seed: Math.floor(Math.random() * 1_000_000) }))}
+            title={`Place every unlocked item on the ${layout} page at random, with a new seed. The page grows when there are many items. Lock items to keep them; Undo goes back. Seed and size range: Season settings (click an empty spot on the page).`}
+          >
+            Shuffle
           </button>
           <span className={save.kind === "error" ? "error" : "muted"} role="status">
             {saveLabel}

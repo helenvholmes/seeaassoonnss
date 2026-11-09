@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addItem, scatterLayout, seededRandom, SCATTER_BASE_WIDTH } from "../src/components/editor/ops.ts";
+import { addItem, scatterArea, scatterLayout, seededRandom, SCATTER_BASE_WIDTH, SCATTER_COVERAGE } from "../src/components/editor/ops.ts";
 import { DEFAULT_SCATTER, emptySeasonDoc, MAX_MODEL_ITEMS, seasonDocSchema, type Item, type SeasonDoc } from "../src/lib/schema.ts";
 import { escapeInlineScript, sketchDocument } from "../src/lib/sketch-frame.ts";
 
@@ -94,6 +94,19 @@ test("scattering twice with one seed gives the same layout", () => {
 test("scatter spreads over the minimum page length", () => {
   const out = scatterLayout(season([photo(1), photo(2), photo(3), photo(4)]), "desktop", DEFAULT_SCATTER);
   for (const i of out.items) assert.ok(i.desktop.y + i.desktop.h <= 2000 + 1);
+});
+
+test("with many items, scatter makes the page longer instead of piling them up", () => {
+  const many = season(Array.from({ length: 60 }, (_, n) => photo(n + 1)));
+  const area = scatterArea(many, "desktop", DEFAULT_SCATTER);
+  assert.ok(area.height > 2000, `area grows: ${area.height}`);
+  const out = scatterLayout(many, "desktop", DEFAULT_SCATTER);
+  const covered = out.items.reduce((sum, i) => sum + i.desktop.w * i.desktop.h, 0);
+  assert.ok(covered / (1440 * area.height) <= SCATTER_COVERAGE + 0.01, "coverage stays at the target");
+  const lowest = Math.max(...out.items.map((i) => i.desktop.y + i.desktop.h));
+  assert.ok(lowest > 2000 && lowest <= area.height + 1, `items use the longer page: ${lowest}`);
+  // A few items still fit in the minimum length.
+  assert.equal(scatterArea(season([photo(1), photo(2)]), "desktop", DEFAULT_SCATTER).height, 2000);
 });
 
 test("scatter in one layout does not touch the other", () => {

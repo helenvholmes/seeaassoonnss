@@ -235,7 +235,7 @@ Seasons uses p5.js for 2D generative backgrounds and React Three Fiber for 3D. S
 
 ### Effects
 
-1. **Random placement:** the editor places every unlocked item of the current layout (desktop or mobile) at a random position. A seed keeps the same layout; the owner can change the seed, and lock the items to keep. Route maps and hidden items do not move.
+1. **Random placement:** the editor places every unlocked item of the current layout (desktop or mobile) at a random position. A seed keeps the same layout; the owner can change the seed, and lock the items to keep. Route maps and hidden items do not move. Items spread over the minimum page length, and further when they would cover more than 35% of it, so a season with many items gets a longer page instead of a pile. A Shuffle button in the editor bar scatters with a new seed.
 2. **Random scale:** photos, videos, stickers and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
 3. **Background objects:** one 3D model or one p5.js sketch can be the season background, behind all items. It fills the screen and stays there while the page scrolls.
 4. **Cursor follow:** any item can drift toward the cursor (strength 0–100%, at most 40 design units). 3D models can also turn toward it. On touch devices, the "cursor" moves down the screen with the scroll position.

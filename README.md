@@ -25,7 +25,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 
 | Item | How you add it | What visitors see |
 | --- | --- | --- |
-| Photo | Upload JPEG, PNG, HEIC or WebP; double-click to crop (drag to move the photo in its box, scroll to zoom); optionally turn on **Parallax background** | The photo, sized for their screen. All location data is removed. With parallax, the photo fills the screen and stays put while the page scrolls past its box, like a view through a window. |
+| Photo | Upload JPEG, PNG, HEIC or WebP; double-click to crop (drag to move the photo in its box, scroll to zoom); optionally turn on **Parallax background**; pick the season's cover in Season settings → Cover image | The photo, sized for their screen. All location data is removed. With parallax, the photo fills the screen and stays put while the page scrolls past its box, like a view through a window. |
 | Video | Upload MP4, MOV or WebM (no GIF) | A silent loop while on screen; sound after a click |
 | Quote | Type Markdown (bold, italic, links) | Text in EB Garamond, IBM Plex Mono or a sans-serif |
 | Title, subtitle | Quote items that show the season's title or subtitle | |
@@ -44,7 +44,7 @@ All optional, and all off for visitors who have "reduce motion" turned on.
 
 | Effect | Where | What it does |
 | --- | --- | --- |
-| Random layout | Season settings → random layout | Places every unlocked item at random, and gives photos, videos, stickers and 3D models a random size in a range you set. The same seed always gives the same layout; lock what you like and try another seed. |
+| Random layout | **Shuffle** in the editor bar (new seed), or Season settings → random layout (seed and size range) | Places every unlocked item at random, spreading them down a longer page when there are many, and gives photos, videos, stickers and 3D models a random size in a range you set. The same seed always gives the same layout; lock what you like and try another seed. |
 | Follow the cursor | Any item's settings | The item drifts toward the cursor. On phones it moves with scroll. |
 | Type effects | Quote settings | Letters move away from the cursor, ripple as the page scrolls, or gather as the quote reaches the middle of the screen. Screen readers read the plain text. |
 | Background | Season settings → behind all items | One 3D model, or one p5.js sketch, fills the screen behind all items. |
