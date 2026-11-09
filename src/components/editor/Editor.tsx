@@ -745,6 +745,11 @@ export function Editor(props: EditorProps) {
               <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
+              {item.type === "photo" && item.content.parallax && item.content.fit === "cover" ? (
+                <span className="badge" style={{ left: "auto", right: 4 }} title="Fixed background on the page; see Preview">
+                  parallax
+                </span>
+              ) : null}
             </div>
           ))}
           {alt && selectedPlacement ? (

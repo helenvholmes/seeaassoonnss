@@ -413,6 +413,19 @@ function ItemSettings(props: Props & { item: Item }) {
             </select>
           </Field>
           {item.content.fit === "cover" ? <CropControls item={item} p={p} cropping={props.cropping} setCropping={props.setCropping} updateItem={updateItem} /> : null}
+          {item.content.fit === "cover" ? (
+            <div className="stack" style={{ gap: 4 }}>
+              <label className="row small">
+                <input type="checkbox" checked={!!item.content.parallax} onChange={(e) => content<PhotoItem>({ parallax: e.target.checked || undefined }, "parallax")} />
+                Parallax background
+              </label>
+              <span className="small muted">
+                {item.content.parallax
+                  ? "On the page, the photo fills the screen and stays put while the page scrolls past this box, like a view through a window. The crop applies to the screen-sized photo. Try it in Preview."
+                  : "Show the photo like a fixed background seen through this box as the page scrolls."}
+              </span>
+            </div>
+          ) : null}
           <div className="row">
             <button
               onClick={() => {

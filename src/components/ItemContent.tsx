@@ -9,6 +9,7 @@ import { PlaylistCard } from "./PlaylistCard";
 import { VideoView } from "./items/VideoView";
 import { VoiceNoteView } from "./items/VoiceNoteView";
 import { RouteView } from "./items/RouteView";
+import { ParallaxPhoto } from "./items/ParallaxPhoto";
 
 export const FONT_STACKS: Record<QuoteItem["content"]["font"], string> = {
   serif: '"EB Garamond", Garamond, "Times New Roman", serif',
@@ -41,8 +42,8 @@ export function imageUrl(mediaBase: string, mediaId: string, width: number) {
   return `${mediaBase}/media/${mediaId}/${width}.webp`;
 }
 
-function Photo({ item, mediaBase, layout, placement, cropping }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement; cropping?: boolean }) {
-  const { mediaId, widths, alt, fit, width, height, crop } = item.content;
+function Photo({ item, mediaBase, layout, placement, cropping, interactive }: { item: PhotoItem; mediaBase: string; layout: Layout; placement: Placement; cropping?: boolean; interactive: boolean }) {
+  const { mediaId, widths, alt, fit, width, height, crop, parallax } = item.content;
   const largest = widths[widths.length - 1];
   if (fit === "contain") {
     const share = placement.w / CANVAS_WIDTH[layout];
@@ -60,6 +61,11 @@ function Photo({ item, mediaBase, layout, placement, cropping }: { item: PhotoIt
         style={{ objectFit: "contain" }}
       />
     );
+  }
+  if (parallax && interactive) {
+    // The photo covers the screen, so it needs the full set of sizes.
+    const attrs = { src: imageUrl(mediaBase, mediaId, largest), srcSet: widths.map((w) => `${imageUrl(mediaBase, mediaId, w)} ${w}w`).join(", "), decoding: "async" as const, draggable: false };
+    return <ParallaxPhoto attrs={attrs} alt={alt} width={width} height={height} crop={crop} />;
   }
   // Cover, with the owner's crop: the photo is positioned inside a clipping frame.
   const rect = photoRect(width, height, placement.w, placement.h, crop);
@@ -158,7 +164,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
   const { item, doc, mediaBase, interactive, layout, placement } = props;
   switch (item.type) {
     case "photo":
-      return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} cropping={props.cropping} />;
+      return <Photo item={item} mediaBase={mediaBase} layout={layout} placement={placement} cropping={props.cropping} interactive={interactive} />;
     case "quote":
       return <Quote item={item} doc={doc} layout={layout} placement={placement} />;
     case "playlist":
