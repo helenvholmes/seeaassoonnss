@@ -1,6 +1,6 @@
 # Seasons — Requirements
 
-Oct 28, 2026 · @Dbeueudvdbd Djeisisheneke · Updated Nov 3, 2026 (see [Decision log](#decision-log))
+Oct 28, 2026 · @Dbeueudvdbd Djeisisheneke · Updated Nov 9, 2026 (see [Decision log](#decision-log))
 
 ## Overview
 
@@ -28,8 +28,8 @@ The app must make one season fast to assemble and strange to look at, and must c
 ### Non-goals
 
 1. Multiple users, collaborators, comments or likes.
-2. Automatic or random layout generation.
-3. Visual effects: filters, grain, torn edges, tape, animation.
+2. Automatic layout generation without the owner's control. (Seeded random placement that the owner starts, reseeds and locks is in scope; see [Generative and 3D layer](#generative-and-3d-layer).)
+3. Photo effects: filters, grain, torn edges, tape. (Motion is limited to the effects in [Generative and 3D layer](#generative-and-3d-layer).)
 4. Export to image, PDF, video or print. The URL is the only output.
 5. Reading photo metadata (date, place) for layout.
 6. Autoplay of audio. (Videos loop silently; see [Item types](#item-types).)
@@ -55,6 +55,8 @@ Visitors reach season pages through the main site's rewrite. The owner uses the 
 | Media processing | In the browser: HEIC to JPEG, video compression. On the server: image resize and metadata removal (for example sharp) | Decided |
 | Editor canvas | Client-side drag, rotate, resize library (for example react-moveable) | Proposed |
 | Maps | D3 and TopoJSON vector outlines; no tile provider, no API key | Decided |
+| Generative 2D | p5.js 2.x in instance mode, client-only | Proposed (phase 6) |
+| 3D | React Three Fiber with drei; glTF binary (`.glb`) models | Proposed (phase 6) |
 
 ### Backend scope
 
@@ -124,11 +126,12 @@ The document shapes follow.
 | `subtitle` | markdown | Short description. Example: "moodboard for… who knows, really?" |
 | `period` | free text | Owner sets any words. Example: "fall 2026" or "after the move" |
 | `cover_item_id` | item reference | Image for the index page |
-| `background` | color or image reference | Page background |
+| `background` | color, image reference, or (proposed) 3D scene or p5.js sketch | Page background |
 | `month` | `YYYY-MM` or empty | Optional month the season belongs to. Orders the index |
 | `desktop_height` | number | Minimum page length in design units. The page grows to fit its lowest item |
 | `mobile_height` | number | Minimum page length in design units. The page grows to fit its lowest item |
 | `mobile_layout` | boolean | False only for seasons made before phase 2; they show the scaled desktop layout on mobile until opened in the editor |
+| `layout_seed` | integer, proposed | Seed for random placement and scale (see [Generative and 3D layer](#generative-and-3d-layer)) |
 | `items` | list of items | See below |
 
 ### Item
@@ -136,7 +139,7 @@ The document shapes follow.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID | |
-| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note` |
+| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`; proposed: `model_3d` |
 | `content` | JSON | Different per type (see [Item types](#item-types)) |
 | `desktop` | placement | Position on the desktop canvas |
 | `mobile` | placement or empty | Empty = item is not shown on mobile |
@@ -166,7 +169,7 @@ The alternative is a canvas that changes shape with the screen. That alternative
 
 ## Item types
 
-Seven item types are in scope. No item plays sound until a visitor clicks it. Videos loop silently.
+Eight item types are in scope: the seven below plus the 3D model (phase 6). The route map is a separate item type (see [Scroll-driven route map](#scroll-driven-route-map)). No item plays sound until a visitor clicks it. Videos loop silently.
 
 | Type | Input | Content stored | Display |
 | --- | --- | --- | --- |
@@ -177,6 +180,7 @@ Seven item types are in scope. No item plays sound until a visitor clicks it. Vi
 | Sticker | Upload transparent PNG, WebP or SVG; reuse from a sticker library | Image, library reference | Image with transparent background |
 | Map | Place search or coordinates | Latitude, longitude, zoom, label | Vector outline drawn with D3 and TopoJSON, a dot and a label; no tiles |
 | Voice note | Record in the browser or upload audio | Audio file, duration, optional caption, waveform (optional) | Small player; plays on click |
+| 3D model (phase 6) | Upload a glTF binary file (`.glb`) | Model file, scale, rotation, cursor-follow on or off, poster image | 3D view in its box (React Three Fiber); poster image if WebGL is not available |
 
 **Quote rules.** Markdown only: bold, italic, links, line breaks. No raw HTML. Quotes can come from any source: own writing, lyrics, books, messages. Preset fonts: EB Garamond (serif), IBM Plex Mono (monospace) and one plain sans-serif (to be picked). Each must look right in lowercase with the `//` prefix.
 
@@ -220,6 +224,32 @@ Odyssey is built with Seasons: it is one season, and the route map is part of it
 
 1. Odyssey is a season in Seasons, for example at `/seasons/odyssey`.
 2. The owner's main website has an `/odyssey` route that shows that season with the scroll-driven route map, through a rewrite or redirect to the season page.
+
+## Generative and 3D layer
+
+Seasons uses p5.js for 2D generative effects and React Three Fiber for 3D. Spline is not a requirement. All 3D models use the open glTF format, so a fork does not need a paid tool.
+
+### Effects
+
+1. **Random placement:** the editor can place photos at random positions. A seed keeps the same layout on each reload. The owner can change the seed, and lock the items she wants to keep.
+2. **Random scale:** each placed image gets a random scale between a minimum and a maximum that the owner sets.
+3. **Background objects:** a 3D scene or a p5.js sketch can be the season background, behind all items.
+4. **Cursor follow:** items or 3D objects can follow the cursor or turn toward it. On touch devices, they move with scroll position.
+5. **Type:** quotes can use generative type effects, for example text that moves with the cursor or with scroll. p5.js 2.x supports variable fonts and text to contours.
+6. **Embedded 3D items:** a 3D model is an item on the canvas. It has position, size, rotation and z-order, the same as other items.
+
+### Tools
+
+1. p5.js 2.x in instance mode, inside a client-only React component.
+2. React Three Fiber (`@react-three/fiber`) with drei helpers (`@react-three/drei`) for 3D scenes and model loading.
+3. Models: glTF binary files (`.glb`), kept in media storage.
+
+### Rules
+
+1. **Reduced motion:** when the visitor's system has "reduce motion" on, effects stop and items stay in their seeded positions.
+2. **Performance:** load p5.js and 3D code only on seasons that use them. One 3D background per season, maximum.
+3. **Fallback:** if WebGL is not available, the page shows the static layout.
+4. **Data model changes:** the season document gets `layout_seed` and an extended `background` field. A new item type, 3D model, stores the `.glb` file, scale and rotation.
 
 ## Editor
 
@@ -329,9 +359,10 @@ Version 1 must replace one Pinterest board with one published season. Everything
 | --- | --- | --- |
 | 1 | Passkey sign-in; season create, edit, draft, publish; photos, quotes, playlist card; desktop canvas with drag, rotate, resize, z-order, lock; season page at `/seasons/[slug]`; rewrite from main site | "leafy greens" is rebuilt and live on the owner's site |
 | 2 | Mobile canvas and toggle; mobile preview; index page `/seasons`; share metadata | A phone shows a hand-placed mobile layout |
-| 3 | Video; stickers and sticker library; voice notes; maps | All seven item types work |
+| 3 | Video; stickers and sticker library; voice notes; maps | The first seven item types work (3D model is phase 6) |
 | 4 | README, `.env.example`, seed demo; public repository | A second person deploys a fork from the README alone |
 | 5 | Scroll-driven route map (built); Odyssey season and `/odyssey` on the main site (owner) | Odyssey is live at `/odyssey` |
+| 6 | Seeded random placement and scale; cursor follow; generative type; 3D model item (glTF); 3D or p5.js background | One season has a 3D background, a 3D item and a seeded random layout |
 | Later | Spotify track list via Web API; Live Photos; slug redirects; undo history beyond one session | Decided case by case |
 
 ## Open questions
@@ -352,6 +383,10 @@ Version 1 must replace one Pinterest board with one published season. Everything
 - [x] Route map layout: a band of the canvas. The map stays fixed while the items placed in that band scroll past.
 - [x] Route map on mobile: same behavior on the 390-wide layout.
 - [ ] Visual references beyond "leafy greens".
+- [ ] Random placement: which items does it move (photos only, or all unlocked items), and does it apply to the mobile layout too?
+- [ ] Mobile fallback for 3D: on phones, show the 3D background and items, or only the poster image?
+- [ ] 3D model limits: maximum `.glb` file size, and whether to compress models (for example Draco) on upload.
+- [ ] p5.js backgrounds: does the owner pick from sketches that ship in the repository, or write their own? User-supplied sketch code would be a security risk on a public page.
 - [ ] Video compression: confirm size limits (built: 1080 px long side, 2 Mbit/s video, 80 MB per file). Originals are not kept (built); keep them instead?
 
 ## Sources
@@ -368,6 +403,9 @@ Version 1 must replace one Pinterest board with one published season. Everything
 10. [GNU: Selling Free Software](https://www.gnu.org/philosophy/selling)
 11. [BookBox repository](https://github.com/helenvholmes/bookbox)
 12. [choosealicense.com: AGPL-3.0](https://choosealicense.com/licenses/agpl-3.0/)
+13. p5.js 2.x reference (typography: variable fonts, text to contours)
+14. React Three Fiber and drei documentation
+15. Khronos: glTF 2.0 specification
 
 ## Decision log
 
@@ -451,3 +489,11 @@ Version 1 must replace one Pinterest board with one published season. Everything
 2. Snapping: items snap within 6 screen pixels to the page's left edge, center, right edge and end, and to other items' edges and centers, on both axes, with pink guide lines. After a snapped move the position is corrected to the exact unit (Moveable snaps in whole screen pixels). A "Snap on/off" button in the editor bar turns it off and is remembered in the browser; holding ⌘ or Ctrl during a move skips snapping once.
 3. Positions and sizes are stored in whole design units after a drag, resize or rotate (previously 0.1).
 4. Photo crop, as in Figma: double-click a photo (or press Crop in its settings) to enter crop mode. The whole photo shows faintly around its box; dragging moves the photo inside the box, the wheel or a slider zooms (1× to 8×), Esc or Enter ends it, Reset crop clears it. The crop is stored with the photo as `crop: { x, y, zoom }`: x and y (0 to 1) choose which part shows (0 = left/top edge, 1 = right/bottom edge) and zoom enlarges it. Because it is independent of the box's shape, desktop and mobile share it and the box is always filled. It applies to photos set to "Crop to fill the box".
+
+**Nov 9, 2026**
+
+1. New generative and 3D layer: seeded random placement and scale, background objects (one 3D scene or p5.js sketch), cursor follow (scroll on touch devices), generative type, and a 3D model item (`.glb`, React Three Fiber). Spline is not required.
+2. Proposed as phase 6. The updated requirements call it phase 5, but phase 5 is already the scroll-driven route map (built).
+3. Two non-goals are narrowed so they don't conflict with it: random layout is allowed when the owner starts it, sets the seed and can lock items; visual-effect non-goals now cover photo effects only.
+4. Item types: eight, adding the 3D model. The route map stays its own item type.
+5. The rest of the Oct 28 base in the updated requirements (GPL-3.0, GIF upload, framework and storage still open, Odyssey on the main site) is replaced by the decisions recorded above and does not change them.
