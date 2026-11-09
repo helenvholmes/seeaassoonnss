@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { api } from "@/lib/client";
+import { api, BASE_PATH } from "@/lib/client";
+import STICKER_PACKS from "@/lib/sticker-packs.json";
 import type { Place } from "@/lib/geo";
 import { imageUrl } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
@@ -14,7 +15,8 @@ interface Props {
   onTitle: () => void;
   onSubtitle: () => void;
   onPlaylist: (url: string) => void;
-  onSticker: (sticker: StickerEntry) => void;
+  /** Adds a library sticker to the page; `alt` is the description for screen readers (packs have one). */
+  onSticker: (sticker: StickerEntry, alt?: string) => void;
   onMap: (place: Place) => void;
   onRecording: (blob: Blob) => void;
   onRoute: (file: File) => void;
@@ -133,16 +135,84 @@ export function ModelPanel({ onModel, label = "Upload .glb…" }: { onModel: Pro
   );
 }
 
-function StickerPanel({ onSticker, setNotice, mediaBase }: Props) {
+type Pack = (typeof STICKER_PACKS)[number];
+
+/** The library name a pack sticker gets, so adding it twice reuses the library copy. */
+const packStickerName = (pack: Pack, item: Pack["items"][number]) => `${pack.name}: ${item.name}`;
+
+function StickerPanel(props: Props) {
+  const [source, setSource] = useState<string>("library");
   const [stickers, setStickers] = useState<StickerEntry[] | null>(null);
-  const [busy, setBusy] = useState(false);
-  const input = useRef<HTMLInputElement>(null);
+  const { setNotice } = props;
   useEffect(() => {
     api<StickerEntry[]>("/stickers").then(setStickers, (e) => setNotice((e as Error).message));
   }, [setNotice]);
-
+  const pack = STICKER_PACKS.find((p) => p.id === source) ?? null;
   return (
     <div className="tool-panel">
+      <select value={source} onChange={(e) => setSource(e.target.value)} aria-label="Stickers from">
+        <option value="library">Your library</option>
+        {STICKER_PACKS.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.name} ({p.items.length})
+          </option>
+        ))}
+      </select>
+      {pack ? <PackStickers {...props} pack={pack} stickers={stickers} setStickers={setStickers} /> : <LibraryStickers {...props} stickers={stickers} setStickers={setStickers} />}
+    </div>
+  );
+}
+
+type StickerState = { stickers: StickerEntry[] | null; setStickers: React.Dispatch<React.SetStateAction<StickerEntry[] | null>> };
+
+/** One pack's stickers. A click copies the sticker into the owner's storage (once) and adds it to the page. */
+function PackStickers({ pack, stickers, setStickers, onSticker, setNotice }: Props & StickerState & { pack: Pack }) {
+  const [adding, setAdding] = useState<string | null>(null);
+  const add = async (item: Pack["items"][number]) => {
+    const name = packStickerName(pack, item);
+    const existing = stickers?.find((s) => s.name === name);
+    if (existing) return onSticker(existing, item.alt);
+    setAdding(item.id);
+    try {
+      const res = await fetch(`${BASE_PATH}/sticker-packs/${pack.id}/${item.file}`);
+      if (!res.ok) throw new Error(`Could not load "${item.name}" (HTTP ${res.status}).`);
+      const type = item.file.endsWith(".svg") ? "image/svg+xml" : "image/webp";
+      const file = new File([await res.blob()], `${name}.${item.file.split(".").pop()}`, { type });
+      const s = await uploadSticker(file);
+      setStickers((cur) => [s, ...(cur ?? [])]);
+      onSticker(s, item.alt);
+    } catch (err) {
+      setNotice((err as Error).message);
+    } finally {
+      setAdding(null);
+    }
+  };
+  return (
+    <>
+      <span className="small muted">Click to add; it is copied into your library.</span>
+      <div className="sticker-grid">
+        {pack.items.map((item) => (
+          <div key={item.id} className="sticker-tile">
+            <button className="sticker-add" title={`Add ${item.name}`} disabled={adding !== null} onClick={() => void add(item)}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={`${BASE_PATH}/sticker-packs/${pack.id}/thumbs/${item.id}.webp`} alt={item.name} loading="lazy" />
+              {adding === item.id ? <span className="sticker-adding">adding…</span> : null}
+            </button>
+          </div>
+        ))}
+      </div>
+      <span className="small muted">
+        {pack.credit} {pack.license}.
+      </span>
+    </>
+  );
+}
+
+function LibraryStickers({ onSticker, setNotice, mediaBase, stickers, setStickers }: Props & StickerState) {
+  const [busy, setBusy] = useState(false);
+  const input = useRef<HTMLInputElement>(null);
+  return (
+    <>
       <button disabled={busy} onClick={() => input.current?.click()}>
         {busy ? "Uploading…" : "Upload sticker…"}
       </button>
@@ -197,7 +267,7 @@ function StickerPanel({ onSticker, setNotice, mediaBase }: Props) {
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 

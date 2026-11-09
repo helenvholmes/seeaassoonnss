@@ -291,14 +291,14 @@ export function Editor(props: EditorProps) {
     }
   };
 
-  const addSticker = (s: StickerEntry) => {
+  const addSticker = (s: StickerEntry, alt = "") => {
     const w = 200;
     addAndSelect({
       id: crypto.randomUUID(),
       type: "sticker",
       desktop: place(w, Math.round((w * s.height) / s.width)),
       mobile: null,
-      content: { stickerId: s.id, mediaId: s.mediaId, width: s.width, height: s.height, widths: s.widths, alt: "" },
+      content: { stickerId: s.id, mediaId: s.mediaId, width: s.width, height: s.height, widths: s.widths, alt },
     });
   };
 

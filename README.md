@@ -30,7 +30,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 | Quote | Type Markdown (bold, italic, links) | Text in EB Garamond, IBM Plex Mono or a sans-serif |
 | Title, subtitle | Quote items that show the season's title or subtitle | |
 | Playlist or song | Paste a public Spotify playlist link or a song link | A card with cover and title; the Spotify player loads on click |
-| Sticker | Upload transparent PNG, WebP or SVG, or reuse one from your sticker library | The image with its transparent background |
+| Sticker | Upload transparent PNG, WebP or SVG, reuse one from your sticker library, or pick one from the built-in packs: botanical plates (public-domain prints, cut out), Open Doodles, Open Peeps and Humaaans | The image with its transparent background |
 | Map | Search a place or type coordinates | A simple outline map with a dot and a label |
 | Voice note | Record in the browser or upload audio | A small player; nothing plays until they press play |
 | Route map | Import a GeoJSON file (points are the stops, lines the path) | A band of the page where the map stays on screen while the route draws in as they scroll; linked items move the map to their stop |
@@ -240,6 +240,7 @@ Open http://localhost:3000/seasons/edit, enter your setup token and register a p
 - **Index order:** pinned seasons first, then by each season's month (newest first), then by creation date.
 - **Media** lives in Cloudflare R2. Photos and stickers are resized to WebP on the server ([sharp](https://sharp.pixelplumbing.com)), without metadata. HEIC is converted to JPEG, video compressed to MP4 ([Mediabunny](https://mediabunny.dev)) and audio encoded to MP3 (LAME) in the browser, so the server never runs ffmpeg.
 - **Maps** are SVG drawn on the server from [Natural Earth](https://www.naturalearthdata.com) outlines and cached per place and zoom. Place search uses OpenStreetMap's [Nominatim](https://nominatim.org), from the editor only.
+- **Sticker packs** are free to use and are listed with their sources and licenses in [public/sticker-packs/CREDITS.md](public/sticker-packs/CREDITS.md). They ship with the app; a sticker is copied into your own storage when you add it.
 - **Spotify** playlist and song titles and covers come from Spotify's oEmbed endpoint, which needs no account or key.
 - **3D** uses [three.js](https://threejs.org) with [React Three Fiber](https://r3f.docs.pmnd.rs), loaded only on seasons with a model. Models are compressed on the server with [glTF Transform](https://gltf-transform.dev) and meshopt; posters are drawn in the editor's browser.
 - **Generative** effects use plain DOM and CSS (cursor follow, type effects) and [p5.js](https://p5js.org) 2 (sketch backgrounds, in a sandboxed iframe).
