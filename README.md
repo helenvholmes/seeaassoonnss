@@ -1,6 +1,6 @@
 # Seasons
 
-A single-author web app for recording one period of life as one public page: photos, video, quotes, a Spotify playlist, stickers, maps and voice notes, each placed by hand on a free-form canvas. Open source; fork your own.
+A single-author web app for recording one period of life as one public page: photos, video, quotes, a Spotify playlist, stickers, maps, voice notes and 3D models, each placed by hand on a free-form canvas, with optional generative effects. Open source; fork your own.
 
 - **One owner.** You sign in with a passkey. There are no other accounts, comments or likes.
 - **Hand-placed.** Drag, rotate, resize, layer and lock every item. A separate mobile layout is placed by hand too.
@@ -34,8 +34,24 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 | Map | Search a place or type coordinates | A simple outline map with a dot and a label |
 | Voice note | Record in the browser or upload audio | A small player; nothing plays until they press play |
 | Route map | Import a GeoJSON file (points are the stops, lines the path) | A band of the page where the map stays on screen while the route draws in as they scroll; linked items move the map to their stop |
+| 3D model | Upload a glTF binary (`.glb`), up to 50 MB | The model in its box; it can spin, turn toward the cursor and play its animation. A still poster shows while it loads and where WebGL is missing |
 
 Nothing makes sound until a visitor clicks.
+
+### Generative effects
+
+All optional, and all off for visitors who have "reduce motion" turned on.
+
+| Effect | Where | What it does |
+| --- | --- | --- |
+| Random layout | Season settings → random layout | Places every unlocked item at random, and gives photos, videos, stickers and 3D models a random size in a range you set. The same seed always gives the same layout; lock what you like and try another seed. |
+| Follow the cursor | Any item's settings | The item drifts toward the cursor. On phones it moves with scroll. |
+| Type effects | Quote settings | Letters move away from the cursor, ripple as the page scrolls, or gather as the quote reaches the middle of the screen. Screen readers read the plain text. |
+| Background | Season settings → behind all items | One 3D model, or one p5.js sketch, fills the screen behind all items. |
+
+**p5.js sketches.** Write a sketch in p5's global mode (`setup()` and `draw()`), as in the [p5.js web editor](https://editor.p5js.org), and paste it in. `mouseX` and `mouseY` follow the cursor (on phones, the scroll position), and `seasons.scroll` is 0 at the top of the page and 1 at the end. Sketches are saved in your own database, in a sketch library you can reuse across seasons; `npm run seed` adds three examples. A sketch runs in a sealed frame (`sandbox="allow-scripts"`): it cannot see the page, your sign-in or the editor. p5.js is served from your own deployment, not a CDN.
+
+**3D models** are compressed on upload: textures become WebP at most 2048 px (or 1024 px, your choice) and geometry is packed with [meshopt](https://meshoptimizer.org). The original is kept in the private bucket. A season can hold up to 6 models plus one background. Pages without a model or sketch load no 3D or p5.js code.
 
 ## Deploy your own copy
 
@@ -57,12 +73,14 @@ Seasons keeps photos, video and audio in two R2 buckets: a **private** one for o
    [
      {
        "AllowedOrigins": ["https://your-domain.example"],
-       "AllowedMethods": ["PUT"],
+       "AllowedMethods": ["GET", "PUT"],
        "AllowedHeaders": ["content-type", "cache-control"],
        "MaxAgeSeconds": 3600
      }
    ]
    ```
+
+   `PUT` lets the browser upload. `GET` lets season pages load 3D models, which are fetched by script.
 
    Your site's address is the one visitors will use: your own domain if you [put Seasons on your own site](#put-it-on-your-own-site), or otherwise the `https://<project>.vercel.app` address Vercel gives you in step 3. You can come back and change it.
 
@@ -165,6 +183,8 @@ On its own, without a main site, a Seasons deployment sends `/` to `/seasons`.
 
 On GitHub, open your fork and click **Sync fork**. Vercel deploys the update and applies any new database changes during the build.
 
+Copies set up before 3D models existed (November 2026) need one change by hand: add `"GET"` to `AllowedMethods` in the public bucket's CORS rule (see [step 2](#2-set-up-media-storage-in-cloudflare-r2)). Without it, 3D models show only their poster.
+
 ## Troubleshooting
 
 Open `https://<your site>/seasons/api/health` first. It says which part of the setup fails (address, database, tables or storage) without showing any secret values. For a deeper check, including uploads, run `npm run doctor` (see [step 4](#4-check-the-setup-recommended)).
@@ -176,6 +196,8 @@ Open `https://<your site>/seasons/api/health` first. It says which part of the s
 | The passkey prompt fails or shows an error about the domain | You are not on the domain in `SITE_URL`. Open the editor at exactly that address. |
 | Uploads fail with "Upload failed" | The bucket's CORS rule does not list your site's address. See [step 2](#2-set-up-media-storage-in-cloudflare-r2). |
 | Photos upload but do not show | `R2_PUBLIC_URL` is wrong, or public access is off on the public bucket. |
+| 3D models show only their poster | The public bucket's CORS rule lacks `GET`, or the browser has no WebGL. `npm run doctor` checks the first. |
+| A sketch background stays empty | The sketch has an error: the editor shows it under the code. Sketches must use p5.js 2 and global mode (`function setup()`, `function draw()`). |
 | "This browser cannot compress video" | Video is compressed in the browser. Use a current Chrome, Edge, Safari or Firefox on a computer. |
 | A playlist link is refused | The playlist must be public. |
 | "Application error: a server-side exception has occurred" | A setting is missing or wrong. `/seasons/api/health` names it, and Vercel's runtime logs show a line starting with `[seasons]`. Fix the setting, then redeploy. |
@@ -209,7 +231,7 @@ Open http://localhost:3000/seasons/edit, enter your setup token and register a p
 | `npm run dev` | Development server |
 | `npm run build` | Production build (needs no environment variables) |
 | `npm run db:migrate` | Applies database migrations in `db/migrations/` |
-| `npm run seed` | Creates a demo season with placeholder items |
+| `npm run seed` | Creates a demo season with placeholder items, a 3D pear, and three example p5.js sketches in the sketch library |
 | `npm run doctor` | Checks the setup and says what to fix |
 | `npm test` | Unit tests |
 | `npm run lint` | Type check |
@@ -223,6 +245,8 @@ Open http://localhost:3000/seasons/edit, enter your setup token and register a p
 - **Media** lives in Cloudflare R2. Photos and stickers are resized to WebP on the server ([sharp](https://sharp.pixelplumbing.com)), without metadata. HEIC is converted to JPEG, video compressed to MP4 ([Mediabunny](https://mediabunny.dev)) and audio encoded to MP3 (LAME) in the browser, so the server never runs ffmpeg.
 - **Maps** are SVG drawn on the server from [Natural Earth](https://www.naturalearthdata.com) outlines and cached per place and zoom. Place search uses OpenStreetMap's [Nominatim](https://nominatim.org), from the editor only.
 - **Spotify** playlist titles and covers come from Spotify's oEmbed endpoint, which needs no account or key.
+- **3D** uses [three.js](https://threejs.org) with [React Three Fiber](https://r3f.docs.pmnd.rs), loaded only on seasons with a model. Models are compressed on the server with [glTF Transform](https://gltf-transform.dev) and meshopt; posters are drawn in the editor's browser.
+- **Generative** effects use plain DOM and CSS (cursor follow, type effects) and [p5.js](https://p5js.org) 2 (sketch backgrounds, in a sandboxed iframe).
 - **Sign-in** uses passkeys (WebAuthn, via [SimpleWebAuthn](https://simplewebauthn.dev)) and an HTTP-only session cookie.
 
 ## License

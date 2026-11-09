@@ -14,7 +14,7 @@ export interface StickerEntry extends UploadedImage {
   name: string;
 }
 
-type Kind = "image" | "sticker" | "video" | "audio";
+type Kind = "image" | "sticker" | "video" | "audio" | "model";
 
 const DIRECT_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 const STICKER_TYPES = new Set(["image/png", "image/webp", "image/svg+xml"]);
@@ -107,4 +107,42 @@ export async function uploadAudio(blob: Blob): Promise<UploadedAudio> {
   const mediaId = await put("audio", a.mp3, "audio/mpeg");
   await api("/media/process", { body: { mediaId, kind: "audio", duration: a.duration } });
   return { mediaId, duration: a.duration, waveform: a.waveform };
+}
+
+export function isModelFile(file: File) {
+  return /\.glb$/i.test(file.name) || file.type === "model/gltf-binary";
+}
+
+export interface ModelStats {
+  bytes: number;
+  vertices: number;
+  textures: number;
+  largestTexture: number;
+  animations: number;
+}
+
+export interface UploadedModel {
+  mediaId: string;
+  bytes: number;
+  before: ModelStats;
+  after: ModelStats;
+  hasAnimation: boolean;
+  warnings: string[];
+}
+
+/** Uploads a .glb; the server compresses it (textures to WebP at `textureSize` px, geometry with meshopt). */
+export async function uploadModel(file: File, textureSize: 1024 | 2048): Promise<UploadedModel> {
+  if (!isModelFile(file)) throw new Error(`${file.name}: 3D models must be glTF binary files (.glb).`);
+  const mediaId = await put("model", file, "model/gltf-binary");
+  return api<UploadedModel>("/media/process", { body: { mediaId, kind: "model", textureSize } });
+}
+
+export function formatBytes(n: number): string {
+  return n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`;
+}
+
+/** A one-line report of what compression did, for the editor. */
+export function modelReport(m: UploadedModel): string {
+  const tex = m.after.textures ? `, textures up to ${m.after.largestTexture} px (were ${m.before.largestTexture} px)` : "";
+  return `${formatBytes(m.before.bytes)} → ${formatBytes(m.after.bytes)}${tex}, ${m.after.vertices.toLocaleString("en")} vertices`;
 }

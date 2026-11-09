@@ -1,6 +1,7 @@
 // Pure operations on a season document. Each returns a new document.
 // Content is shared by both layouts; placement is separate per layout.
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type SeasonDoc } from "../../lib/schema.ts";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
+import { bottomOf } from "../../lib/layout.ts";
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
 
@@ -165,4 +166,75 @@ export function normalizeRotation(deg: number): number {
 /** Rounds geometry to whole design units after a gesture (1 unit is 1 px on a 1440 px desktop screen). */
 export function roundPlacement(p: Placement): Placement {
   return { ...p, x: Math.round(p.x), y: Math.round(p.y), w: Math.max(1, Math.round(p.w)), h: Math.max(1, Math.round(p.h)), rotation: normalizeRotation(p.rotation) };
+}
+
+// ---------- seeded random placement ----------
+
+/** A small, fast seeded random generator (mulberry32). Returns numbers in [0, 1). */
+export function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** A 32-bit hash of a text (FNV-1a), so each item gets its own random stream. */
+function hash(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193);
+  return h >>> 0;
+}
+
+/** Item types whose size the random scale changes. Others keep their size and only move. */
+const SCALED = new Set<Item["type"]>(["photo", "video", "sticker", "model_3d"]);
+/** The width a scale of 1 means: the width new photos get. */
+export const SCATTER_BASE_WIDTH: Record<Layout, number> = { desktop: 360, mobile: 180 };
+
+/**
+ * Places every unlocked item of one layout at a random position, and gives
+ * photos, videos, stickers and 3D models a random width between
+ * minScale and maxScale times the base width (keeping their aspect ratio).
+ * Locked items, hidden items and route maps stay where they are. Each item's
+ * random numbers come from the seed and the item's id, so the same seed gives
+ * the same layout, and adding an item does not move the others. Items spread
+ * over the page's minimum length, or down to the lowest item that stays put if
+ * that is lower; never over where the scattered items happen to be, so
+ * scattering twice with one seed gives the same result.
+ */
+export function scatterArea(doc: SeasonDoc, layout: Layout): { width: number; height: number } {
+  let height = layout === "desktop" ? doc.desktopHeight : doc.mobileHeight;
+  for (const item of doc.items) {
+    const p = placementOf(item, layout);
+    if (p && (p.locked || item.type === "route")) height = Math.max(height, bottomOf(p));
+  }
+  return { width: CANVAS_WIDTH[layout], height };
+}
+
+export function scatterLayout(doc: SeasonDoc, layout: Layout, scatter: Scatter): SeasonDoc {
+  const { width, height } = scatterArea(doc, layout);
+  const lo = Math.min(scatter.minScale, scatter.maxScale);
+  const hi = Math.max(scatter.minScale, scatter.maxScale);
+  return {
+    ...doc,
+    scatter,
+    items: doc.items.map((item) => {
+      const p = placementOf(item, layout);
+      if (!p || p.locked || item.type === "route") return item;
+      const rand = seededRandom(hash(`${scatter.seed}:${layout}:${item.id}`));
+      let { w, h } = p;
+      if (SCALED.has(item.type)) {
+        w = SCATTER_BASE_WIDTH[layout] * (lo + (hi - lo) * rand());
+        h = w * (p.h / p.w);
+      }
+      // Keep the item on the page when it is narrower or shorter than the page.
+      const x = (width - Math.min(w, width)) * rand();
+      const y = (height - Math.min(h, height)) * rand();
+      const next = roundPlacement({ ...p, x, y, w, h });
+      return layout === "desktop" ? { ...item, desktop: next } : { ...item, mobile: next };
+    }),
+  };
 }

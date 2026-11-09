@@ -137,6 +137,13 @@ async function checkStorage(site: URL | null) {
       const res = await fetch(url).catch(() => null);
       if (res?.ok && (await res.text()) === body) report("ok", `public URL serves files (${env("R2_PUBLIC_URL")})`);
       else report("fail", `public URL does not serve the test file (${res ? `HTTP ${res.status}` : "no response"})`, "Turn on public access for the public bucket (r2.dev or a custom domain) and set R2_PUBLIC_URL to it.");
+      if (site && res?.ok) {
+        // 3D models are fetched by script, so the page's origin must be allowed to read them.
+        const cors = await fetch(url, { headers: { Origin: site.origin } }).catch(() => null);
+        const allowed = cors?.headers.get("access-control-allow-origin");
+        if (allowed === "*" || allowed === site.origin) report("ok", `public bucket lets ${site.origin} load files by script (3D models)`);
+        else report("warn", `public bucket does not let ${site.origin} load files by script`, 'Add "GET" to AllowedMethods in the public bucket\'s CORS rule (README step 2). Without it, 3D models show only their poster.');
+      }
     }
     if (site) {
       const signed = await getSignedUrl(s3, new PutObjectCommand({ Bucket: bucket, Key: key, ContentType: "text/plain" }), { expiresIn: 60 });

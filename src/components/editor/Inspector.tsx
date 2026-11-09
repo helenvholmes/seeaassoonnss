@@ -3,7 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, QUOTE_FONTS, slugProblem, type Crop, type PhotoItem, type RouteItem, type Item, type Layout, type Placement, type SeasonDoc } from "@/lib/schema";
+import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, slugProblem, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
+import { ModelPanel } from "./Tools";
+import { formatBytes } from "./upload";
 import { quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
@@ -32,6 +34,13 @@ interface Props {
   select: (id: string | null) => void;
   setMobileVisible: (id: string, visible: boolean) => void;
   resetMobile: (kind: "scaled" | "column") => void;
+  addBackgroundModel: (file: File, textureSize: 1024 | 2048) => void;
+  /** Changes a model on an item (its id) or on the background ("background"). A string `undoable` merges steps with the same key. */
+  setModelContent: (target: string, patch: Partial<ModelContent>, undoable: boolean | string) => void;
+  redrawPoster: (target: string, content: ModelContent) => void;
+  scatter: (s: Scatter) => void;
+  sketchError: string | null;
+  clearSketchError: () => void;
 }
 
 function itemLabel(item: Item): string {
@@ -53,6 +62,8 @@ function itemLabel(item: Item): string {
       return item.content.binding ?? `quote: ${cut(item.content.markdown)}`;
     case "route":
       return `route map: ${item.content.stops.length} stops`;
+    case "model_3d":
+      return item.content.alt ? `3D model: ${cut(item.content.alt)}` : "3D model";
   }
 }
 
@@ -250,6 +261,9 @@ function SeasonSettings(props: Props) {
           <code className="small">{doc.background.value}</code>
         </div>
       </Field>
+      <BackgroundLayerSettings {...props} />
+      <hr />
+      <ScatterSettings {...props} />
       <hr />
       <button
         className="quiet error"
@@ -262,6 +276,249 @@ function SeasonSettings(props: Props) {
       >
         Delete season
       </button>
+    </div>
+  );
+}
+
+function BackgroundLayerSettings(props: Props) {
+  const { doc, change } = props;
+  const layer = doc.backgroundLayer;
+  // "A 3D model" chosen, waiting for its upload.
+  const [pending, setPending] = useState(false);
+  useEffect(() => {
+    if (layer?.kind === "model") setPending(false);
+  }, [layer?.kind]);
+  const shown = pending ? "model" : (layer?.kind ?? "none");
+  return (
+    <div className="stack">
+      <Field label="Behind all items">
+        <select
+          value={shown}
+          onChange={(e) => {
+            const next = e.target.value;
+            props.clearSketchError();
+            setPending(next === "model" && layer?.kind !== "model");
+            if (next === "none") change((d) => ({ ...d, backgroundLayer: null }));
+            if (next === "sketch" && layer?.kind !== "sketch") change((d) => ({ ...d, backgroundLayer: { kind: "sketch", sketchId: null, name: "", code: STARTER_SKETCH } }));
+          }}
+        >
+          <option value="none">Nothing (color only)</option>
+          <option value="model">A 3D model</option>
+          <option value="sketch">A p5.js sketch</option>
+        </select>
+      </Field>
+      {shown === "model" && layer?.kind === "model" ? (
+        <>
+          <ModelFields target="background" content={layer.model} {...props} />
+          <ModelPanel onModel={props.addBackgroundModel} label="Replace with another .glb…" />
+        </>
+      ) : shown === "model" ? (
+        <ModelPanel onModel={props.addBackgroundModel} label="Upload a .glb for the background…" />
+      ) : null}
+      {shown === "sketch" ? <SketchSettings {...props} /> : null}
+    </div>
+  );
+}
+
+const STARTER_SKETCH = `// p5.js, global mode: paste from editor.p5js.org or write here.
+// mouseX and mouseY follow the cursor (on phones they follow the scroll).
+// seasons.scroll is 0 at the top of the page and 1 at the end.
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+}
+
+function draw() {
+  clear();
+  fill(159, 191, 138, 60);
+  circle(mouseX, mouseY, 240 + 120 * sin(frameCount * 0.02));
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+`;
+
+interface LibrarySketch {
+  id: string;
+  name: string;
+  code: string;
+}
+
+function SketchSettings({ doc, change, sketchError, clearSketchError }: Props) {
+  const layer = doc.backgroundLayer?.kind === "sketch" ? doc.backgroundLayer : null;
+  const [library, setLibrary] = useState<LibrarySketch[] | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  useEffect(() => {
+    api<LibrarySketch[]>("/sketches").then(setLibrary, (e) => setMessage((e as Error).message));
+  }, []);
+  if (!layer) return null;
+  const set = (patch: Partial<typeof layer>, key: string) => {
+    clearSketchError();
+    change((d) => (d.backgroundLayer?.kind === "sketch" ? { ...d, backgroundLayer: { ...d.backgroundLayer, ...patch } } : d), `sketch:${key}`);
+  };
+  const inLibrary = library?.find((s) => s.id === layer.sketchId);
+  const changedFromLibrary = !!inLibrary && (inLibrary.code !== layer.code || inLibrary.name !== layer.name);
+
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <Field label="From your sketch library">
+        <select
+          value={layer.sketchId ?? ""}
+          onChange={(e) => {
+            const s = library?.find((x) => x.id === e.target.value);
+            if (s) set({ sketchId: s.id, name: s.name, code: s.code }, "pick");
+            else set({ sketchId: null }, "pick");
+          }}
+        >
+          <option value="">(written here)</option>
+          {library?.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name || "untitled sketch"}
+            </option>
+          ))}
+        </select>
+      </Field>
+      <Field label="Name">
+        <input type="text" value={layer.name} placeholder="untitled sketch" onChange={(e) => set({ name: e.target.value }, "name")} />
+      </Field>
+      <Field label={`Code (${layer.code.length.toLocaleString("en")} / ${MAX_SKETCH_CODE.toLocaleString("en")} characters)`}>
+        <textarea className="sketch-code" spellCheck={false} value={layer.code} onChange={(e) => set({ code: e.target.value.slice(0, MAX_SKETCH_CODE) }, "code")} />
+      </Field>
+      {sketchError ? <span className="small error">Sketch error: {sketchError}</span> : null}
+      <div className="row">
+        <button
+          onClick={async () => {
+            try {
+              const saved = layer.sketchId && inLibrary
+                ? await api<LibrarySketch>(`/sketches/${layer.sketchId}`, { method: "PUT", body: { name: layer.name, code: layer.code } })
+                : await api<LibrarySketch>("/sketches", { body: { name: layer.name, code: layer.code } });
+              setLibrary((cur) => [saved, ...(cur ?? []).filter((s) => s.id !== saved.id)]);
+              set({ sketchId: saved.id }, "saved");
+              setMessage(inLibrary ? "Library copy updated. Other seasons keep their own copy until you pick it again." : "Saved to your sketch library.");
+            } catch (e) {
+              setMessage((e as Error).message);
+            }
+          }}
+        >
+          {inLibrary ? (changedFromLibrary ? "Update library copy" : "In library") : "Save to library"}
+        </button>
+        {inLibrary ? (
+          <button
+            className="quiet"
+            onClick={async () => {
+              if (!confirm(`Remove "${inLibrary.name || "untitled sketch"}" from the library? Seasons that use it keep their copy.`)) return;
+              try {
+                await api(`/sketches/${inLibrary.id}`, { method: "DELETE" });
+                setLibrary((cur) => cur?.filter((s) => s.id !== inLibrary.id) ?? null);
+                set({ sketchId: null }, "removed");
+              } catch (e) {
+                setMessage((e as Error).message);
+              }
+            }}
+          >
+            Remove from library
+          </button>
+        ) : null}
+      </div>
+      <span className="small muted">
+        {message ??
+          "The sketch runs in a sealed frame: it cannot see the page, your sign-in or the editor. It fills the screen behind all items. With reduced motion on, visitors see its first frame only. Changes show on the public page after Publish."}
+      </span>
+    </div>
+  );
+}
+
+function ScatterSettings({ doc, scatter, layout }: Props) {
+  const s = doc.scatter ?? DEFAULT_SCATTER;
+  const [seed, setSeed] = useState(s.seed);
+  const [min, setMin] = useState(s.minScale);
+  const [max, setMax] = useState(s.maxScale);
+  useEffect(() => {
+    setSeed(s.seed);
+    setMin(s.minScale);
+    setMax(s.maxScale);
+  }, [s.seed, s.minScale, s.maxScale]);
+  const run = (nextSeed: number) => {
+    setSeed(nextSeed);
+    scatter({ seed: nextSeed, minScale: Math.min(min, max), maxScale: Math.max(min, max) });
+  };
+  return (
+    <div className="stack">
+      <p className="tools-heading">random layout</p>
+      <p className="small muted">
+        Places every unlocked item on the {layout} page at random. Photos, videos, stickers and 3D models also get a random size. Lock the items you want to keep, then try another seed. The same seed always gives the same layout. Undo goes back.
+      </p>
+      <div className="grid2">
+        <Field label="Seed">
+          <NumberInput value={seed} min={0} step={1} digits={0} onChange={(n) => setSeed(Math.min(2 ** 31 - 1, Math.round(n)))} />
+        </Field>
+        <span />
+        <Field label="Smallest size ×">
+          <NumberInput value={min} min={0.1} step={0.1} digits={2} onChange={(n) => setMin(Math.min(5, n))} />
+        </Field>
+        <Field label="Largest size ×">
+          <NumberInput value={max} min={0.1} step={0.1} digits={2} onChange={(n) => setMax(Math.min(5, n))} />
+        </Field>
+      </div>
+      <div className="row">
+        <button onClick={() => run(seed)}>Scatter with this seed</button>
+        <button onClick={() => run(Math.floor(Math.random() * 1_000_000))}>New seed</button>
+      </div>
+      <span className="small muted">
+        Size 1× is the width a new photo gets ({layout === "desktop" ? 360 : 180} units). Items spread over the minimum page length ({layout === "desktop" ? doc.desktopHeight : doc.mobileHeight}); raise it above for a longer spread.
+      </span>
+    </div>
+  );
+}
+
+/** Settings for a 3D model, on an item or on the background. */
+function ModelFields({ target, content, setModelContent, redrawPoster }: Props & { target: string; content: ModelContent }) {
+  const set = (patch: Partial<ModelContent>, field: string) => setModelContent(target, patch, `model:${target}:${field}`);
+  const axis = (i: 0 | 1 | 2, deg: number) => {
+    const r = [...content.rotation] as [number, number, number];
+    r[i] = normalizeRotation(deg);
+    set({ rotation: r }, `rot${i}`);
+  };
+  return (
+    <div className="stack" style={{ gap: 6 }}>
+      <Field label="Description (for screen readers)">
+        <input type="text" value={content.alt} placeholder="Describe the model" onChange={(e) => set({ alt: e.target.value }, "alt")} />
+      </Field>
+      <Field label={`Size in its box: ${content.scale.toFixed(2)}×`}>
+        <input type="range" min={0.2} max={3} step={0.01} value={content.scale} onChange={(e) => set({ scale: Number(e.target.value) }, "scale")} />
+      </Field>
+      <div className="grid2">
+        <Field label="Tilt (x) °">
+          <NumberInput value={content.rotation[0]} step={5} onChange={(n) => axis(0, n)} />
+        </Field>
+        <Field label="Turn (y) °">
+          <NumberInput value={content.rotation[1]} step={5} onChange={(n) => axis(1, n)} />
+        </Field>
+        <Field label="Roll (z) °">
+          <NumberInput value={content.rotation[2]} step={5} onChange={(n) => axis(2, n)} />
+        </Field>
+        <Field label={`Spin: ${content.spin}°/s`}>
+          <input type="range" min={-90} max={90} step={1} value={content.spin} onChange={(e) => set({ spin: Number(e.target.value) }, "spin")} />
+        </Field>
+      </div>
+      <label className="row small">
+        <input type="checkbox" checked={content.follow} onChange={(e) => set({ follow: e.target.checked }, "follow")} />
+        Turn toward the cursor (with scroll on phones)
+      </label>
+      {content.hasAnimation ? (
+        <label className="row small">
+          <input type="checkbox" checked={content.animate} onChange={(e) => set({ animate: e.target.checked }, "animate")} />
+          Play its animation
+        </label>
+      ) : null}
+      <div className="row">
+        <button onClick={() => redrawPoster(target, content)} title="The poster shows while the model loads, and instead of it where WebGL is missing">
+          {content.posterMediaId ? "Update poster" : "Make poster"}
+        </button>
+        <span className="small muted size-report">{formatBytes(content.bytes)}</span>
+      </div>
+      <span className="small muted">Spin, follow and animation run on the public page and in Preview, not in the editor. With reduced motion on, the model stays still.</span>
     </div>
   );
 }
@@ -399,7 +656,7 @@ function ItemSettings(props: Props & { item: Item }) {
 
   return (
     <div className="stack">
-      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type.replace("_", " ")}</p>
+      <p className="tools-heading">{item.type === "quote" && item.content.binding ? item.content.binding : item.type === "model_3d" ? "3D model" : item.type.replace("_", " ")}</p>
 
       {item.type === "photo" ? (
         <>
@@ -589,6 +846,37 @@ function ItemSettings(props: Props & { item: Item }) {
       ) : null}
 
       {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} /> : null}
+
+      {item.type === "model_3d" ? <ModelFields {...props} target={item.id} content={item.content} /> : null}
+
+      {item.type === "quote" ? (
+        <Field label="Type effect (public page and Preview)">
+          <select value={item.content.effect ?? "none"} onChange={(e) => content({ effect: e.target.value as QuoteEffect }, "effect")}>
+            {QUOTE_EFFECTS.map((fx) => (
+              <option key={fx} value={fx}>
+                {{ none: "None", repel: "Letters move away from the cursor", wave: "Letters ripple as the page scrolls", gather: "Letters gather mid-screen" }[fx]}
+              </option>
+            ))}
+          </select>
+        </Field>
+      ) : null}
+
+      {item.type !== "route" ? (
+        <Field label={`Follow the cursor: ${item.follow ? `${Math.round(item.follow * 100)}%` : "off"}`}>
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={item.follow ?? 0}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              updateItem((i) => ({ ...i, follow: v > 0 ? v : undefined }), `follow:${item.id}`);
+            }}
+          />
+          <span className="small muted">Drifts toward the cursor, up to 40 units at 100%. On phones it moves with scroll.</span>
+        </Field>
+      ) : null}
 
       {item.type !== "route" && doc.items.some((i) => i.type === "route") ? (
         <Field label="Route stop (moves the map there when this item is mid-screen)">

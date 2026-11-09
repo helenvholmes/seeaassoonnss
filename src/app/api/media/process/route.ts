@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { handle, readJson } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
-import { finishTimed, isMediaKind, MediaError, processImage, processSticker } from "@/lib/media";
+import { finishTimed, isMediaKind, MediaError, processImage, processModel, processSticker } from "@/lib/media";
 import { isUuid } from "@/lib/seasons";
 
 export const maxDuration = 60;
@@ -18,6 +18,8 @@ export const POST = handle(async (request: Request) => {
       return NextResponse.json(await processImage(mediaId));
     case "sticker":
       return NextResponse.json(await processSticker(mediaId, typeof body.name === "string" ? body.name : ""));
+    case "model":
+      return NextResponse.json(await processModel(mediaId, body.textureSize === 1024 ? 1024 : 2048));
     case "video":
     case "audio":
       return NextResponse.json(await finishTimed(mediaId, kind, Number(body.duration)));

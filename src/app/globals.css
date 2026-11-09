@@ -273,3 +273,18 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .photo-ghost { opacity: 0.35; pointer-events: none; }
 .editor .item.is-cropping { cursor: grab; outline: 1px solid #e5336d; }
 .editor .item.is-cropping:active { cursor: grabbing; }
+
+/* ---------- Phase 6: 3D models, backgrounds, generative type ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.model-item { position: relative; width: 100%; height: 100%; }
+.model-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.model-canvas { display: block; }
+/* Behind all items; the inner screen stays on screen while the page scrolls past. */
+.bg-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.bg-layer-screen { position: sticky; top: 0; width: 100%; height: min(100svh, 100%); }
+.editor .bg-layer-screen { height: min(var(--stage-height, 100svh), 100%); }
+.sketch-frame { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.fx-word { display: inline-block; white-space: nowrap; }
+.fx-letter { display: inline-block; will-change: transform; }
+.sketch-code { width: 100%; min-height: 220px; font: 12px/1.45 "IBM Plex Mono", ui-monospace, monospace; tab-size: 2; }
+.size-report { font: 11px/1.5 "IBM Plex Mono", ui-monospace, monospace; }
