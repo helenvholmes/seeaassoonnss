@@ -47,7 +47,7 @@ export default async function SeasonPage({ params }: Props) {
       <SeasonCanvas doc={doc} mediaBase={mediaBase} />
       <nav className="season-footer">
         <Link href="/">// all seasons</Link>
-        <a href={sourceUrl}>Seasons is open source</a>
+        <a href={sourceUrl}>seeaassoonnss is open source</a>
       </nav>
     </main>
   );

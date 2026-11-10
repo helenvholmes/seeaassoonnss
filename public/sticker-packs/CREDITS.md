@@ -4,7 +4,7 @@ The sticker packs in the editor's Stickers panel. Each sticker a season uses is 
 
 ## Botanical plates
 
-Public-domain (CC0) prints from the Cleveland Museum of Art and the Art Institute of Chicago: Pierre-Joseph Redouté and others, 1700s–1800s. Cut out of their paper for Seasons. License: CC0 / public domain.
+Public-domain (CC0) prints from the Cleveland Museum of Art and the Art Institute of Chicago: Pierre-Joseph Redouté and others, 1700s–1800s. Cut out of their paper for seeaassoonnss. License: CC0 / public domain.
 
 - **Pasture Rose (Rosa Carolina Corymbosa)**: Pasture Rose (Rosa Carolina Corymbosa), Pierre-Joseph Redouté (French, 1759–1840) (1817–24). Cleveland Museum of Art, https://www.clevelandart.org/art/135614
 - **Lillium Pomponium (Turban Lily), plate 7 from Les Liliacées**: Lillium Pomponium (Turban Lily), plate 7 from Les Liliacées, De Gouy (French, 1670–1830) (1802–16). Cleveland Museum of Art, https://www.clevelandart.org/art/380082

@@ -14,7 +14,10 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     // A copy deployed on its own (without a main site in front) has nothing at "/".
-    return [{ source: "/", destination: "/seasons", basePath: false, permanent: false }];
+    // It sends visitors to the index of seasons, or with LANDING_PAGE=on to the
+    // landing page. (Next.js cannot rewrite outside the base path, so it redirects.)
+    const home = process.env.LANDING_PAGE === "on" ? "/seasons/about" : "/seasons";
+    return [{ source: "/", destination: home, basePath: false, permanent: false }];
   },
 };
 

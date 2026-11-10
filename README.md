@@ -1,10 +1,10 @@
-# Seasons
+# seeaassoonnss
 
 A single-author web app for recording one period of life as one public page: photos, video, quotes, Spotify playlists and songs, stickers, maps, voice notes and 3D models, each placed by hand on a free-form canvas, with optional generative effects. Open source; fork your own.
 
 - **One owner.** You sign in with a passkey. There are no other accounts, comments or likes.
 - **Hand-placed.** Drag, rotate, resize, layer and lock every item. A separate mobile layout is placed by hand too.
-- **Public pages** at `/seasons/[slug]`, plus an index at `/seasons`. Drafts stay private until you publish.
+- **Public pages** at `/seasons/[slug]`, plus an index at `/seasons` and a landing page for the project at `/seasons/about`. Drafts stay private until you publish.
 - **Cheap to run.** Vercel (Hobby), a free Postgres database and Cloudflare R2's free tier are enough for one person.
 
 The full specification and decision log are in [docs/requirements.md](docs/requirements.md).
@@ -63,9 +63,9 @@ On GitHub, click **Fork** on this repository.
 
 ### 2. Set up media storage in Cloudflare R2
 
-Seasons keeps photos, video and audio in two R2 buckets: a **private** one for original uploads, and a **public** one for the files your pages load.
+seeaassoonnss keeps photos, video and audio in two R2 buckets: a **private** one for original uploads, and a **public** one for the files your pages load.
 
-1. In the Cloudflare dashboard, open **R2 Object Storage** and create two buckets, for example `seasons-originals` (private) and `seasons-media` (public).
+1. In the Cloudflare dashboard, open **R2 Object Storage** and create two buckets, for example `seeaassoonnss-originals` (private) and `seeaassoonnss-media` (public).
 2. Open the public bucket → **Settings** → **Public access**. Either connect a custom domain (for example `media.example.com`) or allow the `r2.dev` URL. Copy that URL: it is `R2_PUBLIC_URL`.
 3. On **each** bucket, open **Settings** → **CORS policy** and add this rule, with your site's address in place of `https://your-domain.example`. The browser uploads straight to R2, so both buckets need it.
 
@@ -82,14 +82,14 @@ Seasons keeps photos, video and audio in two R2 buckets: a **private** one for o
 
    `PUT` lets the browser upload. `GET` lets season pages load 3D models, which are fetched by script.
 
-   Your site's address is the one visitors will use: your own domain if you [put Seasons on your own site](#put-it-on-your-own-site), or otherwise the `https://<project>.vercel.app` address Vercel gives you in step 3. You can come back and change it.
+   Your site's address is the one visitors will use: your own domain if you [put seeaassoonnss on your own site](#put-it-on-your-own-site), or otherwise the `https://<project>.vercel.app` address Vercel gives you in step 3. You can come back and change it.
 
 4. Go to **R2 Object Storage** → **Manage API tokens** → **Create API token**. Give it **Object Read & Write** for the two buckets. Copy the **Access Key ID** and **Secret Access Key**. Your **Account ID** is on the R2 overview page.
 
 ### 3. Create the Vercel project
 
 1. In Vercel, click **Add New → Project** and import your fork. Vercel detects Next.js.
-2. Vercel may suggest an "Amazon S3" integration. Skip it: Seasons talks to R2 directly.
+2. Vercel may suggest an "Amazon S3" integration. Skip it: seeaassoonnss talks to R2 directly.
 3. Open **Environment Variables** and add the variables from [the table below](#environment-variables). Make the setup token with `openssl rand -base64 32`, or any password generator.
 4. Click **Deploy**. The first build prints a warning that the database is missing. That is expected.
 5. Add a database: in the project, open **Storage** → **Create Database** → **Neon** (Postgres) and connect it to the project. This sets `DATABASE_URL` for you. Any Postgres works; set `DATABASE_URL` yourself for another provider.
@@ -140,13 +140,14 @@ In the editor, click **New season**. Or, to see an example first, click **Create
 | `DATABASE_URL` | yes | **yes** | Postgres connection string. It contains the database password. Set automatically by the Neon integration. |
 | `SITE_URL` | yes | no | The address visitors use, without `/seasons`. For example `https://example.com` or `https://my-seasons.vercel.app`. Passkeys are bound to this domain. |
 | `SETUP_TOKEN` | yes, for the first sign-in | **yes** | A long random string. Anyone who has it can register a passkey and take over the editor until it is used. Each value works once. |
-| `SOURCE_URL` | recommended | no | Your fork's GitHub URL, for the "Seasons is open source" link. |
+| `LANDING_PAGE` | no | no | `on` sends `/` to the landing page (what the app is and how to run your own) instead of to `/seasons`. It is read at build time, so redeploy after changing it. The landing page is always at `/seasons/about`. |
+| `SOURCE_URL` | recommended | no | Your fork's GitHub URL, for the "seeaassoonnss is open source" link. |
 | `STORAGE_DRIVER` | yes | no | `r2` for a deployment. `local` stores files on disk and only works in development. |
 | `R2_ACCOUNT_ID` | with r2 | no | Cloudflare account ID. It identifies your account but grants no access on its own. |
 | `R2_ACCESS_KEY_ID` | with r2 | **yes** | From the R2 API token. Keep it with the secret key. |
 | `R2_SECRET_ACCESS_KEY` | with r2 | **yes** | From the R2 API token. With the access key ID, it can read, write and delete everything in both buckets. |
-| `R2_PRIVATE_BUCKET` | with r2 | no | Bucket for original uploads, for example `seasons-originals`. |
-| `R2_PUBLIC_BUCKET` | with r2 | no | Bucket for processed media, for example `seasons-media`. |
+| `R2_PRIVATE_BUCKET` | with r2 | no | Bucket for original uploads, for example `seeaassoonnss-originals`. |
+| `R2_PUBLIC_BUCKET` | with r2 | no | Bucket for processed media, for example `seeaassoonnss-media`. |
 | `R2_PUBLIC_URL` | with r2 | no | Public URL of the public bucket, no trailing slash. |
 
 In Vercel, turn on **Sensitive** for the four secrets. Vercel then never shows their values again, and `vercel env pull` leaves them empty. Never commit them: `.env.local` is ignored by git for this reason. If a secret leaks, replace it: rotate the database password in Neon, delete the R2 API token and make a new one, or set a new `SETUP_TOKEN`.
@@ -155,7 +156,7 @@ In Vercel, turn on **Sensitive** for the four secrets. Vercel then never shows t
 
 ## Put it on your own site
 
-Seasons serves everything under `/seasons`, so it can sit inside another website on the same domain. On your main site, forward `/seasons` to the Seasons deployment. In a Next.js main site:
+seeaassoonnss serves everything under `/seasons`, so it can sit inside another website on the same domain. On your main site, forward `/seasons` to the seeaassoonnss deployment. In a Next.js main site:
 
 ```ts
 // next.config.ts of the main site
@@ -169,11 +170,11 @@ async rewrites() {
 
 Any other site on Vercel can add the same two rewrites to its `vercel.json`. Then:
 
-1. Set `SITE_URL` to the main domain and redeploy Seasons.
+1. Set `SITE_URL` to the main domain and redeploy seeaassoonnss.
 2. Update the CORS rule on both buckets to the main domain.
 3. Sign in at `https://<main domain>/seasons/edit`, not at the `*.vercel.app` address. Passkeys only work on the domain in `SITE_URL`. If you already registered a passkey on the old address, set a new `SETUP_TOKEN` and register again.
 
-On its own, without a main site, a Seasons deployment sends `/` to `/seasons`.
+On its own, without a main site, a seeaassoonnss deployment sends `/` to `/seasons`. Set `LANDING_PAGE=on` to send it to the landing page at `/seasons/about` instead, as [seeaassoonnss.app](https://seeaassoonnss.app) does. Its "see a season" button opens `/seasons/demo`, so publish the demo season on that deployment.
 
 ## Updating your copy
 
@@ -248,6 +249,6 @@ Open http://localhost:3000/seasons/edit, enter your setup token and register a p
 
 ## License
 
-[GNU AGPL-3.0](LICENSE) (`AGPL-3.0-only`). You may use, change, share and sell Seasons. If you run a changed version for other people, you must offer them its source code. The "Seasons is open source" link on every season page does this; point `SOURCE_URL` at your fork.
+[GNU AGPL-3.0](LICENSE) (`AGPL-3.0-only`). You may use, change, share and sell seeaassoonnss. If you run a changed version for other people, you must offer them its source code. The "seeaassoonnss is open source" link on every season page does this; point `SOURCE_URL` at your fork.
 
 Season content (photos, quotes, audio) lives in your database and storage, not in the repository, and the license does not cover it.

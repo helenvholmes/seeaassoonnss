@@ -20,7 +20,7 @@ const cachedSeasons = unstable_cache(listPublishedSeasons, ["published-seasons"]
 export async function generateMetadata(): Promise<Metadata> {
   try {
     const url = absoluteUrl(BASE_PATH);
-    return { title: "seasons", alternates: { canonical: url }, openGraph: { title: "seasons", url, siteName: "seasons", type: "website" } };
+    return { title: "seasons", alternates: { canonical: url }, openGraph: { title: "seasons", url, siteName: "seeaassoonnss", type: "website" } };
   } catch (e) {
     logPageError("index metadata", e);
     throw e;
@@ -70,7 +70,7 @@ export default async function Index() {
         })}
       </ul>
       <a className="source-link" href={config.sourceUrl}>
-        Seasons is open source
+        seeaassoonnss is open source
       </a>
     </main>
   );

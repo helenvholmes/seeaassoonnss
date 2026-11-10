@@ -1,4 +1,4 @@
-// npm run doctor: checks a Seasons setup and says what to fix.
+// npm run doctor: checks a seeaassoonnss setup and says what to fix.
 // Run it with the same environment as your deployment, for example after
 // `vercel env pull .env.local`. It writes and deletes one small test file in each
 // R2 bucket; it changes nothing else.
@@ -44,7 +44,7 @@ async function checkEnv(): Promise<URL | null> {
   else report(token.length >= 16 ? "ok" : "warn", `SETUP_TOKEN is set (${token.length} characters)`, token.length >= 16 ? undefined : "Use at least 16 random characters.");
 
   const source = env("SOURCE_URL");
-  if (!source) report("warn", "SOURCE_URL is not set", "The 'Seasons is open source' link points at the original repository. Under AGPL-3.0, point it at your fork if you change the code.");
+  if (!source) report("warn", "SOURCE_URL is not set", "The 'seeaassoonnss is open source' link points at the original repository. Under AGPL-3.0, point it at your fork if you change the code.");
   else report("ok", `SOURCE_URL ${source}`);
   return site;
 }
@@ -162,7 +162,7 @@ async function checkServices() {
 }
 
 async function main() {
-  console.log("Seasons setup check");
+  console.log("seeaassoonnss setup check");
   const site = await checkEnv();
   await checkDatabase();
   await checkStorage(site);

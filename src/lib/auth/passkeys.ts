@@ -28,7 +28,7 @@ export class PasskeyError extends Error {
 
 function rp() {
   const url = config.siteUrl;
-  return { rpID: url.hostname, origin: url.origin, rpName: "Seasons" };
+  return { rpID: url.hostname, origin: url.origin, rpName: "seeaassoonnss" };
 }
 
 async function storeChallenge(kind: "register" | "login", challenge: string) {
@@ -93,7 +93,7 @@ export async function registrationOptions(setupToken: string | undefined) {
     rpName,
     rpID,
     userName: "owner",
-    userDisplayName: "Seasons owner",
+    userDisplayName: "seeaassoonnss owner",
     userID: OWNER_USER_ID,
     attestationType: "none",
     excludeCredentials: existing.map((p) => ({ id: p.id, transports: p.transports ?? undefined })),
