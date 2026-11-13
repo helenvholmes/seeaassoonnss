@@ -30,7 +30,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 | Quote | Type Markdown (bold, italic, links) | Text in EB Garamond, IBM Plex Mono or a sans-serif |
 | Title, subtitle | Quote items that show the season's title or subtitle | |
 | Playlist or song | Paste a public Spotify playlist link or a song link | A card with cover and title; the Spotify player loads on click |
-| Sticker | Upload transparent PNG, WebP or SVG, reuse one from your sticker library, or pick one from the built-in packs: botanical plates (public-domain prints, cut out), Open Doodles, Open Peeps and Humaaans | The image with its transparent background |
+| Sticker | Upload transparent PNG, WebP or SVG, reuse one from your sticker library, or pick one from the built-in packs: botanical plates (public-domain prints, cut out), Open Doodles, Open Peeps, Humaaans and OpenMoji (animals & nature, food & drink, travel & places) | The image with its transparent background |
 | Map | Search a place or type coordinates | A simple outline map with a dot and a label |
 | Voice note | Record in the browser or upload audio | A small player; nothing plays until they press play |
 | Route map | Import a GeoJSON file (points are the stops, lines the path) | A band of the page where the map stays on screen while the route draws in as they scroll; linked items move the map to their stop |
