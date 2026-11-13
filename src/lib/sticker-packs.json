@@ -1206,5 +1206,3089 @@
     "alt": "Flat illustration of a person: wheelchair short"
    }
   ]
+ },
+ {
+  "id": "openmoji-animals-nature",
+  "name": "OpenMoji: Animals & nature",
+  "credit": "All emojis designed by OpenMoji (openmoji.org), the open-source emoji and icon project.",
+  "license": "CC BY-SA 4.0",
+  "items": [
+   {
+    "id": "monkey-face",
+    "file": "monkey-face.svg",
+    "name": "Monkey face",
+    "alt": "Emoji: monkey face"
+   },
+   {
+    "id": "monkey",
+    "file": "monkey.svg",
+    "name": "Monkey",
+    "alt": "Emoji: monkey"
+   },
+   {
+    "id": "gorilla",
+    "file": "gorilla.svg",
+    "name": "Gorilla",
+    "alt": "Emoji: gorilla"
+   },
+   {
+    "id": "orangutan",
+    "file": "orangutan.svg",
+    "name": "Orangutan",
+    "alt": "Emoji: orangutan"
+   },
+   {
+    "id": "dog-face",
+    "file": "dog-face.svg",
+    "name": "Dog face",
+    "alt": "Emoji: dog face"
+   },
+   {
+    "id": "dog",
+    "file": "dog.svg",
+    "name": "Dog",
+    "alt": "Emoji: dog"
+   },
+   {
+    "id": "guide-dog",
+    "file": "guide-dog.svg",
+    "name": "Guide dog",
+    "alt": "Emoji: guide dog"
+   },
+   {
+    "id": "service-dog",
+    "file": "service-dog.svg",
+    "name": "Service dog",
+    "alt": "Emoji: service dog"
+   },
+   {
+    "id": "poodle",
+    "file": "poodle.svg",
+    "name": "Poodle",
+    "alt": "Emoji: poodle"
+   },
+   {
+    "id": "wolf",
+    "file": "wolf.svg",
+    "name": "Wolf",
+    "alt": "Emoji: wolf"
+   },
+   {
+    "id": "fox",
+    "file": "fox.svg",
+    "name": "Fox",
+    "alt": "Emoji: fox"
+   },
+   {
+    "id": "raccoon",
+    "file": "raccoon.svg",
+    "name": "Raccoon",
+    "alt": "Emoji: raccoon"
+   },
+   {
+    "id": "cat-face",
+    "file": "cat-face.svg",
+    "name": "Cat face",
+    "alt": "Emoji: cat face"
+   },
+   {
+    "id": "cat",
+    "file": "cat.svg",
+    "name": "Cat",
+    "alt": "Emoji: cat"
+   },
+   {
+    "id": "black-cat",
+    "file": "black-cat.svg",
+    "name": "Black cat",
+    "alt": "Emoji: black cat"
+   },
+   {
+    "id": "lion",
+    "file": "lion.svg",
+    "name": "Lion",
+    "alt": "Emoji: lion"
+   },
+   {
+    "id": "tiger-face",
+    "file": "tiger-face.svg",
+    "name": "Tiger face",
+    "alt": "Emoji: tiger face"
+   },
+   {
+    "id": "tiger",
+    "file": "tiger.svg",
+    "name": "Tiger",
+    "alt": "Emoji: tiger"
+   },
+   {
+    "id": "leopard",
+    "file": "leopard.svg",
+    "name": "Leopard",
+    "alt": "Emoji: leopard"
+   },
+   {
+    "id": "horse-face",
+    "file": "horse-face.svg",
+    "name": "Horse face",
+    "alt": "Emoji: horse face"
+   },
+   {
+    "id": "moose",
+    "file": "moose.svg",
+    "name": "Moose",
+    "alt": "Emoji: moose"
+   },
+   {
+    "id": "donkey",
+    "file": "donkey.svg",
+    "name": "Donkey",
+    "alt": "Emoji: donkey"
+   },
+   {
+    "id": "horse",
+    "file": "horse.svg",
+    "name": "Horse",
+    "alt": "Emoji: horse"
+   },
+   {
+    "id": "unicorn",
+    "file": "unicorn.svg",
+    "name": "Unicorn",
+    "alt": "Emoji: unicorn"
+   },
+   {
+    "id": "zebra",
+    "file": "zebra.svg",
+    "name": "Zebra",
+    "alt": "Emoji: zebra"
+   },
+   {
+    "id": "deer",
+    "file": "deer.svg",
+    "name": "Deer",
+    "alt": "Emoji: deer"
+   },
+   {
+    "id": "bison",
+    "file": "bison.svg",
+    "name": "Bison",
+    "alt": "Emoji: bison"
+   },
+   {
+    "id": "cow-face",
+    "file": "cow-face.svg",
+    "name": "Cow face",
+    "alt": "Emoji: cow face"
+   },
+   {
+    "id": "ox",
+    "file": "ox.svg",
+    "name": "Ox",
+    "alt": "Emoji: ox"
+   },
+   {
+    "id": "water-buffalo",
+    "file": "water-buffalo.svg",
+    "name": "Water buffalo",
+    "alt": "Emoji: water buffalo"
+   },
+   {
+    "id": "cow",
+    "file": "cow.svg",
+    "name": "Cow",
+    "alt": "Emoji: cow"
+   },
+   {
+    "id": "pig-face",
+    "file": "pig-face.svg",
+    "name": "Pig face",
+    "alt": "Emoji: pig face"
+   },
+   {
+    "id": "pig",
+    "file": "pig.svg",
+    "name": "Pig",
+    "alt": "Emoji: pig"
+   },
+   {
+    "id": "boar",
+    "file": "boar.svg",
+    "name": "Boar",
+    "alt": "Emoji: boar"
+   },
+   {
+    "id": "pig-nose",
+    "file": "pig-nose.svg",
+    "name": "Pig nose",
+    "alt": "Emoji: pig nose"
+   },
+   {
+    "id": "ram",
+    "file": "ram.svg",
+    "name": "Ram",
+    "alt": "Emoji: ram"
+   },
+   {
+    "id": "ewe",
+    "file": "ewe.svg",
+    "name": "Ewe",
+    "alt": "Emoji: ewe"
+   },
+   {
+    "id": "goat",
+    "file": "goat.svg",
+    "name": "Goat",
+    "alt": "Emoji: goat"
+   },
+   {
+    "id": "camel",
+    "file": "camel.svg",
+    "name": "Camel",
+    "alt": "Emoji: camel"
+   },
+   {
+    "id": "two-hump-camel",
+    "file": "two-hump-camel.svg",
+    "name": "Two-hump camel",
+    "alt": "Emoji: two-hump camel"
+   },
+   {
+    "id": "llama",
+    "file": "llama.svg",
+    "name": "Llama",
+    "alt": "Emoji: llama"
+   },
+   {
+    "id": "giraffe",
+    "file": "giraffe.svg",
+    "name": "Giraffe",
+    "alt": "Emoji: giraffe"
+   },
+   {
+    "id": "elephant",
+    "file": "elephant.svg",
+    "name": "Elephant",
+    "alt": "Emoji: elephant"
+   },
+   {
+    "id": "mammoth",
+    "file": "mammoth.svg",
+    "name": "Mammoth",
+    "alt": "Emoji: mammoth"
+   },
+   {
+    "id": "rhinoceros",
+    "file": "rhinoceros.svg",
+    "name": "Rhinoceros",
+    "alt": "Emoji: rhinoceros"
+   },
+   {
+    "id": "hippopotamus",
+    "file": "hippopotamus.svg",
+    "name": "Hippopotamus",
+    "alt": "Emoji: hippopotamus"
+   },
+   {
+    "id": "mouse-face",
+    "file": "mouse-face.svg",
+    "name": "Mouse face",
+    "alt": "Emoji: mouse face"
+   },
+   {
+    "id": "mouse",
+    "file": "mouse.svg",
+    "name": "Mouse",
+    "alt": "Emoji: mouse"
+   },
+   {
+    "id": "rat",
+    "file": "rat.svg",
+    "name": "Rat",
+    "alt": "Emoji: rat"
+   },
+   {
+    "id": "hamster",
+    "file": "hamster.svg",
+    "name": "Hamster",
+    "alt": "Emoji: hamster"
+   },
+   {
+    "id": "rabbit-face",
+    "file": "rabbit-face.svg",
+    "name": "Rabbit face",
+    "alt": "Emoji: rabbit face"
+   },
+   {
+    "id": "rabbit",
+    "file": "rabbit.svg",
+    "name": "Rabbit",
+    "alt": "Emoji: rabbit"
+   },
+   {
+    "id": "chipmunk",
+    "file": "chipmunk.svg",
+    "name": "Chipmunk",
+    "alt": "Emoji: chipmunk"
+   },
+   {
+    "id": "beaver",
+    "file": "beaver.svg",
+    "name": "Beaver",
+    "alt": "Emoji: beaver"
+   },
+   {
+    "id": "hedgehog",
+    "file": "hedgehog.svg",
+    "name": "Hedgehog",
+    "alt": "Emoji: hedgehog"
+   },
+   {
+    "id": "bat",
+    "file": "bat.svg",
+    "name": "Bat",
+    "alt": "Emoji: bat"
+   },
+   {
+    "id": "bear",
+    "file": "bear.svg",
+    "name": "Bear",
+    "alt": "Emoji: bear"
+   },
+   {
+    "id": "polar-bear",
+    "file": "polar-bear.svg",
+    "name": "Polar bear",
+    "alt": "Emoji: polar bear"
+   },
+   {
+    "id": "koala",
+    "file": "koala.svg",
+    "name": "Koala",
+    "alt": "Emoji: koala"
+   },
+   {
+    "id": "panda",
+    "file": "panda.svg",
+    "name": "Panda",
+    "alt": "Emoji: panda"
+   },
+   {
+    "id": "sloth",
+    "file": "sloth.svg",
+    "name": "Sloth",
+    "alt": "Emoji: sloth"
+   },
+   {
+    "id": "otter",
+    "file": "otter.svg",
+    "name": "Otter",
+    "alt": "Emoji: otter"
+   },
+   {
+    "id": "skunk",
+    "file": "skunk.svg",
+    "name": "Skunk",
+    "alt": "Emoji: skunk"
+   },
+   {
+    "id": "kangaroo",
+    "file": "kangaroo.svg",
+    "name": "Kangaroo",
+    "alt": "Emoji: kangaroo"
+   },
+   {
+    "id": "badger",
+    "file": "badger.svg",
+    "name": "Badger",
+    "alt": "Emoji: badger"
+   },
+   {
+    "id": "paw-prints",
+    "file": "paw-prints.svg",
+    "name": "Paw prints",
+    "alt": "Emoji: paw prints"
+   },
+   {
+    "id": "turkey",
+    "file": "turkey.svg",
+    "name": "Turkey",
+    "alt": "Emoji: turkey"
+   },
+   {
+    "id": "chicken",
+    "file": "chicken.svg",
+    "name": "Chicken",
+    "alt": "Emoji: chicken"
+   },
+   {
+    "id": "rooster",
+    "file": "rooster.svg",
+    "name": "Rooster",
+    "alt": "Emoji: rooster"
+   },
+   {
+    "id": "hatching-chick",
+    "file": "hatching-chick.svg",
+    "name": "Hatching chick",
+    "alt": "Emoji: hatching chick"
+   },
+   {
+    "id": "baby-chick",
+    "file": "baby-chick.svg",
+    "name": "Baby chick",
+    "alt": "Emoji: baby chick"
+   },
+   {
+    "id": "front-facing-baby-chick",
+    "file": "front-facing-baby-chick.svg",
+    "name": "Front-facing baby chick",
+    "alt": "Emoji: front-facing baby chick"
+   },
+   {
+    "id": "bird",
+    "file": "bird.svg",
+    "name": "Bird",
+    "alt": "Emoji: bird"
+   },
+   {
+    "id": "penguin",
+    "file": "penguin.svg",
+    "name": "Penguin",
+    "alt": "Emoji: penguin"
+   },
+   {
+    "id": "dove",
+    "file": "dove.svg",
+    "name": "Dove",
+    "alt": "Emoji: dove"
+   },
+   {
+    "id": "eagle",
+    "file": "eagle.svg",
+    "name": "Eagle",
+    "alt": "Emoji: eagle"
+   },
+   {
+    "id": "duck",
+    "file": "duck.svg",
+    "name": "Duck",
+    "alt": "Emoji: duck"
+   },
+   {
+    "id": "swan",
+    "file": "swan.svg",
+    "name": "Swan",
+    "alt": "Emoji: swan"
+   },
+   {
+    "id": "owl",
+    "file": "owl.svg",
+    "name": "Owl",
+    "alt": "Emoji: owl"
+   },
+   {
+    "id": "dodo",
+    "file": "dodo.svg",
+    "name": "Dodo",
+    "alt": "Emoji: dodo"
+   },
+   {
+    "id": "feather",
+    "file": "feather.svg",
+    "name": "Feather",
+    "alt": "Emoji: feather"
+   },
+   {
+    "id": "flamingo",
+    "file": "flamingo.svg",
+    "name": "Flamingo",
+    "alt": "Emoji: flamingo"
+   },
+   {
+    "id": "peacock",
+    "file": "peacock.svg",
+    "name": "Peacock",
+    "alt": "Emoji: peacock"
+   },
+   {
+    "id": "parrot",
+    "file": "parrot.svg",
+    "name": "Parrot",
+    "alt": "Emoji: parrot"
+   },
+   {
+    "id": "wing",
+    "file": "wing.svg",
+    "name": "Wing",
+    "alt": "Emoji: wing"
+   },
+   {
+    "id": "black-bird",
+    "file": "black-bird.svg",
+    "name": "Black bird",
+    "alt": "Emoji: black bird"
+   },
+   {
+    "id": "goose",
+    "file": "goose.svg",
+    "name": "Goose",
+    "alt": "Emoji: goose"
+   },
+   {
+    "id": "phoenix",
+    "file": "phoenix.svg",
+    "name": "Phoenix",
+    "alt": "Emoji: phoenix"
+   },
+   {
+    "id": "frog",
+    "file": "frog.svg",
+    "name": "Frog",
+    "alt": "Emoji: frog"
+   },
+   {
+    "id": "crocodile",
+    "file": "crocodile.svg",
+    "name": "Crocodile",
+    "alt": "Emoji: crocodile"
+   },
+   {
+    "id": "turtle",
+    "file": "turtle.svg",
+    "name": "Turtle",
+    "alt": "Emoji: turtle"
+   },
+   {
+    "id": "lizard",
+    "file": "lizard.svg",
+    "name": "Lizard",
+    "alt": "Emoji: lizard"
+   },
+   {
+    "id": "snake",
+    "file": "snake.svg",
+    "name": "Snake",
+    "alt": "Emoji: snake"
+   },
+   {
+    "id": "dragon-face",
+    "file": "dragon-face.svg",
+    "name": "Dragon face",
+    "alt": "Emoji: dragon face"
+   },
+   {
+    "id": "dragon",
+    "file": "dragon.svg",
+    "name": "Dragon",
+    "alt": "Emoji: dragon"
+   },
+   {
+    "id": "sauropod",
+    "file": "sauropod.svg",
+    "name": "Sauropod",
+    "alt": "Emoji: sauropod"
+   },
+   {
+    "id": "t-rex",
+    "file": "t-rex.svg",
+    "name": "T-Rex",
+    "alt": "Emoji: T-Rex"
+   },
+   {
+    "id": "spouting-whale",
+    "file": "spouting-whale.svg",
+    "name": "Spouting whale",
+    "alt": "Emoji: spouting whale"
+   },
+   {
+    "id": "whale",
+    "file": "whale.svg",
+    "name": "Whale",
+    "alt": "Emoji: whale"
+   },
+   {
+    "id": "dolphin",
+    "file": "dolphin.svg",
+    "name": "Dolphin",
+    "alt": "Emoji: dolphin"
+   },
+   {
+    "id": "orca",
+    "file": "orca.svg",
+    "name": "Orca",
+    "alt": "Emoji: orca"
+   },
+   {
+    "id": "seal",
+    "file": "seal.svg",
+    "name": "Seal",
+    "alt": "Emoji: seal"
+   },
+   {
+    "id": "fish",
+    "file": "fish.svg",
+    "name": "Fish",
+    "alt": "Emoji: fish"
+   },
+   {
+    "id": "tropical-fish",
+    "file": "tropical-fish.svg",
+    "name": "Tropical fish",
+    "alt": "Emoji: tropical fish"
+   },
+   {
+    "id": "blowfish",
+    "file": "blowfish.svg",
+    "name": "Blowfish",
+    "alt": "Emoji: blowfish"
+   },
+   {
+    "id": "shark",
+    "file": "shark.svg",
+    "name": "Shark",
+    "alt": "Emoji: shark"
+   },
+   {
+    "id": "octopus",
+    "file": "octopus.svg",
+    "name": "Octopus",
+    "alt": "Emoji: octopus"
+   },
+   {
+    "id": "spiral-shell",
+    "file": "spiral-shell.svg",
+    "name": "Spiral shell",
+    "alt": "Emoji: spiral shell"
+   },
+   {
+    "id": "coral",
+    "file": "coral.svg",
+    "name": "Coral",
+    "alt": "Emoji: coral"
+   },
+   {
+    "id": "jellyfish",
+    "file": "jellyfish.svg",
+    "name": "Jellyfish",
+    "alt": "Emoji: jellyfish"
+   },
+   {
+    "id": "crab",
+    "file": "crab.svg",
+    "name": "Crab",
+    "alt": "Emoji: crab"
+   },
+   {
+    "id": "lobster",
+    "file": "lobster.svg",
+    "name": "Lobster",
+    "alt": "Emoji: lobster"
+   },
+   {
+    "id": "shrimp",
+    "file": "shrimp.svg",
+    "name": "Shrimp",
+    "alt": "Emoji: shrimp"
+   },
+   {
+    "id": "squid",
+    "file": "squid.svg",
+    "name": "Squid",
+    "alt": "Emoji: squid"
+   },
+   {
+    "id": "oyster",
+    "file": "oyster.svg",
+    "name": "Oyster",
+    "alt": "Emoji: oyster"
+   },
+   {
+    "id": "snail",
+    "file": "snail.svg",
+    "name": "Snail",
+    "alt": "Emoji: snail"
+   },
+   {
+    "id": "butterfly",
+    "file": "butterfly.svg",
+    "name": "Butterfly",
+    "alt": "Emoji: butterfly"
+   },
+   {
+    "id": "bug",
+    "file": "bug.svg",
+    "name": "Bug",
+    "alt": "Emoji: bug"
+   },
+   {
+    "id": "ant",
+    "file": "ant.svg",
+    "name": "Ant",
+    "alt": "Emoji: ant"
+   },
+   {
+    "id": "honeybee",
+    "file": "honeybee.svg",
+    "name": "Honeybee",
+    "alt": "Emoji: honeybee"
+   },
+   {
+    "id": "beetle",
+    "file": "beetle.svg",
+    "name": "Beetle",
+    "alt": "Emoji: beetle"
+   },
+   {
+    "id": "lady-beetle",
+    "file": "lady-beetle.svg",
+    "name": "Lady beetle",
+    "alt": "Emoji: lady beetle"
+   },
+   {
+    "id": "cricket",
+    "file": "cricket.svg",
+    "name": "Cricket",
+    "alt": "Emoji: cricket"
+   },
+   {
+    "id": "cockroach",
+    "file": "cockroach.svg",
+    "name": "Cockroach",
+    "alt": "Emoji: cockroach"
+   },
+   {
+    "id": "spider",
+    "file": "spider.svg",
+    "name": "Spider",
+    "alt": "Emoji: spider"
+   },
+   {
+    "id": "spider-web",
+    "file": "spider-web.svg",
+    "name": "Spider web",
+    "alt": "Emoji: spider web"
+   },
+   {
+    "id": "scorpion",
+    "file": "scorpion.svg",
+    "name": "Scorpion",
+    "alt": "Emoji: scorpion"
+   },
+   {
+    "id": "mosquito",
+    "file": "mosquito.svg",
+    "name": "Mosquito",
+    "alt": "Emoji: mosquito"
+   },
+   {
+    "id": "fly",
+    "file": "fly.svg",
+    "name": "Fly",
+    "alt": "Emoji: fly"
+   },
+   {
+    "id": "worm",
+    "file": "worm.svg",
+    "name": "Worm",
+    "alt": "Emoji: worm"
+   },
+   {
+    "id": "microbe",
+    "file": "microbe.svg",
+    "name": "Microbe",
+    "alt": "Emoji: microbe"
+   },
+   {
+    "id": "bouquet",
+    "file": "bouquet.svg",
+    "name": "Bouquet",
+    "alt": "Emoji: bouquet"
+   },
+   {
+    "id": "cherry-blossom",
+    "file": "cherry-blossom.svg",
+    "name": "Cherry blossom",
+    "alt": "Emoji: cherry blossom"
+   },
+   {
+    "id": "white-flower",
+    "file": "white-flower.svg",
+    "name": "White flower",
+    "alt": "Emoji: white flower"
+   },
+   {
+    "id": "lotus",
+    "file": "lotus.svg",
+    "name": "Lotus",
+    "alt": "Emoji: lotus"
+   },
+   {
+    "id": "rosette",
+    "file": "rosette.svg",
+    "name": "Rosette",
+    "alt": "Emoji: rosette"
+   },
+   {
+    "id": "rose",
+    "file": "rose.svg",
+    "name": "Rose",
+    "alt": "Emoji: rose"
+   },
+   {
+    "id": "wilted-flower",
+    "file": "wilted-flower.svg",
+    "name": "Wilted flower",
+    "alt": "Emoji: wilted flower"
+   },
+   {
+    "id": "hibiscus",
+    "file": "hibiscus.svg",
+    "name": "Hibiscus",
+    "alt": "Emoji: hibiscus"
+   },
+   {
+    "id": "sunflower",
+    "file": "sunflower.svg",
+    "name": "Sunflower",
+    "alt": "Emoji: sunflower"
+   },
+   {
+    "id": "blossom",
+    "file": "blossom.svg",
+    "name": "Blossom",
+    "alt": "Emoji: blossom"
+   },
+   {
+    "id": "tulip",
+    "file": "tulip.svg",
+    "name": "Tulip",
+    "alt": "Emoji: tulip"
+   },
+   {
+    "id": "hyacinth",
+    "file": "hyacinth.svg",
+    "name": "Hyacinth",
+    "alt": "Emoji: hyacinth"
+   },
+   {
+    "id": "seedling",
+    "file": "seedling.svg",
+    "name": "Seedling",
+    "alt": "Emoji: seedling"
+   },
+   {
+    "id": "potted-plant",
+    "file": "potted-plant.svg",
+    "name": "Potted plant",
+    "alt": "Emoji: potted plant"
+   },
+   {
+    "id": "evergreen-tree",
+    "file": "evergreen-tree.svg",
+    "name": "Evergreen tree",
+    "alt": "Emoji: evergreen tree"
+   },
+   {
+    "id": "deciduous-tree",
+    "file": "deciduous-tree.svg",
+    "name": "Deciduous tree",
+    "alt": "Emoji: deciduous tree"
+   },
+   {
+    "id": "palm-tree",
+    "file": "palm-tree.svg",
+    "name": "Palm tree",
+    "alt": "Emoji: palm tree"
+   },
+   {
+    "id": "cactus",
+    "file": "cactus.svg",
+    "name": "Cactus",
+    "alt": "Emoji: cactus"
+   },
+   {
+    "id": "sheaf-of-rice",
+    "file": "sheaf-of-rice.svg",
+    "name": "Sheaf of rice",
+    "alt": "Emoji: sheaf of rice"
+   },
+   {
+    "id": "herb",
+    "file": "herb.svg",
+    "name": "Herb",
+    "alt": "Emoji: herb"
+   },
+   {
+    "id": "shamrock",
+    "file": "shamrock.svg",
+    "name": "Shamrock",
+    "alt": "Emoji: shamrock"
+   },
+   {
+    "id": "four-leaf-clover",
+    "file": "four-leaf-clover.svg",
+    "name": "Four leaf clover",
+    "alt": "Emoji: four leaf clover"
+   },
+   {
+    "id": "maple-leaf",
+    "file": "maple-leaf.svg",
+    "name": "Maple leaf",
+    "alt": "Emoji: maple leaf"
+   },
+   {
+    "id": "fallen-leaf",
+    "file": "fallen-leaf.svg",
+    "name": "Fallen leaf",
+    "alt": "Emoji: fallen leaf"
+   },
+   {
+    "id": "leaf-fluttering-in-wind",
+    "file": "leaf-fluttering-in-wind.svg",
+    "name": "Leaf fluttering in wind",
+    "alt": "Emoji: leaf fluttering in wind"
+   },
+   {
+    "id": "empty-nest",
+    "file": "empty-nest.svg",
+    "name": "Empty nest",
+    "alt": "Emoji: empty nest"
+   },
+   {
+    "id": "nest-with-eggs",
+    "file": "nest-with-eggs.svg",
+    "name": "Nest with eggs",
+    "alt": "Emoji: nest with eggs"
+   },
+   {
+    "id": "mushroom",
+    "file": "mushroom.svg",
+    "name": "Mushroom",
+    "alt": "Emoji: mushroom"
+   },
+   {
+    "id": "leafless-tree",
+    "file": "leafless-tree.svg",
+    "name": "Leafless tree",
+    "alt": "Emoji: leafless tree"
+   }
+  ]
+ },
+ {
+  "id": "openmoji-food-drink",
+  "name": "OpenMoji: Food & drink",
+  "credit": "All emojis designed by OpenMoji (openmoji.org), the open-source emoji and icon project.",
+  "license": "CC BY-SA 4.0",
+  "items": [
+   {
+    "id": "grapes",
+    "file": "grapes.svg",
+    "name": "Grapes",
+    "alt": "Emoji: grapes"
+   },
+   {
+    "id": "melon",
+    "file": "melon.svg",
+    "name": "Melon",
+    "alt": "Emoji: melon"
+   },
+   {
+    "id": "watermelon",
+    "file": "watermelon.svg",
+    "name": "Watermelon",
+    "alt": "Emoji: watermelon"
+   },
+   {
+    "id": "tangerine",
+    "file": "tangerine.svg",
+    "name": "Tangerine",
+    "alt": "Emoji: tangerine"
+   },
+   {
+    "id": "lemon",
+    "file": "lemon.svg",
+    "name": "Lemon",
+    "alt": "Emoji: lemon"
+   },
+   {
+    "id": "lime",
+    "file": "lime.svg",
+    "name": "Lime",
+    "alt": "Emoji: lime"
+   },
+   {
+    "id": "banana",
+    "file": "banana.svg",
+    "name": "Banana",
+    "alt": "Emoji: banana"
+   },
+   {
+    "id": "pineapple",
+    "file": "pineapple.svg",
+    "name": "Pineapple",
+    "alt": "Emoji: pineapple"
+   },
+   {
+    "id": "mango",
+    "file": "mango.svg",
+    "name": "Mango",
+    "alt": "Emoji: mango"
+   },
+   {
+    "id": "red-apple",
+    "file": "red-apple.svg",
+    "name": "Red apple",
+    "alt": "Emoji: red apple"
+   },
+   {
+    "id": "green-apple",
+    "file": "green-apple.svg",
+    "name": "Green apple",
+    "alt": "Emoji: green apple"
+   },
+   {
+    "id": "pear",
+    "file": "pear.svg",
+    "name": "Pear",
+    "alt": "Emoji: pear"
+   },
+   {
+    "id": "peach",
+    "file": "peach.svg",
+    "name": "Peach",
+    "alt": "Emoji: peach"
+   },
+   {
+    "id": "cherries",
+    "file": "cherries.svg",
+    "name": "Cherries",
+    "alt": "Emoji: cherries"
+   },
+   {
+    "id": "strawberry",
+    "file": "strawberry.svg",
+    "name": "Strawberry",
+    "alt": "Emoji: strawberry"
+   },
+   {
+    "id": "blueberries",
+    "file": "blueberries.svg",
+    "name": "Blueberries",
+    "alt": "Emoji: blueberries"
+   },
+   {
+    "id": "kiwi-fruit",
+    "file": "kiwi-fruit.svg",
+    "name": "Kiwi fruit",
+    "alt": "Emoji: kiwi fruit"
+   },
+   {
+    "id": "tomato",
+    "file": "tomato.svg",
+    "name": "Tomato",
+    "alt": "Emoji: tomato"
+   },
+   {
+    "id": "olive",
+    "file": "olive.svg",
+    "name": "Olive",
+    "alt": "Emoji: olive"
+   },
+   {
+    "id": "coconut",
+    "file": "coconut.svg",
+    "name": "Coconut",
+    "alt": "Emoji: coconut"
+   },
+   {
+    "id": "avocado",
+    "file": "avocado.svg",
+    "name": "Avocado",
+    "alt": "Emoji: avocado"
+   },
+   {
+    "id": "eggplant",
+    "file": "eggplant.svg",
+    "name": "Eggplant",
+    "alt": "Emoji: eggplant"
+   },
+   {
+    "id": "potato",
+    "file": "potato.svg",
+    "name": "Potato",
+    "alt": "Emoji: potato"
+   },
+   {
+    "id": "carrot",
+    "file": "carrot.svg",
+    "name": "Carrot",
+    "alt": "Emoji: carrot"
+   },
+   {
+    "id": "ear-of-corn",
+    "file": "ear-of-corn.svg",
+    "name": "Ear of corn",
+    "alt": "Emoji: ear of corn"
+   },
+   {
+    "id": "hot-pepper",
+    "file": "hot-pepper.svg",
+    "name": "Hot pepper",
+    "alt": "Emoji: hot pepper"
+   },
+   {
+    "id": "bell-pepper",
+    "file": "bell-pepper.svg",
+    "name": "Bell pepper",
+    "alt": "Emoji: bell pepper"
+   },
+   {
+    "id": "cucumber",
+    "file": "cucumber.svg",
+    "name": "Cucumber",
+    "alt": "Emoji: cucumber"
+   },
+   {
+    "id": "leafy-green",
+    "file": "leafy-green.svg",
+    "name": "Leafy green",
+    "alt": "Emoji: leafy green"
+   },
+   {
+    "id": "broccoli",
+    "file": "broccoli.svg",
+    "name": "Broccoli",
+    "alt": "Emoji: broccoli"
+   },
+   {
+    "id": "garlic",
+    "file": "garlic.svg",
+    "name": "Garlic",
+    "alt": "Emoji: garlic"
+   },
+   {
+    "id": "onion",
+    "file": "onion.svg",
+    "name": "Onion",
+    "alt": "Emoji: onion"
+   },
+   {
+    "id": "peanuts",
+    "file": "peanuts.svg",
+    "name": "Peanuts",
+    "alt": "Emoji: peanuts"
+   },
+   {
+    "id": "beans",
+    "file": "beans.svg",
+    "name": "Beans",
+    "alt": "Emoji: beans"
+   },
+   {
+    "id": "chestnut",
+    "file": "chestnut.svg",
+    "name": "Chestnut",
+    "alt": "Emoji: chestnut"
+   },
+   {
+    "id": "ginger-root",
+    "file": "ginger-root.svg",
+    "name": "Ginger root",
+    "alt": "Emoji: ginger root"
+   },
+   {
+    "id": "pea-pod",
+    "file": "pea-pod.svg",
+    "name": "Pea pod",
+    "alt": "Emoji: pea pod"
+   },
+   {
+    "id": "brown-mushroom",
+    "file": "brown-mushroom.svg",
+    "name": "Brown mushroom",
+    "alt": "Emoji: brown mushroom"
+   },
+   {
+    "id": "root-vegetable",
+    "file": "root-vegetable.svg",
+    "name": "Root vegetable",
+    "alt": "Emoji: root vegetable"
+   },
+   {
+    "id": "bread",
+    "file": "bread.svg",
+    "name": "Bread",
+    "alt": "Emoji: bread"
+   },
+   {
+    "id": "croissant",
+    "file": "croissant.svg",
+    "name": "Croissant",
+    "alt": "Emoji: croissant"
+   },
+   {
+    "id": "baguette-bread",
+    "file": "baguette-bread.svg",
+    "name": "Baguette bread",
+    "alt": "Emoji: baguette bread"
+   },
+   {
+    "id": "flatbread",
+    "file": "flatbread.svg",
+    "name": "Flatbread",
+    "alt": "Emoji: flatbread"
+   },
+   {
+    "id": "pretzel",
+    "file": "pretzel.svg",
+    "name": "Pretzel",
+    "alt": "Emoji: pretzel"
+   },
+   {
+    "id": "bagel",
+    "file": "bagel.svg",
+    "name": "Bagel",
+    "alt": "Emoji: bagel"
+   },
+   {
+    "id": "pancakes",
+    "file": "pancakes.svg",
+    "name": "Pancakes",
+    "alt": "Emoji: pancakes"
+   },
+   {
+    "id": "waffle",
+    "file": "waffle.svg",
+    "name": "Waffle",
+    "alt": "Emoji: waffle"
+   },
+   {
+    "id": "cheese-wedge",
+    "file": "cheese-wedge.svg",
+    "name": "Cheese wedge",
+    "alt": "Emoji: cheese wedge"
+   },
+   {
+    "id": "meat-on-bone",
+    "file": "meat-on-bone.svg",
+    "name": "Meat on bone",
+    "alt": "Emoji: meat on bone"
+   },
+   {
+    "id": "poultry-leg",
+    "file": "poultry-leg.svg",
+    "name": "Poultry leg",
+    "alt": "Emoji: poultry leg"
+   },
+   {
+    "id": "cut-of-meat",
+    "file": "cut-of-meat.svg",
+    "name": "Cut of meat",
+    "alt": "Emoji: cut of meat"
+   },
+   {
+    "id": "bacon",
+    "file": "bacon.svg",
+    "name": "Bacon",
+    "alt": "Emoji: bacon"
+   },
+   {
+    "id": "hamburger",
+    "file": "hamburger.svg",
+    "name": "Hamburger",
+    "alt": "Emoji: hamburger"
+   },
+   {
+    "id": "french-fries",
+    "file": "french-fries.svg",
+    "name": "French fries",
+    "alt": "Emoji: french fries"
+   },
+   {
+    "id": "pizza",
+    "file": "pizza.svg",
+    "name": "Pizza",
+    "alt": "Emoji: pizza"
+   },
+   {
+    "id": "hot-dog",
+    "file": "hot-dog.svg",
+    "name": "Hot dog",
+    "alt": "Emoji: hot dog"
+   },
+   {
+    "id": "sandwich",
+    "file": "sandwich.svg",
+    "name": "Sandwich",
+    "alt": "Emoji: sandwich"
+   },
+   {
+    "id": "taco",
+    "file": "taco.svg",
+    "name": "Taco",
+    "alt": "Emoji: taco"
+   },
+   {
+    "id": "burrito",
+    "file": "burrito.svg",
+    "name": "Burrito",
+    "alt": "Emoji: burrito"
+   },
+   {
+    "id": "tamale",
+    "file": "tamale.svg",
+    "name": "Tamale",
+    "alt": "Emoji: tamale"
+   },
+   {
+    "id": "stuffed-flatbread",
+    "file": "stuffed-flatbread.svg",
+    "name": "Stuffed flatbread",
+    "alt": "Emoji: stuffed flatbread"
+   },
+   {
+    "id": "falafel",
+    "file": "falafel.svg",
+    "name": "Falafel",
+    "alt": "Emoji: falafel"
+   },
+   {
+    "id": "egg",
+    "file": "egg.svg",
+    "name": "Egg",
+    "alt": "Emoji: egg"
+   },
+   {
+    "id": "cooking",
+    "file": "cooking.svg",
+    "name": "Cooking",
+    "alt": "Emoji: cooking"
+   },
+   {
+    "id": "shallow-pan-of-food",
+    "file": "shallow-pan-of-food.svg",
+    "name": "Shallow pan of food",
+    "alt": "Emoji: shallow pan of food"
+   },
+   {
+    "id": "pot-of-food",
+    "file": "pot-of-food.svg",
+    "name": "Pot of food",
+    "alt": "Emoji: pot of food"
+   },
+   {
+    "id": "fondue",
+    "file": "fondue.svg",
+    "name": "Fondue",
+    "alt": "Emoji: fondue"
+   },
+   {
+    "id": "bowl-with-spoon",
+    "file": "bowl-with-spoon.svg",
+    "name": "Bowl with spoon",
+    "alt": "Emoji: bowl with spoon"
+   },
+   {
+    "id": "green-salad",
+    "file": "green-salad.svg",
+    "name": "Green salad",
+    "alt": "Emoji: green salad"
+   },
+   {
+    "id": "popcorn",
+    "file": "popcorn.svg",
+    "name": "Popcorn",
+    "alt": "Emoji: popcorn"
+   },
+   {
+    "id": "butter",
+    "file": "butter.svg",
+    "name": "Butter",
+    "alt": "Emoji: butter"
+   },
+   {
+    "id": "salt",
+    "file": "salt.svg",
+    "name": "Salt",
+    "alt": "Emoji: salt"
+   },
+   {
+    "id": "canned-food",
+    "file": "canned-food.svg",
+    "name": "Canned food",
+    "alt": "Emoji: canned food"
+   },
+   {
+    "id": "bento-box",
+    "file": "bento-box.svg",
+    "name": "Bento box",
+    "alt": "Emoji: bento box"
+   },
+   {
+    "id": "rice-cracker",
+    "file": "rice-cracker.svg",
+    "name": "Rice cracker",
+    "alt": "Emoji: rice cracker"
+   },
+   {
+    "id": "rice-ball",
+    "file": "rice-ball.svg",
+    "name": "Rice ball",
+    "alt": "Emoji: rice ball"
+   },
+   {
+    "id": "cooked-rice",
+    "file": "cooked-rice.svg",
+    "name": "Cooked rice",
+    "alt": "Emoji: cooked rice"
+   },
+   {
+    "id": "curry-rice",
+    "file": "curry-rice.svg",
+    "name": "Curry rice",
+    "alt": "Emoji: curry rice"
+   },
+   {
+    "id": "steaming-bowl",
+    "file": "steaming-bowl.svg",
+    "name": "Steaming bowl",
+    "alt": "Emoji: steaming bowl"
+   },
+   {
+    "id": "spaghetti",
+    "file": "spaghetti.svg",
+    "name": "Spaghetti",
+    "alt": "Emoji: spaghetti"
+   },
+   {
+    "id": "roasted-sweet-potato",
+    "file": "roasted-sweet-potato.svg",
+    "name": "Roasted sweet potato",
+    "alt": "Emoji: roasted sweet potato"
+   },
+   {
+    "id": "oden",
+    "file": "oden.svg",
+    "name": "Oden",
+    "alt": "Emoji: oden"
+   },
+   {
+    "id": "sushi",
+    "file": "sushi.svg",
+    "name": "Sushi",
+    "alt": "Emoji: sushi"
+   },
+   {
+    "id": "fried-shrimp",
+    "file": "fried-shrimp.svg",
+    "name": "Fried shrimp",
+    "alt": "Emoji: fried shrimp"
+   },
+   {
+    "id": "fish-cake-with-swirl",
+    "file": "fish-cake-with-swirl.svg",
+    "name": "Fish cake with swirl",
+    "alt": "Emoji: fish cake with swirl"
+   },
+   {
+    "id": "moon-cake",
+    "file": "moon-cake.svg",
+    "name": "Moon cake",
+    "alt": "Emoji: moon cake"
+   },
+   {
+    "id": "dango",
+    "file": "dango.svg",
+    "name": "Dango",
+    "alt": "Emoji: dango"
+   },
+   {
+    "id": "dumpling",
+    "file": "dumpling.svg",
+    "name": "Dumpling",
+    "alt": "Emoji: dumpling"
+   },
+   {
+    "id": "fortune-cookie",
+    "file": "fortune-cookie.svg",
+    "name": "Fortune cookie",
+    "alt": "Emoji: fortune cookie"
+   },
+   {
+    "id": "takeout-box",
+    "file": "takeout-box.svg",
+    "name": "Takeout box",
+    "alt": "Emoji: takeout box"
+   },
+   {
+    "id": "soft-ice-cream",
+    "file": "soft-ice-cream.svg",
+    "name": "Soft ice cream",
+    "alt": "Emoji: soft ice cream"
+   },
+   {
+    "id": "shaved-ice",
+    "file": "shaved-ice.svg",
+    "name": "Shaved ice",
+    "alt": "Emoji: shaved ice"
+   },
+   {
+    "id": "ice-cream",
+    "file": "ice-cream.svg",
+    "name": "Ice cream",
+    "alt": "Emoji: ice cream"
+   },
+   {
+    "id": "doughnut",
+    "file": "doughnut.svg",
+    "name": "Doughnut",
+    "alt": "Emoji: doughnut"
+   },
+   {
+    "id": "cookie",
+    "file": "cookie.svg",
+    "name": "Cookie",
+    "alt": "Emoji: cookie"
+   },
+   {
+    "id": "birthday-cake",
+    "file": "birthday-cake.svg",
+    "name": "Birthday cake",
+    "alt": "Emoji: birthday cake"
+   },
+   {
+    "id": "shortcake",
+    "file": "shortcake.svg",
+    "name": "Shortcake",
+    "alt": "Emoji: shortcake"
+   },
+   {
+    "id": "cupcake",
+    "file": "cupcake.svg",
+    "name": "Cupcake",
+    "alt": "Emoji: cupcake"
+   },
+   {
+    "id": "pie",
+    "file": "pie.svg",
+    "name": "Pie",
+    "alt": "Emoji: pie"
+   },
+   {
+    "id": "chocolate-bar",
+    "file": "chocolate-bar.svg",
+    "name": "Chocolate bar",
+    "alt": "Emoji: chocolate bar"
+   },
+   {
+    "id": "candy",
+    "file": "candy.svg",
+    "name": "Candy",
+    "alt": "Emoji: candy"
+   },
+   {
+    "id": "lollipop",
+    "file": "lollipop.svg",
+    "name": "Lollipop",
+    "alt": "Emoji: lollipop"
+   },
+   {
+    "id": "custard",
+    "file": "custard.svg",
+    "name": "Custard",
+    "alt": "Emoji: custard"
+   },
+   {
+    "id": "honey-pot",
+    "file": "honey-pot.svg",
+    "name": "Honey pot",
+    "alt": "Emoji: honey pot"
+   },
+   {
+    "id": "baby-bottle",
+    "file": "baby-bottle.svg",
+    "name": "Baby bottle",
+    "alt": "Emoji: baby bottle"
+   },
+   {
+    "id": "glass-of-milk",
+    "file": "glass-of-milk.svg",
+    "name": "Glass of milk",
+    "alt": "Emoji: glass of milk"
+   },
+   {
+    "id": "hot-beverage",
+    "file": "hot-beverage.svg",
+    "name": "Hot beverage",
+    "alt": "Emoji: hot beverage"
+   },
+   {
+    "id": "teapot",
+    "file": "teapot.svg",
+    "name": "Teapot",
+    "alt": "Emoji: teapot"
+   },
+   {
+    "id": "teacup-without-handle",
+    "file": "teacup-without-handle.svg",
+    "name": "Teacup without handle",
+    "alt": "Emoji: teacup without handle"
+   },
+   {
+    "id": "sake",
+    "file": "sake.svg",
+    "name": "Sake",
+    "alt": "Emoji: sake"
+   },
+   {
+    "id": "bottle-with-popping-cork",
+    "file": "bottle-with-popping-cork.svg",
+    "name": "Bottle with popping cork",
+    "alt": "Emoji: bottle with popping cork"
+   },
+   {
+    "id": "wine-glass",
+    "file": "wine-glass.svg",
+    "name": "Wine glass",
+    "alt": "Emoji: wine glass"
+   },
+   {
+    "id": "cocktail-glass",
+    "file": "cocktail-glass.svg",
+    "name": "Cocktail glass",
+    "alt": "Emoji: cocktail glass"
+   },
+   {
+    "id": "tropical-drink",
+    "file": "tropical-drink.svg",
+    "name": "Tropical drink",
+    "alt": "Emoji: tropical drink"
+   },
+   {
+    "id": "beer-mug",
+    "file": "beer-mug.svg",
+    "name": "Beer mug",
+    "alt": "Emoji: beer mug"
+   },
+   {
+    "id": "clinking-beer-mugs",
+    "file": "clinking-beer-mugs.svg",
+    "name": "Clinking beer mugs",
+    "alt": "Emoji: clinking beer mugs"
+   },
+   {
+    "id": "clinking-glasses",
+    "file": "clinking-glasses.svg",
+    "name": "Clinking glasses",
+    "alt": "Emoji: clinking glasses"
+   },
+   {
+    "id": "tumbler-glass",
+    "file": "tumbler-glass.svg",
+    "name": "Tumbler glass",
+    "alt": "Emoji: tumbler glass"
+   },
+   {
+    "id": "pouring-liquid",
+    "file": "pouring-liquid.svg",
+    "name": "Pouring liquid",
+    "alt": "Emoji: pouring liquid"
+   },
+   {
+    "id": "cup-with-straw",
+    "file": "cup-with-straw.svg",
+    "name": "Cup with straw",
+    "alt": "Emoji: cup with straw"
+   },
+   {
+    "id": "bubble-tea",
+    "file": "bubble-tea.svg",
+    "name": "Bubble tea",
+    "alt": "Emoji: bubble tea"
+   },
+   {
+    "id": "beverage-box",
+    "file": "beverage-box.svg",
+    "name": "Beverage box",
+    "alt": "Emoji: beverage box"
+   },
+   {
+    "id": "mate",
+    "file": "mate.svg",
+    "name": "Mate",
+    "alt": "Emoji: mate"
+   },
+   {
+    "id": "ice",
+    "file": "ice.svg",
+    "name": "Ice",
+    "alt": "Emoji: ice"
+   },
+   {
+    "id": "chopsticks",
+    "file": "chopsticks.svg",
+    "name": "Chopsticks",
+    "alt": "Emoji: chopsticks"
+   },
+   {
+    "id": "fork-and-knife-with-plate",
+    "file": "fork-and-knife-with-plate.svg",
+    "name": "Fork and knife with plate",
+    "alt": "Emoji: fork and knife with plate"
+   },
+   {
+    "id": "fork-and-knife",
+    "file": "fork-and-knife.svg",
+    "name": "Fork and knife",
+    "alt": "Emoji: fork and knife"
+   },
+   {
+    "id": "spoon",
+    "file": "spoon.svg",
+    "name": "Spoon",
+    "alt": "Emoji: spoon"
+   },
+   {
+    "id": "kitchen-knife",
+    "file": "kitchen-knife.svg",
+    "name": "Kitchen knife",
+    "alt": "Emoji: kitchen knife"
+   },
+   {
+    "id": "jar",
+    "file": "jar.svg",
+    "name": "Jar",
+    "alt": "Emoji: jar"
+   },
+   {
+    "id": "amphora",
+    "file": "amphora.svg",
+    "name": "Amphora",
+    "alt": "Emoji: amphora"
+   }
+  ]
+ },
+ {
+  "id": "openmoji-travel-places",
+  "name": "OpenMoji: Travel & places",
+  "credit": "All emojis designed by OpenMoji (openmoji.org), the open-source emoji and icon project.",
+  "license": "CC BY-SA 4.0",
+  "items": [
+   {
+    "id": "globe-showing-europe-africa",
+    "file": "globe-showing-europe-africa.svg",
+    "name": "Globe showing Europe-Africa",
+    "alt": "Emoji: globe showing Europe-Africa"
+   },
+   {
+    "id": "globe-showing-americas",
+    "file": "globe-showing-americas.svg",
+    "name": "Globe showing Americas",
+    "alt": "Emoji: globe showing Americas"
+   },
+   {
+    "id": "globe-showing-asia-australia",
+    "file": "globe-showing-asia-australia.svg",
+    "name": "Globe showing Asia-Australia",
+    "alt": "Emoji: globe showing Asia-Australia"
+   },
+   {
+    "id": "globe-with-meridians",
+    "file": "globe-with-meridians.svg",
+    "name": "Globe with meridians",
+    "alt": "Emoji: globe with meridians"
+   },
+   {
+    "id": "world-map",
+    "file": "world-map.svg",
+    "name": "World map",
+    "alt": "Emoji: world map"
+   },
+   {
+    "id": "map-of-japan",
+    "file": "map-of-japan.svg",
+    "name": "Map of Japan",
+    "alt": "Emoji: map of Japan"
+   },
+   {
+    "id": "compass",
+    "file": "compass.svg",
+    "name": "Compass",
+    "alt": "Emoji: compass"
+   },
+   {
+    "id": "snow-capped-mountain",
+    "file": "snow-capped-mountain.svg",
+    "name": "Snow-capped mountain",
+    "alt": "Emoji: snow-capped mountain"
+   },
+   {
+    "id": "mountain",
+    "file": "mountain.svg",
+    "name": "Mountain",
+    "alt": "Emoji: mountain"
+   },
+   {
+    "id": "landslide",
+    "file": "landslide.svg",
+    "name": "Landslide",
+    "alt": "Emoji: landslide"
+   },
+   {
+    "id": "volcano",
+    "file": "volcano.svg",
+    "name": "Volcano",
+    "alt": "Emoji: volcano"
+   },
+   {
+    "id": "mount-fuji",
+    "file": "mount-fuji.svg",
+    "name": "Mount fuji",
+    "alt": "Emoji: mount fuji"
+   },
+   {
+    "id": "camping",
+    "file": "camping.svg",
+    "name": "Camping",
+    "alt": "Emoji: camping"
+   },
+   {
+    "id": "beach-with-umbrella",
+    "file": "beach-with-umbrella.svg",
+    "name": "Beach with umbrella",
+    "alt": "Emoji: beach with umbrella"
+   },
+   {
+    "id": "desert",
+    "file": "desert.svg",
+    "name": "Desert",
+    "alt": "Emoji: desert"
+   },
+   {
+    "id": "desert-island",
+    "file": "desert-island.svg",
+    "name": "Desert island",
+    "alt": "Emoji: desert island"
+   },
+   {
+    "id": "national-park",
+    "file": "national-park.svg",
+    "name": "National park",
+    "alt": "Emoji: national park"
+   },
+   {
+    "id": "stadium",
+    "file": "stadium.svg",
+    "name": "Stadium",
+    "alt": "Emoji: stadium"
+   },
+   {
+    "id": "classical-building",
+    "file": "classical-building.svg",
+    "name": "Classical building",
+    "alt": "Emoji: classical building"
+   },
+   {
+    "id": "building-construction",
+    "file": "building-construction.svg",
+    "name": "Building construction",
+    "alt": "Emoji: building construction"
+   },
+   {
+    "id": "brick",
+    "file": "brick.svg",
+    "name": "Brick",
+    "alt": "Emoji: brick"
+   },
+   {
+    "id": "rock",
+    "file": "rock.svg",
+    "name": "Rock",
+    "alt": "Emoji: rock"
+   },
+   {
+    "id": "wood",
+    "file": "wood.svg",
+    "name": "Wood",
+    "alt": "Emoji: wood"
+   },
+   {
+    "id": "hut",
+    "file": "hut.svg",
+    "name": "Hut",
+    "alt": "Emoji: hut"
+   },
+   {
+    "id": "houses",
+    "file": "houses.svg",
+    "name": "Houses",
+    "alt": "Emoji: houses"
+   },
+   {
+    "id": "derelict-house",
+    "file": "derelict-house.svg",
+    "name": "Derelict house",
+    "alt": "Emoji: derelict house"
+   },
+   {
+    "id": "house",
+    "file": "house.svg",
+    "name": "House",
+    "alt": "Emoji: house"
+   },
+   {
+    "id": "house-with-garden",
+    "file": "house-with-garden.svg",
+    "name": "House with garden",
+    "alt": "Emoji: house with garden"
+   },
+   {
+    "id": "office-building",
+    "file": "office-building.svg",
+    "name": "Office building",
+    "alt": "Emoji: office building"
+   },
+   {
+    "id": "japanese-post-office",
+    "file": "japanese-post-office.svg",
+    "name": "Japanese post office",
+    "alt": "Emoji: Japanese post office"
+   },
+   {
+    "id": "post-office",
+    "file": "post-office.svg",
+    "name": "Post office",
+    "alt": "Emoji: post office"
+   },
+   {
+    "id": "hospital",
+    "file": "hospital.svg",
+    "name": "Hospital",
+    "alt": "Emoji: hospital"
+   },
+   {
+    "id": "bank",
+    "file": "bank.svg",
+    "name": "Bank",
+    "alt": "Emoji: bank"
+   },
+   {
+    "id": "hotel",
+    "file": "hotel.svg",
+    "name": "Hotel",
+    "alt": "Emoji: hotel"
+   },
+   {
+    "id": "love-hotel",
+    "file": "love-hotel.svg",
+    "name": "Love hotel",
+    "alt": "Emoji: love hotel"
+   },
+   {
+    "id": "convenience-store",
+    "file": "convenience-store.svg",
+    "name": "Convenience store",
+    "alt": "Emoji: convenience store"
+   },
+   {
+    "id": "school",
+    "file": "school.svg",
+    "name": "School",
+    "alt": "Emoji: school"
+   },
+   {
+    "id": "department-store",
+    "file": "department-store.svg",
+    "name": "Department store",
+    "alt": "Emoji: department store"
+   },
+   {
+    "id": "factory",
+    "file": "factory.svg",
+    "name": "Factory",
+    "alt": "Emoji: factory"
+   },
+   {
+    "id": "japanese-castle",
+    "file": "japanese-castle.svg",
+    "name": "Japanese castle",
+    "alt": "Emoji: Japanese castle"
+   },
+   {
+    "id": "castle",
+    "file": "castle.svg",
+    "name": "Castle",
+    "alt": "Emoji: castle"
+   },
+   {
+    "id": "wedding",
+    "file": "wedding.svg",
+    "name": "Wedding",
+    "alt": "Emoji: wedding"
+   },
+   {
+    "id": "tokyo-tower",
+    "file": "tokyo-tower.svg",
+    "name": "Tokyo tower",
+    "alt": "Emoji: Tokyo tower"
+   },
+   {
+    "id": "statue-of-liberty",
+    "file": "statue-of-liberty.svg",
+    "name": "Statue of Liberty",
+    "alt": "Emoji: Statue of Liberty"
+   },
+   {
+    "id": "church",
+    "file": "church.svg",
+    "name": "Church",
+    "alt": "Emoji: church"
+   },
+   {
+    "id": "mosque",
+    "file": "mosque.svg",
+    "name": "Mosque",
+    "alt": "Emoji: mosque"
+   },
+   {
+    "id": "hindu-temple",
+    "file": "hindu-temple.svg",
+    "name": "Hindu temple",
+    "alt": "Emoji: hindu temple"
+   },
+   {
+    "id": "synagogue",
+    "file": "synagogue.svg",
+    "name": "Synagogue",
+    "alt": "Emoji: synagogue"
+   },
+   {
+    "id": "shinto-shrine",
+    "file": "shinto-shrine.svg",
+    "name": "Shinto shrine",
+    "alt": "Emoji: shinto shrine"
+   },
+   {
+    "id": "kaaba",
+    "file": "kaaba.svg",
+    "name": "Kaaba",
+    "alt": "Emoji: kaaba"
+   },
+   {
+    "id": "fountain",
+    "file": "fountain.svg",
+    "name": "Fountain",
+    "alt": "Emoji: fountain"
+   },
+   {
+    "id": "tent",
+    "file": "tent.svg",
+    "name": "Tent",
+    "alt": "Emoji: tent"
+   },
+   {
+    "id": "foggy",
+    "file": "foggy.svg",
+    "name": "Foggy",
+    "alt": "Emoji: foggy"
+   },
+   {
+    "id": "night-with-stars",
+    "file": "night-with-stars.svg",
+    "name": "Night with stars",
+    "alt": "Emoji: night with stars"
+   },
+   {
+    "id": "cityscape",
+    "file": "cityscape.svg",
+    "name": "Cityscape",
+    "alt": "Emoji: cityscape"
+   },
+   {
+    "id": "sunrise-over-mountains",
+    "file": "sunrise-over-mountains.svg",
+    "name": "Sunrise over mountains",
+    "alt": "Emoji: sunrise over mountains"
+   },
+   {
+    "id": "sunrise",
+    "file": "sunrise.svg",
+    "name": "Sunrise",
+    "alt": "Emoji: sunrise"
+   },
+   {
+    "id": "cityscape-at-dusk",
+    "file": "cityscape-at-dusk.svg",
+    "name": "Cityscape at dusk",
+    "alt": "Emoji: cityscape at dusk"
+   },
+   {
+    "id": "sunset",
+    "file": "sunset.svg",
+    "name": "Sunset",
+    "alt": "Emoji: sunset"
+   },
+   {
+    "id": "bridge-at-night",
+    "file": "bridge-at-night.svg",
+    "name": "Bridge at night",
+    "alt": "Emoji: bridge at night"
+   },
+   {
+    "id": "hot-springs",
+    "file": "hot-springs.svg",
+    "name": "Hot springs",
+    "alt": "Emoji: hot springs"
+   },
+   {
+    "id": "carousel-horse",
+    "file": "carousel-horse.svg",
+    "name": "Carousel horse",
+    "alt": "Emoji: carousel horse"
+   },
+   {
+    "id": "playground-slide",
+    "file": "playground-slide.svg",
+    "name": "Playground slide",
+    "alt": "Emoji: playground slide"
+   },
+   {
+    "id": "ferris-wheel",
+    "file": "ferris-wheel.svg",
+    "name": "Ferris wheel",
+    "alt": "Emoji: ferris wheel"
+   },
+   {
+    "id": "roller-coaster",
+    "file": "roller-coaster.svg",
+    "name": "Roller coaster",
+    "alt": "Emoji: roller coaster"
+   },
+   {
+    "id": "barber-pole",
+    "file": "barber-pole.svg",
+    "name": "Barber pole",
+    "alt": "Emoji: barber pole"
+   },
+   {
+    "id": "circus-tent",
+    "file": "circus-tent.svg",
+    "name": "Circus tent",
+    "alt": "Emoji: circus tent"
+   },
+   {
+    "id": "locomotive",
+    "file": "locomotive.svg",
+    "name": "Locomotive",
+    "alt": "Emoji: locomotive"
+   },
+   {
+    "id": "railway-car",
+    "file": "railway-car.svg",
+    "name": "Railway car",
+    "alt": "Emoji: railway car"
+   },
+   {
+    "id": "high-speed-train",
+    "file": "high-speed-train.svg",
+    "name": "High-speed train",
+    "alt": "Emoji: high-speed train"
+   },
+   {
+    "id": "bullet-train",
+    "file": "bullet-train.svg",
+    "name": "Bullet train",
+    "alt": "Emoji: bullet train"
+   },
+   {
+    "id": "train",
+    "file": "train.svg",
+    "name": "Train",
+    "alt": "Emoji: train"
+   },
+   {
+    "id": "metro",
+    "file": "metro.svg",
+    "name": "Metro",
+    "alt": "Emoji: metro"
+   },
+   {
+    "id": "light-rail",
+    "file": "light-rail.svg",
+    "name": "Light rail",
+    "alt": "Emoji: light rail"
+   },
+   {
+    "id": "station",
+    "file": "station.svg",
+    "name": "Station",
+    "alt": "Emoji: station"
+   },
+   {
+    "id": "tram",
+    "file": "tram.svg",
+    "name": "Tram",
+    "alt": "Emoji: tram"
+   },
+   {
+    "id": "monorail",
+    "file": "monorail.svg",
+    "name": "Monorail",
+    "alt": "Emoji: monorail"
+   },
+   {
+    "id": "mountain-railway",
+    "file": "mountain-railway.svg",
+    "name": "Mountain railway",
+    "alt": "Emoji: mountain railway"
+   },
+   {
+    "id": "tram-car",
+    "file": "tram-car.svg",
+    "name": "Tram car",
+    "alt": "Emoji: tram car"
+   },
+   {
+    "id": "bus",
+    "file": "bus.svg",
+    "name": "Bus",
+    "alt": "Emoji: bus"
+   },
+   {
+    "id": "oncoming-bus",
+    "file": "oncoming-bus.svg",
+    "name": "Oncoming bus",
+    "alt": "Emoji: oncoming bus"
+   },
+   {
+    "id": "trolleybus",
+    "file": "trolleybus.svg",
+    "name": "Trolleybus",
+    "alt": "Emoji: trolleybus"
+   },
+   {
+    "id": "minibus",
+    "file": "minibus.svg",
+    "name": "Minibus",
+    "alt": "Emoji: minibus"
+   },
+   {
+    "id": "ambulance",
+    "file": "ambulance.svg",
+    "name": "Ambulance",
+    "alt": "Emoji: ambulance"
+   },
+   {
+    "id": "fire-engine",
+    "file": "fire-engine.svg",
+    "name": "Fire engine",
+    "alt": "Emoji: fire engine"
+   },
+   {
+    "id": "police-car",
+    "file": "police-car.svg",
+    "name": "Police car",
+    "alt": "Emoji: police car"
+   },
+   {
+    "id": "oncoming-police-car",
+    "file": "oncoming-police-car.svg",
+    "name": "Oncoming police car",
+    "alt": "Emoji: oncoming police car"
+   },
+   {
+    "id": "taxi",
+    "file": "taxi.svg",
+    "name": "Taxi",
+    "alt": "Emoji: taxi"
+   },
+   {
+    "id": "oncoming-taxi",
+    "file": "oncoming-taxi.svg",
+    "name": "Oncoming taxi",
+    "alt": "Emoji: oncoming taxi"
+   },
+   {
+    "id": "automobile",
+    "file": "automobile.svg",
+    "name": "Automobile",
+    "alt": "Emoji: automobile"
+   },
+   {
+    "id": "oncoming-automobile",
+    "file": "oncoming-automobile.svg",
+    "name": "Oncoming automobile",
+    "alt": "Emoji: oncoming automobile"
+   },
+   {
+    "id": "sport-utility-vehicle",
+    "file": "sport-utility-vehicle.svg",
+    "name": "Sport utility vehicle",
+    "alt": "Emoji: sport utility vehicle"
+   },
+   {
+    "id": "pickup-truck",
+    "file": "pickup-truck.svg",
+    "name": "Pickup truck",
+    "alt": "Emoji: pickup truck"
+   },
+   {
+    "id": "delivery-truck",
+    "file": "delivery-truck.svg",
+    "name": "Delivery truck",
+    "alt": "Emoji: delivery truck"
+   },
+   {
+    "id": "articulated-lorry",
+    "file": "articulated-lorry.svg",
+    "name": "Articulated lorry",
+    "alt": "Emoji: articulated lorry"
+   },
+   {
+    "id": "tractor",
+    "file": "tractor.svg",
+    "name": "Tractor",
+    "alt": "Emoji: tractor"
+   },
+   {
+    "id": "racing-car",
+    "file": "racing-car.svg",
+    "name": "Racing car",
+    "alt": "Emoji: racing car"
+   },
+   {
+    "id": "motorcycle",
+    "file": "motorcycle.svg",
+    "name": "Motorcycle",
+    "alt": "Emoji: motorcycle"
+   },
+   {
+    "id": "motor-scooter",
+    "file": "motor-scooter.svg",
+    "name": "Motor scooter",
+    "alt": "Emoji: motor scooter"
+   },
+   {
+    "id": "manual-wheelchair",
+    "file": "manual-wheelchair.svg",
+    "name": "Manual wheelchair",
+    "alt": "Emoji: manual wheelchair"
+   },
+   {
+    "id": "motorized-wheelchair",
+    "file": "motorized-wheelchair.svg",
+    "name": "Motorized wheelchair",
+    "alt": "Emoji: motorized wheelchair"
+   },
+   {
+    "id": "auto-rickshaw",
+    "file": "auto-rickshaw.svg",
+    "name": "Auto rickshaw",
+    "alt": "Emoji: auto rickshaw"
+   },
+   {
+    "id": "bicycle",
+    "file": "bicycle.svg",
+    "name": "Bicycle",
+    "alt": "Emoji: bicycle"
+   },
+   {
+    "id": "kick-scooter",
+    "file": "kick-scooter.svg",
+    "name": "Kick scooter",
+    "alt": "Emoji: kick scooter"
+   },
+   {
+    "id": "skateboard",
+    "file": "skateboard.svg",
+    "name": "Skateboard",
+    "alt": "Emoji: skateboard"
+   },
+   {
+    "id": "roller-skate",
+    "file": "roller-skate.svg",
+    "name": "Roller skate",
+    "alt": "Emoji: roller skate"
+   },
+   {
+    "id": "bus-stop",
+    "file": "bus-stop.svg",
+    "name": "Bus stop",
+    "alt": "Emoji: bus stop"
+   },
+   {
+    "id": "motorway",
+    "file": "motorway.svg",
+    "name": "Motorway",
+    "alt": "Emoji: motorway"
+   },
+   {
+    "id": "railway-track",
+    "file": "railway-track.svg",
+    "name": "Railway track",
+    "alt": "Emoji: railway track"
+   },
+   {
+    "id": "oil-drum",
+    "file": "oil-drum.svg",
+    "name": "Oil drum",
+    "alt": "Emoji: oil drum"
+   },
+   {
+    "id": "fuel-pump",
+    "file": "fuel-pump.svg",
+    "name": "Fuel pump",
+    "alt": "Emoji: fuel pump"
+   },
+   {
+    "id": "wheel",
+    "file": "wheel.svg",
+    "name": "Wheel",
+    "alt": "Emoji: wheel"
+   },
+   {
+    "id": "police-car-light",
+    "file": "police-car-light.svg",
+    "name": "Police car light",
+    "alt": "Emoji: police car light"
+   },
+   {
+    "id": "horizontal-traffic-light",
+    "file": "horizontal-traffic-light.svg",
+    "name": "Horizontal traffic light",
+    "alt": "Emoji: horizontal traffic light"
+   },
+   {
+    "id": "vertical-traffic-light",
+    "file": "vertical-traffic-light.svg",
+    "name": "Vertical traffic light",
+    "alt": "Emoji: vertical traffic light"
+   },
+   {
+    "id": "stop-sign",
+    "file": "stop-sign.svg",
+    "name": "Stop sign",
+    "alt": "Emoji: stop sign"
+   },
+   {
+    "id": "construction",
+    "file": "construction.svg",
+    "name": "Construction",
+    "alt": "Emoji: construction"
+   },
+   {
+    "id": "anchor",
+    "file": "anchor.svg",
+    "name": "Anchor",
+    "alt": "Emoji: anchor"
+   },
+   {
+    "id": "ring-buoy",
+    "file": "ring-buoy.svg",
+    "name": "Ring buoy",
+    "alt": "Emoji: ring buoy"
+   },
+   {
+    "id": "sailboat",
+    "file": "sailboat.svg",
+    "name": "Sailboat",
+    "alt": "Emoji: sailboat"
+   },
+   {
+    "id": "canoe",
+    "file": "canoe.svg",
+    "name": "Canoe",
+    "alt": "Emoji: canoe"
+   },
+   {
+    "id": "speedboat",
+    "file": "speedboat.svg",
+    "name": "Speedboat",
+    "alt": "Emoji: speedboat"
+   },
+   {
+    "id": "passenger-ship",
+    "file": "passenger-ship.svg",
+    "name": "Passenger ship",
+    "alt": "Emoji: passenger ship"
+   },
+   {
+    "id": "ferry",
+    "file": "ferry.svg",
+    "name": "Ferry",
+    "alt": "Emoji: ferry"
+   },
+   {
+    "id": "motor-boat",
+    "file": "motor-boat.svg",
+    "name": "Motor boat",
+    "alt": "Emoji: motor boat"
+   },
+   {
+    "id": "ship",
+    "file": "ship.svg",
+    "name": "Ship",
+    "alt": "Emoji: ship"
+   },
+   {
+    "id": "airplane",
+    "file": "airplane.svg",
+    "name": "Airplane",
+    "alt": "Emoji: airplane"
+   },
+   {
+    "id": "small-airplane",
+    "file": "small-airplane.svg",
+    "name": "Small airplane",
+    "alt": "Emoji: small airplane"
+   },
+   {
+    "id": "airplane-departure",
+    "file": "airplane-departure.svg",
+    "name": "Airplane departure",
+    "alt": "Emoji: airplane departure"
+   },
+   {
+    "id": "airplane-arrival",
+    "file": "airplane-arrival.svg",
+    "name": "Airplane arrival",
+    "alt": "Emoji: airplane arrival"
+   },
+   {
+    "id": "parachute",
+    "file": "parachute.svg",
+    "name": "Parachute",
+    "alt": "Emoji: parachute"
+   },
+   {
+    "id": "seat",
+    "file": "seat.svg",
+    "name": "Seat",
+    "alt": "Emoji: seat"
+   },
+   {
+    "id": "helicopter",
+    "file": "helicopter.svg",
+    "name": "Helicopter",
+    "alt": "Emoji: helicopter"
+   },
+   {
+    "id": "suspension-railway",
+    "file": "suspension-railway.svg",
+    "name": "Suspension railway",
+    "alt": "Emoji: suspension railway"
+   },
+   {
+    "id": "mountain-cableway",
+    "file": "mountain-cableway.svg",
+    "name": "Mountain cableway",
+    "alt": "Emoji: mountain cableway"
+   },
+   {
+    "id": "aerial-tramway",
+    "file": "aerial-tramway.svg",
+    "name": "Aerial tramway",
+    "alt": "Emoji: aerial tramway"
+   },
+   {
+    "id": "satellite",
+    "file": "satellite.svg",
+    "name": "Satellite",
+    "alt": "Emoji: satellite"
+   },
+   {
+    "id": "rocket",
+    "file": "rocket.svg",
+    "name": "Rocket",
+    "alt": "Emoji: rocket"
+   },
+   {
+    "id": "flying-saucer",
+    "file": "flying-saucer.svg",
+    "name": "Flying saucer",
+    "alt": "Emoji: flying saucer"
+   },
+   {
+    "id": "bellhop-bell",
+    "file": "bellhop-bell.svg",
+    "name": "Bellhop bell",
+    "alt": "Emoji: bellhop bell"
+   },
+   {
+    "id": "luggage",
+    "file": "luggage.svg",
+    "name": "Luggage",
+    "alt": "Emoji: luggage"
+   },
+   {
+    "id": "hourglass-done",
+    "file": "hourglass-done.svg",
+    "name": "Hourglass done",
+    "alt": "Emoji: hourglass done"
+   },
+   {
+    "id": "hourglass-not-done",
+    "file": "hourglass-not-done.svg",
+    "name": "Hourglass not done",
+    "alt": "Emoji: hourglass not done"
+   },
+   {
+    "id": "watch",
+    "file": "watch.svg",
+    "name": "Watch",
+    "alt": "Emoji: watch"
+   },
+   {
+    "id": "alarm-clock",
+    "file": "alarm-clock.svg",
+    "name": "Alarm clock",
+    "alt": "Emoji: alarm clock"
+   },
+   {
+    "id": "stopwatch",
+    "file": "stopwatch.svg",
+    "name": "Stopwatch",
+    "alt": "Emoji: stopwatch"
+   },
+   {
+    "id": "timer-clock",
+    "file": "timer-clock.svg",
+    "name": "Timer clock",
+    "alt": "Emoji: timer clock"
+   },
+   {
+    "id": "mantelpiece-clock",
+    "file": "mantelpiece-clock.svg",
+    "name": "Mantelpiece clock",
+    "alt": "Emoji: mantelpiece clock"
+   },
+   {
+    "id": "twelve-o-clock",
+    "file": "twelve-o-clock.svg",
+    "name": "Twelve o’clock",
+    "alt": "Emoji: twelve o’clock"
+   },
+   {
+    "id": "twelve-thirty",
+    "file": "twelve-thirty.svg",
+    "name": "Twelve-thirty",
+    "alt": "Emoji: twelve-thirty"
+   },
+   {
+    "id": "one-o-clock",
+    "file": "one-o-clock.svg",
+    "name": "One o’clock",
+    "alt": "Emoji: one o’clock"
+   },
+   {
+    "id": "one-thirty",
+    "file": "one-thirty.svg",
+    "name": "One-thirty",
+    "alt": "Emoji: one-thirty"
+   },
+   {
+    "id": "two-o-clock",
+    "file": "two-o-clock.svg",
+    "name": "Two o’clock",
+    "alt": "Emoji: two o’clock"
+   },
+   {
+    "id": "two-thirty",
+    "file": "two-thirty.svg",
+    "name": "Two-thirty",
+    "alt": "Emoji: two-thirty"
+   },
+   {
+    "id": "three-o-clock",
+    "file": "three-o-clock.svg",
+    "name": "Three o’clock",
+    "alt": "Emoji: three o’clock"
+   },
+   {
+    "id": "three-thirty",
+    "file": "three-thirty.svg",
+    "name": "Three-thirty",
+    "alt": "Emoji: three-thirty"
+   },
+   {
+    "id": "four-o-clock",
+    "file": "four-o-clock.svg",
+    "name": "Four o’clock",
+    "alt": "Emoji: four o’clock"
+   },
+   {
+    "id": "four-thirty",
+    "file": "four-thirty.svg",
+    "name": "Four-thirty",
+    "alt": "Emoji: four-thirty"
+   },
+   {
+    "id": "five-o-clock",
+    "file": "five-o-clock.svg",
+    "name": "Five o’clock",
+    "alt": "Emoji: five o’clock"
+   },
+   {
+    "id": "five-thirty",
+    "file": "five-thirty.svg",
+    "name": "Five-thirty",
+    "alt": "Emoji: five-thirty"
+   },
+   {
+    "id": "six-o-clock",
+    "file": "six-o-clock.svg",
+    "name": "Six o’clock",
+    "alt": "Emoji: six o’clock"
+   },
+   {
+    "id": "six-thirty",
+    "file": "six-thirty.svg",
+    "name": "Six-thirty",
+    "alt": "Emoji: six-thirty"
+   },
+   {
+    "id": "seven-o-clock",
+    "file": "seven-o-clock.svg",
+    "name": "Seven o’clock",
+    "alt": "Emoji: seven o’clock"
+   },
+   {
+    "id": "seven-thirty",
+    "file": "seven-thirty.svg",
+    "name": "Seven-thirty",
+    "alt": "Emoji: seven-thirty"
+   },
+   {
+    "id": "eight-o-clock",
+    "file": "eight-o-clock.svg",
+    "name": "Eight o’clock",
+    "alt": "Emoji: eight o’clock"
+   },
+   {
+    "id": "eight-thirty",
+    "file": "eight-thirty.svg",
+    "name": "Eight-thirty",
+    "alt": "Emoji: eight-thirty"
+   },
+   {
+    "id": "nine-o-clock",
+    "file": "nine-o-clock.svg",
+    "name": "Nine o’clock",
+    "alt": "Emoji: nine o’clock"
+   },
+   {
+    "id": "nine-thirty",
+    "file": "nine-thirty.svg",
+    "name": "Nine-thirty",
+    "alt": "Emoji: nine-thirty"
+   },
+   {
+    "id": "ten-o-clock",
+    "file": "ten-o-clock.svg",
+    "name": "Ten o’clock",
+    "alt": "Emoji: ten o’clock"
+   },
+   {
+    "id": "ten-thirty",
+    "file": "ten-thirty.svg",
+    "name": "Ten-thirty",
+    "alt": "Emoji: ten-thirty"
+   },
+   {
+    "id": "eleven-o-clock",
+    "file": "eleven-o-clock.svg",
+    "name": "Eleven o’clock",
+    "alt": "Emoji: eleven o’clock"
+   },
+   {
+    "id": "eleven-thirty",
+    "file": "eleven-thirty.svg",
+    "name": "Eleven-thirty",
+    "alt": "Emoji: eleven-thirty"
+   },
+   {
+    "id": "new-moon",
+    "file": "new-moon.svg",
+    "name": "New moon",
+    "alt": "Emoji: new moon"
+   },
+   {
+    "id": "waxing-crescent-moon",
+    "file": "waxing-crescent-moon.svg",
+    "name": "Waxing crescent moon",
+    "alt": "Emoji: waxing crescent moon"
+   },
+   {
+    "id": "first-quarter-moon",
+    "file": "first-quarter-moon.svg",
+    "name": "First quarter moon",
+    "alt": "Emoji: first quarter moon"
+   },
+   {
+    "id": "waxing-gibbous-moon",
+    "file": "waxing-gibbous-moon.svg",
+    "name": "Waxing gibbous moon",
+    "alt": "Emoji: waxing gibbous moon"
+   },
+   {
+    "id": "full-moon",
+    "file": "full-moon.svg",
+    "name": "Full moon",
+    "alt": "Emoji: full moon"
+   },
+   {
+    "id": "waning-gibbous-moon",
+    "file": "waning-gibbous-moon.svg",
+    "name": "Waning gibbous moon",
+    "alt": "Emoji: waning gibbous moon"
+   },
+   {
+    "id": "last-quarter-moon",
+    "file": "last-quarter-moon.svg",
+    "name": "Last quarter moon",
+    "alt": "Emoji: last quarter moon"
+   },
+   {
+    "id": "waning-crescent-moon",
+    "file": "waning-crescent-moon.svg",
+    "name": "Waning crescent moon",
+    "alt": "Emoji: waning crescent moon"
+   },
+   {
+    "id": "crescent-moon",
+    "file": "crescent-moon.svg",
+    "name": "Crescent moon",
+    "alt": "Emoji: crescent moon"
+   },
+   {
+    "id": "new-moon-face",
+    "file": "new-moon-face.svg",
+    "name": "New moon face",
+    "alt": "Emoji: new moon face"
+   },
+   {
+    "id": "first-quarter-moon-face",
+    "file": "first-quarter-moon-face.svg",
+    "name": "First quarter moon face",
+    "alt": "Emoji: first quarter moon face"
+   },
+   {
+    "id": "last-quarter-moon-face",
+    "file": "last-quarter-moon-face.svg",
+    "name": "Last quarter moon face",
+    "alt": "Emoji: last quarter moon face"
+   },
+   {
+    "id": "thermometer",
+    "file": "thermometer.svg",
+    "name": "Thermometer",
+    "alt": "Emoji: thermometer"
+   },
+   {
+    "id": "sun",
+    "file": "sun.svg",
+    "name": "Sun",
+    "alt": "Emoji: sun"
+   },
+   {
+    "id": "full-moon-face",
+    "file": "full-moon-face.svg",
+    "name": "Full moon face",
+    "alt": "Emoji: full moon face"
+   },
+   {
+    "id": "sun-with-face",
+    "file": "sun-with-face.svg",
+    "name": "Sun with face",
+    "alt": "Emoji: sun with face"
+   },
+   {
+    "id": "ringed-planet",
+    "file": "ringed-planet.svg",
+    "name": "Ringed planet",
+    "alt": "Emoji: ringed planet"
+   },
+   {
+    "id": "star",
+    "file": "star.svg",
+    "name": "Star",
+    "alt": "Emoji: star"
+   },
+   {
+    "id": "glowing-star",
+    "file": "glowing-star.svg",
+    "name": "Glowing star",
+    "alt": "Emoji: glowing star"
+   },
+   {
+    "id": "shooting-star",
+    "file": "shooting-star.svg",
+    "name": "Shooting star",
+    "alt": "Emoji: shooting star"
+   },
+   {
+    "id": "milky-way",
+    "file": "milky-way.svg",
+    "name": "Milky way",
+    "alt": "Emoji: milky way"
+   },
+   {
+    "id": "cloud",
+    "file": "cloud.svg",
+    "name": "Cloud",
+    "alt": "Emoji: cloud"
+   },
+   {
+    "id": "sun-behind-cloud",
+    "file": "sun-behind-cloud.svg",
+    "name": "Sun behind cloud",
+    "alt": "Emoji: sun behind cloud"
+   },
+   {
+    "id": "cloud-with-lightning-and-rain",
+    "file": "cloud-with-lightning-and-rain.svg",
+    "name": "Cloud with lightning and rain",
+    "alt": "Emoji: cloud with lightning and rain"
+   },
+   {
+    "id": "sun-behind-small-cloud",
+    "file": "sun-behind-small-cloud.svg",
+    "name": "Sun behind small cloud",
+    "alt": "Emoji: sun behind small cloud"
+   },
+   {
+    "id": "sun-behind-large-cloud",
+    "file": "sun-behind-large-cloud.svg",
+    "name": "Sun behind large cloud",
+    "alt": "Emoji: sun behind large cloud"
+   },
+   {
+    "id": "sun-behind-rain-cloud",
+    "file": "sun-behind-rain-cloud.svg",
+    "name": "Sun behind rain cloud",
+    "alt": "Emoji: sun behind rain cloud"
+   },
+   {
+    "id": "cloud-with-rain",
+    "file": "cloud-with-rain.svg",
+    "name": "Cloud with rain",
+    "alt": "Emoji: cloud with rain"
+   },
+   {
+    "id": "cloud-with-snow",
+    "file": "cloud-with-snow.svg",
+    "name": "Cloud with snow",
+    "alt": "Emoji: cloud with snow"
+   },
+   {
+    "id": "cloud-with-lightning",
+    "file": "cloud-with-lightning.svg",
+    "name": "Cloud with lightning",
+    "alt": "Emoji: cloud with lightning"
+   },
+   {
+    "id": "tornado",
+    "file": "tornado.svg",
+    "name": "Tornado",
+    "alt": "Emoji: tornado"
+   },
+   {
+    "id": "fog",
+    "file": "fog.svg",
+    "name": "Fog",
+    "alt": "Emoji: fog"
+   },
+   {
+    "id": "wind-face",
+    "file": "wind-face.svg",
+    "name": "Wind face",
+    "alt": "Emoji: wind face"
+   },
+   {
+    "id": "cyclone",
+    "file": "cyclone.svg",
+    "name": "Cyclone",
+    "alt": "Emoji: cyclone"
+   },
+   {
+    "id": "rainbow",
+    "file": "rainbow.svg",
+    "name": "Rainbow",
+    "alt": "Emoji: rainbow"
+   },
+   {
+    "id": "closed-umbrella",
+    "file": "closed-umbrella.svg",
+    "name": "Closed umbrella",
+    "alt": "Emoji: closed umbrella"
+   },
+   {
+    "id": "umbrella",
+    "file": "umbrella.svg",
+    "name": "Umbrella",
+    "alt": "Emoji: umbrella"
+   },
+   {
+    "id": "umbrella-with-rain-drops",
+    "file": "umbrella-with-rain-drops.svg",
+    "name": "Umbrella with rain drops",
+    "alt": "Emoji: umbrella with rain drops"
+   },
+   {
+    "id": "umbrella-on-ground",
+    "file": "umbrella-on-ground.svg",
+    "name": "Umbrella on ground",
+    "alt": "Emoji: umbrella on ground"
+   },
+   {
+    "id": "high-voltage",
+    "file": "high-voltage.svg",
+    "name": "High voltage",
+    "alt": "Emoji: high voltage"
+   },
+   {
+    "id": "snowflake",
+    "file": "snowflake.svg",
+    "name": "Snowflake",
+    "alt": "Emoji: snowflake"
+   },
+   {
+    "id": "snowman",
+    "file": "snowman.svg",
+    "name": "Snowman",
+    "alt": "Emoji: snowman"
+   },
+   {
+    "id": "snowman-without-snow",
+    "file": "snowman-without-snow.svg",
+    "name": "Snowman without snow",
+    "alt": "Emoji: snowman without snow"
+   },
+   {
+    "id": "comet",
+    "file": "comet.svg",
+    "name": "Comet",
+    "alt": "Emoji: comet"
+   },
+   {
+    "id": "fire",
+    "file": "fire.svg",
+    "name": "Fire",
+    "alt": "Emoji: fire"
+   },
+   {
+    "id": "droplet",
+    "file": "droplet.svg",
+    "name": "Droplet",
+    "alt": "Emoji: droplet"
+   },
+   {
+    "id": "water-wave",
+    "file": "water-wave.svg",
+    "name": "Water wave",
+    "alt": "Emoji: water wave"
+   }
+  ]
  }
 ]
