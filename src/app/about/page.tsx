@@ -192,13 +192,12 @@ export default function Landing() {
           <Wordmark />
         </h1>
         <p className="landing-lede">
-          One page for one period of your life. Photos, songs, quotes and voice notes, each <em>placed by hand.</em>
+          A period of your life, set to photos, voice notes, quotes.
         </p>
         <div className="landing-actions">
-          {/* Plain <a>: a route handler that redirects, not a page to prefetch. */}
-          <a className="button primary" href={`${BASE_PATH}/api/latest`}>
+          <Link className="button primary" href="/demo">
             see a season ▸
-          </a>
+          </Link>
           <a className="button" href={guide}>
             run your own
           </a>
