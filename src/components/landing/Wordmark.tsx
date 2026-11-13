@@ -1,6 +1,6 @@
 /**
  * "seeaassoonnss": the word "seasons" with every letter after the first said twice.
- * The second letter of each pair is set as a quieter italic echo, so "seasons" still
+ * The second letter of each pair is set in italic as an echo, so "seasons" still
  * reads in the upright letters. Screen readers get the plain name.
  */
 const PAIRS = ["s", "ee", "aa", "ss", "oo", "nn", "ss"];
