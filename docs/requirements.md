@@ -1,12 +1,12 @@
-# Seasons — Requirements
+# seeaassoonnss — Requirements
 
 Oct 28, 2026 · @Dbeueudvdbd Djeisisheneke · Updated Nov 9, 2026 (see [Decision log](#decision-log))
 
 ## Overview
 
-Seasons is a single-author web app. It records one period of life as one public page of photos, video, quotes, a Spotify playlist and other items in a free-form layout.
+seeaassoonnss is a single-author web app. It records one period of life as one public page of photos, video, quotes, a Spotify playlist and other items in a free-form layout.
 
-1. **Name:** Seasons. One page is a season. (Earlier Pinterest versions used the word "moodboard".)
+1. **Name:** seeaassoonnss ("seasons" with each letter after the first doubled; renamed from Seasons on Nov 10 for the domain seeaassoonnss.app). One page is a season. (Earlier Pinterest versions used the word "moodboard".)
 2. **Author:** one person (the owner). There are no other accounts, no collaborators and no comments.
 3. **Audience:** the public. Visitors view seasons on the owner's website at `/seasons/[slug]`. Visitors cannot edit.
 4. **Source code:** public on GitHub, so other people can fork the app and run their own copy.
@@ -40,15 +40,15 @@ The app must make one season fast to assemble and strange to look at, and must c
 
 ## Architecture and stack
 
-Seasons is a separate Vercel project. The main website forwards `/seasons/*` to it, so visitors stay on the owner's domain. Items marked "proposed" are open for change.
+seeaassoonnss is a separate Vercel project. The main website forwards `/seasons/*` to it, so visitors stay on the owner's domain. Items marked "proposed" are open for change.
 
-Visitors reach season pages through the main site's rewrite. The owner uses the editor only after passkey sign-in. Only the Seasons app talks to the database, storage and Spotify.
+Visitors reach season pages through the main site's rewrite. The owner uses the editor only after passkey sign-in. Only the seeaassoonnss app talks to the database, storage and Spotify.
 
 | Part | Choice | Status |
 | --- | --- | --- |
 | Framework | Next.js (App Router), TypeScript | Decided |
 | Hosting | Vercel, separate project from the main site | Decided |
-| URL | Main site rewrites `/seasons/:path*` to the Seasons deployment; Seasons sets `basePath: "/seasons"` | Proposed |
+| URL | Main site rewrites `/seasons/:path*` to the seeaassoonnss deployment; seeaassoonnss sets `basePath: "/seasons"` | Proposed |
 | Database | Hosted Postgres with a free tier (for example Neon); one JSON document per season | Proposed |
 | Media storage | Cloudflare R2: a public bucket for processed media, a private bucket for originals | Decided |
 | Sign-in | Passkey (WebAuthn), one owner | Decided |
@@ -206,7 +206,7 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 
 A route map is an optional mode of the Map item. The map stays fixed on the screen while text and photos scroll next to it or over it. The route line draws in as the reader scrolls.
 
-Odyssey is built with Seasons: it is one season, and the route map is part of its page. A season is one canvas, and a page now grows without a length limit, so the route map has to work as part of that canvas. How it does is an open question (see Open questions).
+Odyssey is built with seeaassoonnss: it is one season, and the route map is part of its page. A season is one canvas, and a page now grows without a length limit, so the route map has to work as part of that canvas. How it does is an open question (see Open questions).
 
 ### References
 
@@ -228,12 +228,12 @@ Odyssey is built with Seasons: it is one season, and the route map is part of it
 
 ### Odyssey page
 
-1. Odyssey is a season in Seasons, for example at `/seasons/odyssey`.
+1. Odyssey is a season in seeaassoonnss, for example at `/seasons/odyssey`.
 2. The owner's main website has an `/odyssey` route that shows that season with the scroll-driven route map, through a rewrite or redirect to the season page.
 
 ## Generative and 3D layer
 
-Seasons uses p5.js for 2D generative backgrounds and React Three Fiber for 3D. Spline is not a requirement. All 3D models use the open glTF format, so a fork does not need a paid tool. Built in phase 6.
+seeaassoonnss uses p5.js for 2D generative backgrounds and React Three Fiber for 3D. Spline is not a requirement. All 3D models use the open glTF format, so a fork does not need a paid tool. Built in phase 6.
 
 ### Effects
 
@@ -333,6 +333,7 @@ Two public routes exist: the index and one page per season. Drafts are never pub
 | Route | Shows | Notes |
 | --- | --- | --- |
 | `/seasons` | List of published seasons | Each entry: cover image, `// title`, period. Newest first; an optional `sort_order` pins a season to a position |
+| `/seasons/about` | Landing page for the project | What the app is, a sample season visitors can drag about, and how to run a copy. Static; no database. With `LANDING_PAGE=on`, `/` redirects to it |
 | `/seasons/[slug]` | One season canvas | Desktop or mobile layout by screen width |
 | `/seasons/edit/...` | Editor | Owner only; requires passkey session |
 
@@ -351,10 +352,10 @@ Two public routes exist: the index and one page per season. Drafts are never pub
 License: GNU AGPL-3.0 (`AGPL-3.0-only`). The full text is in [`LICENSE`](../LICENSE).
 
 1. **Effect.** Anyone can use, change and share the code. A person who distributes a copy, changed or not, must share its source code under the same license.
-2. **Hosted copies.** A person who changes Seasons and runs it as a website for others must offer those users the changed source code (section 13). This is the main reason to choose AGPL-3.0 over GPL-3.0 (the BookBox license): a web app is mostly run, not distributed.
+2. **Hosted copies.** A person who changes seeaassoonnss and runs it as a website for others must offer those users the changed source code (section 13). This is the main reason to choose AGPL-3.0 over GPL-3.0 (the BookBox license): a web app is mostly run, not distributed.
 3. **Commercial use.** AGPL-3.0 does not forbid sale or commercial use ([GNU: Selling Free Software](https://www.gnu.org/philosophy/selling)). Anyone may charge for a copy or a hosted service, but a changed version they run must still offer its source to its users. Forbidding sale outright would need a noncommercial license such as PolyForm Noncommercial, which is not open source; that option was rejected.
 4. **Naming.** AGPL-3.0 is an open source license, so the README can say "open source".
-5. **Source link.** As in BookBox, the app shows a "Seasons is open source" link. A `SOURCE_URL` constant points it at the fork's repository. Under AGPL-3.0 this link is the simplest way for a changed fork to meet section 13, so forks should keep it.
+5. **Source link.** As in BookBox, the app shows a "seeaassoonnss is open source" link. A `SOURCE_URL` constant points it at the fork's repository. Under AGPL-3.0 this link is the simplest way for a changed fork to meet section 13, so forks should keep it.
 6. **Scope.** The license covers code only. Season content (photos, quotes, audio) lives in the database and storage, not in the repository.
 
 ### Fork requirements
@@ -364,8 +365,8 @@ License: GNU AGPL-3.0 (`AGPL-3.0-only`). The full text is in [`LICENSE`](../LICE
 3. The README gives deploy steps for Vercel, one Postgres provider and Cloudflare R2.
 4. The repository includes no personal content, no stickers, no model files and no real keys.
 5. A seed command makes one demo season with placeholder items, including a 3D model built by the script, a type effect, cursor follow and a sketch background, and adds three example sketches to the sketch library.
-6. **Who runs a copy.** Seasons stays single-owner. The owner may run copies for friends or family; each of them gets their own deployment (own database, storage and passkey), not an account on the owner's. Anyone else forks the repository.
-7. **Public demo.** As with BookBox, a demo deployment shows what Seasons does: a separate deployment with the seeded demo season published. Its editor stays locked to its owner; visitors cannot try it (decided Nov 9). An open editor would let anyone upload files to public storage and publish pages on the owner's domain, which would need moderation, upload quotas and regular resets to run safely.
+6. **Who runs a copy.** seeaassoonnss stays single-owner. The owner may run copies for friends or family; each of them gets their own deployment (own database, storage and passkey), not an account on the owner's. Anyone else forks the repository.
+7. **Public demo.** As with BookBox, a demo deployment shows what seeaassoonnss does: a separate deployment with the seeded demo season published. Its editor stays locked to its owner; visitors cannot try it (decided Nov 9). An open editor would let anyone upload files to public storage and publish pages on the owner's domain, which would need moderation, upload quotas and regular resets to run safely.
 
 ## Visual references and prior art
 
@@ -512,7 +513,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 
 **Nov 4, 2026**
 
-1. Odyssey is back in scope, built with Seasons. This reverses the Nov 3 entry above. The scroll-driven route map returns as part of the Odyssey season, proposed as phase 5.
+1. Odyssey is back in scope, built with seeaassoonnss. This reverses the Nov 3 entry above. The scroll-driven route map returns as part of the Odyssey season, proposed as phase 5.
 
 **Nov 4, 2026 (phase 5 build)**
 
@@ -543,7 +544,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 **Nov 9, 2026 (phase 6 build)**
 
 1. Answers: random placement moves all unlocked items; 3D runs on phones; models are compressed on upload (measurements and reasons in [3D model compression](#3d-model-compression)); the owner writes their own p5.js sketches, stored in their own database.
-2. Seasons stays single-owner. Friends or family who want seasons get their own deployment. A public demo deployment, as for BookBox, shows the seeded demo season.
+2. seeaassoonnss stays single-owner. Friends or family who want seasons get their own deployment. A public demo deployment, as for BookBox, shows the seeded demo season.
 3. p5.js runs in global mode in a sandboxed iframe instead of instance mode in a React component: stronger isolation for owner-written code, and sketches paste straight from the p5.js web editor. The page passes the cursor in as messages, so `mouseX` and `mouseY` work; `seasons.scroll` gives scroll progress. Write routes refuse requests with any origin other than `SITE_URL`, which includes a sketch frame's `null` origin.
 4. A season stores its own copy of a sketch's code. Editing the library copy never changes a published page.
 5. drei is not used. Generative type is DOM and CSS, not p5, so it stays readable text.
@@ -554,3 +555,9 @@ Version 1 must replace one Pinterest board with one published season. Everything
 **Nov 9, 2026 (demo)**
 
 1. Visitors cannot use the editor on the public demo. It shows the published demo season only.
+
+**Nov 10, 2026 (name and landing page)**
+
+1. The project is renamed seeaassoonnss, for the domain seeaassoonnss.app ("seasons" was not available). It is written in lowercase. A page is still a season, and internal names stay: the `/seasons` base path, database tables, cookies and the `seasons.scroll` sketch variable, so existing pages, sign-ins and sketches keep working.
+2. A landing page at `/seasons/about` explains the app and how to run a copy, in the app's own type and colors: EB Garamond, IBM Plex Mono, `//` headings. Its sample season is built from the botanical sticker pack and the app's playlist and voice note cards, with a separate phone layout, and can be dragged with a mouse.
+3. With `LANDING_PAGE=on`, `/` redirects to it (Next.js cannot rewrite outside the base path). Without it, `/` still goes to `/seasons`, so forks keep their behavior. `about` is now a reserved slug.

@@ -51,7 +51,7 @@ export function seasonMetadata(slug: string, doc: SeasonDoc, mediaBase: string):
     title,
     description,
     alternates: { canonical: url },
-    openGraph: { type: "article", siteName: "seasons", title, description, url, images },
+    openGraph: { type: "article", siteName: "seeaassoonnss", title, description, url, images },
     twitter: { card: images ? "summary_large_image" : "summary", title, description, images: images?.map((i) => i.url) },
   };
 }

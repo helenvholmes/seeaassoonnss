@@ -8,7 +8,7 @@ export const POST = handle(async (request: Request) => {
   await requireOwner(request);
   const body = await readJson(request);
   try {
-    const places = await searchPlaces(String(body.q ?? ""), `Seasons (self-hosted; ${config.sourceUrl})`);
+    const places = await searchPlaces(String(body.q ?? ""), `seeaassoonnss (self-hosted; ${config.sourceUrl})`);
     return NextResponse.json(places);
   } catch (e) {
     if (e instanceof GeoError) return NextResponse.json({ error: e.message }, { status: 502 });

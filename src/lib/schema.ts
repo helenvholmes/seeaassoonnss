@@ -327,7 +327,7 @@ export const CANVAS_WIDTH: Record<Layout, number> = { desktop: DESKTOP_WIDTH, mo
 
 export const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 /** Paths used by the app itself, so no season can take them. */
-export const RESERVED_SLUGS = new Set(["edit", "api", "local-media", "map", "vendor", "_next"]);
+export const RESERVED_SLUGS = new Set(["about", "edit", "api", "local-media", "map", "vendor", "_next"]);
 
 export function slugProblem(slug: string): string | null {
   if (!slug) return "Slug is empty.";

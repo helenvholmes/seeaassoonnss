@@ -7,7 +7,7 @@ import "@fontsource/ibm-plex-mono/400-italic.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import "./globals.css";
 
-export const metadata: Metadata = { title: "seasons" };
+export const metadata: Metadata = { title: "seeaassoonnss" };
 export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
