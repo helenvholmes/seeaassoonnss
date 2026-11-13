@@ -195,9 +195,10 @@ export default function Landing() {
           One page for one period of your life. Photos, songs, quotes and voice notes, each <em>placed by hand.</em>
         </p>
         <div className="landing-actions">
-          <Link className="button primary" href="/demo">
+          {/* Plain <a>: a route handler that redirects, not a page to prefetch. */}
+          <a className="button primary" href={`${BASE_PATH}/api/latest`}>
             see a season ▸
-          </Link>
+          </a>
           <a className="button" href={guide}>
             run your own
           </a>
