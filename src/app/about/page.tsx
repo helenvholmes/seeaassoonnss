@@ -11,7 +11,7 @@ export const dynamic = "force-static";
 
 const NAME = "seeaassoonnss";
 const DESCRIPTION =
-  "One page for one period of your life: photos, songs, quotes and voice notes, each placed by hand. Open source; run your own copy for free.";
+  "A period of your life, set to photos, voice notes, quotes. Open source; run your own copy for free.";
 
 export function generateMetadata(): Metadata {
   const site = process.env.SITE_URL;
