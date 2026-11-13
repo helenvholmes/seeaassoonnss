@@ -1,0 +1,366 @@
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: #fbfbf9;
+  color: #1d1d1b;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Canvas (shared by the public page and the editor) ---------- */
+.canvas {
+  position: relative;
+  width: 100%;
+  margin: 0 auto;
+  /* The page cuts off parts of items outside the canvas. "clip" (unlike "hidden")
+     does not create a scroll container, so route maps can stay fixed (sticky). */
+  overflow: hidden;
+  overflow: clip;
+  container-type: inline-size;
+}
+.item { position: absolute; transform-origin: center center; }
+/* The mobile breakpoint is MOBILE_BREAKPOINT (960 px) in lib/schema.ts. */
+.only-mobile { display: none; }
+@media (max-width: 959.98px) {
+  .only-desktop { display: none; }
+  .only-mobile { display: block; }
+}
+.item-photo { display: block; width: 100%; height: 100%; user-select: none; -webkit-user-drag: none; }
+.item-quote { margin: 0; line-height: 1.3; font-weight: 400; overflow-wrap: break-word; }
+.item-quote p { margin: 0 0 0.6em; }
+.item-quote p:last-child { margin-bottom: 0; }
+.item-quote a { color: inherit; }
+.item-quote-source { opacity: 0.6; font-size: 0.7em; margin-top: 0.6em !important; }
+.item-title { font-weight: 400; }
+
+/* ---------- Playlist card ---------- */
+.playlist-card {
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 4%;
+  padding: 4%;
+  background: #fff;
+  color: #1d1d1b;
+  text-decoration: none;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  cursor: pointer;
+  overflow: hidden;
+}
+@container (min-aspect-ratio: 3 / 2) {
+  .playlist-text { justify-content: center; }
+}
+.playlist-cover { width: 100%; aspect-ratio: 1; object-fit: cover; flex: 0 1 auto; min-height: 0; background: #e8e8e4; }
+.playlist-text { display: flex; flex-direction: column; gap: 0.35em; min-width: 0; font-size: clamp(8px, 6.5cqw, 40px); }
+.playlist-label { opacity: 0.55; font-size: 0.75em; text-transform: lowercase; }
+.playlist-title { font-weight: 600; }
+.playlist-caption { opacity: 0.75; font-size: 0.85em; }
+@container (min-aspect-ratio: 3 / 2) {
+  .playlist-card { flex-direction: row; }
+  .playlist-cover { width: auto; height: 100%; }
+  .playlist-text { font-size: clamp(8px, 9cqh, 40px); }
+}
+.playlist-embed { display: block; width: 100%; height: 100%; border: 0; border-radius: 12px; }
+
+/* ---------- Public page ---------- */
+.season-page { min-height: 100vh; }
+.source-link {
+  display: block;
+  padding: 32px 16px 40px;
+  text-align: center;
+  font: 12px "IBM Plex Mono", ui-monospace, monospace;
+  color: inherit;
+  opacity: 0.45;
+}
+.source-link:hover { opacity: 0.8; }
+
+/* ---------- Owner pages ---------- */
+.owner { font: 14px/1.45 "IBM Plex Mono", ui-monospace, monospace; max-width: 720px; margin: 0 auto; padding: 48px 16px; }
+.owner h1 { font: 400 28px "EB Garamond", serif; margin: 0 0 24px; }
+.owner a { color: inherit; }
+.owner-list { list-style: none; padding: 0; margin: 24px 0; border-top: 1px solid #e3e3df; }
+.owner-list li { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-bottom: 1px solid #e3e3df; }
+.muted { opacity: 0.55; }
+.error { color: #b3261e; }
+button, .button, input, textarea, select { font: inherit; }
+button, .button {
+  border: 1px solid #1d1d1b; background: #fff; color: #1d1d1b; padding: 6px 12px;
+  border-radius: 4px; cursor: pointer; text-decoration: none; display: inline-block;
+}
+button:hover:not(:disabled), .button:hover { background: #1d1d1b; color: #fff; }
+button:disabled { opacity: 0.4; cursor: default; }
+button.primary { background: #1d1d1b; color: #fff; }
+button.quiet { border-color: transparent; background: transparent; }
+button.quiet:hover:not(:disabled) { background: #ecece8; color: inherit; }
+input[type="text"], input[type="password"], input[type="number"], input[type="url"], textarea, select {
+  border: 1px solid #c9c9c4; border-radius: 4px; padding: 6px 8px; background: #fff; width: 100%;
+}
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
+
+/* ---------- Editor ---------- */
+.editor {
+  display: grid;
+  grid-template-columns: 200px 1fr 300px;
+  grid-template-rows: auto 1fr;
+  height: 100vh;
+  font: 13px/1.4 "IBM Plex Mono", ui-monospace, monospace;
+  background: #ecece8;
+}
+.editor-bar {
+  grid-column: 1 / -1;
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  padding: 8px 16px; background: #fff; border-bottom: 1px solid #dcdcd6;
+}
+.editor-tools, .editor-inspector { background: #fff; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.editor-tools { border-right: 1px solid #dcdcd6; }
+.editor-inspector { border-left: 1px solid #dcdcd6; }
+.editor-stage { position: relative; overflow: auto; padding: 32px; }
+.editor-canvas { margin: 0; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.06); overflow: visible; }
+/* Outside the canvas, items are shown faded so the cut-off is visible while editing. */
+.editor-canvas::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 0 100vmax rgb(236 236 232 / 0.75); z-index: 100000; }
+.editor .item { cursor: move; }
+.editor .item * { pointer-events: none; }
+.editor .item.is-locked { cursor: default; }
+.editor .item.is-selected.is-locked { outline: 1px dashed #8a8a84; }
+.badge { position: absolute; top: 4px; left: 4px; font: 10px "IBM Plex Mono", monospace; background: #1d1d1b; color: #fff; padding: 1px 5px; border-radius: 3px; z-index: 1; }
+.badge-warn { background: #b3261e; }
+.editor .item:not(.is-selected) .badge-warn { opacity: 0; }
+.editor:hover .item .badge-warn { opacity: 1; }
+.canvas-height-label { margin-top: 8px; }
+.tools-heading { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field > span { font-size: 11px; opacity: 0.7; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.small { font-size: 11px; }
+.quiet-link { color: inherit; opacity: 0.7; }
+hr { border: 0; border-top: 1px solid #e3e3df; width: 100%; margin: 8px 0; }
+button.error { color: #b3261e; border-color: #b3261e; }
+button.error:hover:not(:disabled) { background: #b3261e; color: #fff; }
+input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #c9c9c4; border-radius: 4px; background: none; }
+
+/* ---------- Season footer and index ---------- */
+.season-footer { display: flex; justify-content: center; gap: 24px; flex-wrap: wrap; padding: 32px 16px 40px; font: 12px "IBM Plex Mono", ui-monospace, monospace; }
+.season-footer a { color: inherit; opacity: 0.45; }
+.season-footer a:hover { opacity: 0.8; }
+.index-page { max-width: 1280px; margin: 0 auto; padding: 64px 32px 0; }
+.index-heading { font: 400 clamp(32px, 5vw, 56px)/1.1 "EB Garamond", serif; margin: 0 0 48px; }
+.index-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 48px 32px; }
+.index-entry { display: flex; flex-direction: column; gap: 8px; color: inherit; text-decoration: none; }
+.index-cover { display: block; aspect-ratio: 4 / 5; background: #efefeb; overflow: hidden; }
+.index-cover img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s ease; }
+.index-entry:hover .index-cover img { transform: scale(1.02); }
+@media (prefers-reduced-motion: reduce) { .index-cover img { transition: none; } }
+.index-title { font: 400 22px/1.2 "EB Garamond", serif; }
+.index-period { font: 12px "IBM Plex Mono", ui-monospace, monospace; opacity: 0.55; }
+@media (max-width: 640px) {
+  .index-page { padding: 40px 16px 0; }
+  .index-heading { margin-bottom: 32px; }
+  .index-grid { grid-template-columns: 1fr; gap: 40px; }
+}
+
+/* ---------- Editor: layout toggle and device preview ---------- */
+.segmented { display: inline-flex; }
+.segmented button { border-radius: 0; }
+.segmented button:first-child { border-radius: 4px 0 0 4px; }
+.segmented button:last-child { border-radius: 0 4px 4px 0; margin-left: -1px; }
+.preview { min-height: 100vh; background: #ecece8; font: 13px/1.4 "IBM Plex Mono", ui-monospace, monospace; }
+.preview-caption { text-align: center; margin: 16px 0 8px; }
+.preview-stage { overflow: auto; padding: 0 16px 48px; text-align: center; }
+.preview-frame { border: 0; background: #fff; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.08); }
+
+/* ---------- Video, voice note, map ---------- */
+.video-wrap { position: relative; width: 100%; height: 100%; }
+.media-button {
+  position: absolute; right: 8px; bottom: 8px; z-index: 1;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; padding: 3px 8px;
+  background: rgb(255 255 255 / 0.85); color: #1d1d1b; border: 0; border-radius: 3px; cursor: pointer;
+}
+.media-button:hover:not(:disabled) { background: #fff; color: #1d1d1b; }
+.media-button-center { right: auto; bottom: auto; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: 16px; padding: 10px 14px; }
+.voice-note {
+  container-type: size;
+  display: flex; align-items: center; gap: 4cqh; width: 100%; height: 100%; padding: 0 5cqh;
+  background: #fff; color: #1d1d1b; border-radius: 999px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; overflow: hidden;
+}
+.voice-play {
+  flex: none; display: grid; place-items: center; width: 70cqh; height: 70cqh; border-radius: 50%;
+  border: 0; padding: 0; background: #1d1d1b; color: #fff; font-size: 24cqh; cursor: pointer;
+}
+.voice-play:hover:not(:disabled) { background: #444; color: #fff; }
+.voice-body { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center; gap: 6cqh; height: 100%; }
+.voice-wave { width: 100%; height: 34cqh; }
+.voice-wave rect { fill: #c9c9c2; }
+.voice-wave rect.played { fill: #1d1d1b; }
+.voice-meta { display: flex; justify-content: space-between; gap: 8px; font-size: clamp(7px, 16cqh, 18px); white-space: nowrap; }
+.voice-caption { overflow: hidden; text-overflow: ellipsis; }
+.voice-time { opacity: 0.55; }
+.map-item { position: relative; width: 100%; height: 100%; } /* The label may extend past the map. */
+.map-item img { display: block; width: 100%; height: 100%; object-fit: cover; user-select: none; -webkit-user-drag: none; }
+.map-label {
+  position: absolute; left: 50%; top: 50%; transform: translate(0.9em, -50%);
+  font-family: "IBM Plex Mono", ui-monospace, monospace; white-space: nowrap;
+  background: rgb(251 251 249 / 0.85); padding: 0.1em 0.35em;
+}
+
+/* ---------- Editor tool panels ---------- */
+.tool-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px; margin-top: -4px; border: 1px solid #e3e3df; border-top: 0; border-radius: 0 0 4px 4px; background: #fafaf8; }
+.sticker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.sticker-tile { position: relative; }
+.sticker-adding { position: absolute; inset: auto 0 4px; text-align: center; font-size: 11px; background: rgb(255 255 255 / 0.85); }
+.sticker-add { width: 100%; aspect-ratio: 1; padding: 4px; border-color: #e3e3df; background: repeating-conic-gradient(#f0f0ec 0 25%, #fff 0 50%) 0 0 / 12px 12px; }
+.sticker-add:hover:not(:disabled) { background: repeating-conic-gradient(#e6e6e0 0 25%, #fff 0 50%) 0 0 / 12px 12px; border-color: #1d1d1b; }
+.sticker-add img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.sticker-remove { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; padding: 0; line-height: 1; border-radius: 50%; font-size: 12px; opacity: 0; }
+.sticker-tile:hover .sticker-remove, .sticker-remove:focus-visible { opacity: 1; }
+.place-result { text-align: left; font-size: 12px; }
+.recording-dot { width: 10px; height: 10px; border-radius: 50%; background: #b3261e; animation: pulse 1s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .recording-dot { animation: none; } }
+
+/* ---------- Editor: end of page ---------- */
+.page-end {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 99999; pointer-events: none;
+  border-top: 1px dashed #a9a9a0;
+  background: repeating-linear-gradient(-45deg, rgb(0 0 0 / 0.025) 0 10px, transparent 10px 20px);
+}
+.page-end span {
+  position: absolute; top: 6px; left: 8px;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
+}
+
+/* ---------- Route map ---------- */
+.route-band { position: relative; width: 100%; height: 100%; }
+.route-panel { position: relative; width: 100%; height: min(100svh, 100%); overflow: hidden; background: transparent; }
+.route-sticky { position: sticky; top: 0; }
+.route-panel svg { display: block; width: 100%; height: 100%; }
+.route-move { transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.3, 0.1, 0.2, 1); }
+.route-line-base { fill: none; stroke: #c9c9c2; stroke-linecap: round; stroke-linejoin: round; }
+.route-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.route-stop { fill: #fbfbf9; stroke: #1d1d1b; transition: r 0.3s; }
+@media (prefers-reduced-motion: reduce) { .route-move, .route-stop { transition: none; } }
+.route-label {
+  position: absolute; left: 12px; top: 12px; z-index: 1;
+  font: 13px "IBM Plex Mono", ui-monospace, monospace; background: rgb(251 251 249 / 0.9); padding: 2px 8px;
+}
+.route-band-note {
+  position: absolute; left: 0; right: 0; bottom: 0; top: auto; padding: 6px 8px;
+  font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
+}
+.editor .item-route { outline: 1px dashed #b9b9b0; background: repeating-linear-gradient(0deg, transparent 0 22px, rgb(0 0 0 / 0.02) 22px 24px); }
+.route-stops { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+
+/* ---------- Editor: Alt measuring ---------- */
+.measure-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100001; overflow: visible; }
+.measure-overlay * { vector-effect: non-scaling-stroke; }
+.measure-line { stroke: #e5336d; stroke-width: 1; }
+.measure-box { fill: none; stroke: #e5336d; stroke-width: 1; }
+.measure-target { stroke-dasharray: 4 3; }
+.measure-center { stroke: #e5336d; stroke-width: 1; stroke-dasharray: 2 4; opacity: 0.5; }
+.measure-center.is-centered { stroke-dasharray: none; opacity: 1; }
+.measure-tag { fill: #e5336d; }
+.measure-text { fill: #fff; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.snap-toggle { min-width: 84px; }
+/* Moveable's snap guide lines, in the measuring color. */
+.editor .moveable-line.moveable-guideline { background: #e5336d !important; }
+
+/* ---------- Photo crop ---------- */
+.photo-frame { position: absolute; inset: 0; overflow: hidden; }
+.photo-cropped, .photo-ghost { position: absolute; max-width: none; display: block; user-select: none; -webkit-user-drag: none; }
+.photo-ghost { opacity: 0.35; pointer-events: none; }
+/* Parallax photo: a screen-sized layer that the script keeps fixed on screen
+   (see ParallaxPhoto.tsx). Without the script it simply fills the box. */
+.parallax-layer { position: absolute; inset: 0; }
+.parallax-layer.is-moving { inset: auto; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.parallax-layer > .photo-cropped { left: 0; top: 0; width: 100%; height: 100%; object-fit: cover; }
+.cover-picker { display: grid; grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); gap: 6px; }
+.cover-choice { padding: 0; aspect-ratio: 4 / 5; overflow: hidden; border: 2px solid transparent; border-radius: 3px; background: #efefeb; }
+.cover-choice img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cover-choice.is-chosen { border-color: #e5336d; }
+.editor .item.is-cropping { cursor: grab; outline: 1px solid #e5336d; }
+.editor .item.is-cropping:active { cursor: grabbing; }
+
+/* ---------- Phase 6: 3D models, backgrounds, generative type ---------- */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.model-item { position: relative; width: 100%; height: 100%; }
+.model-poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; user-select: none; -webkit-user-drag: none; }
+.model-canvas { display: block; }
+/* Behind all items; the inner screen stays on screen while the page scrolls past. */
+.bg-layer { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.bg-layer-screen { position: sticky; top: 0; width: 100%; height: min(100svh, 100%); }
+.editor .bg-layer-screen { height: min(var(--stage-height, 100svh), 100%); }
+.sketch-frame { display: block; width: 100%; height: 100%; border: 0; background: transparent; }
+.fx-word { display: inline-block; white-space: nowrap; }
+.fx-letter { display: inline-block; will-change: transform; }
+.sketch-code { width: 100%; min-height: 220px; font: 12px/1.45 "IBM Plex Mono", ui-monospace, monospace; tab-size: 2; }
+.size-report { font: 11px/1.5 "IBM Plex Mono", ui-monospace, monospace; }
+
+/* ---------- Landing page (/seasons/about, or / with LANDING_PAGE=on) ---------- */
+.wordmark { white-space: nowrap; }
+.wordmark-echo { font-style: italic; }
+.landing { font: 14px/1.5 "IBM Plex Mono", ui-monospace, monospace; overflow-x: clip; }
+.landing a { color: inherit; }
+.landing-hero { max-width: 1280px; margin: 0 auto; padding: 72px 32px 24px; }
+.landing-name { font: 400 clamp(48px, 11vw, 148px)/0.95 "EB Garamond", serif; letter-spacing: -0.01em; margin: 0 0 24px; }
+.landing-lede { font: 400 clamp(22px, 2.6vw, 32px)/1.25 "EB Garamond", serif; max-width: 26em; margin: 0 0 28px; }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.landing-actions .button { padding: 8px 16px; }
+.landing .button.primary { background: #1d1d1b; color: #fff; }
+.landing .button.primary:hover { background: #fff; color: #1d1d1b; }
+
+.landing-sample { max-width: 1280px; margin: 0 auto; padding: 32px 32px 0; }
+.landing-hint { margin: 0 0 8px; font-size: 12px; opacity: 0.55; }
+.landing-hint-drag { display: none; }
+@media (hover: hover) and (pointer: fine) { .landing-hint-drag { display: inline; } }
+.collage { position: relative; aspect-ratio: 16 / 8.4; container-type: inline-size; user-select: none; }
+.collage-piece {
+  position: absolute; left: var(--x); top: var(--y); width: var(--w);
+  transform: translate(var(--dx), var(--dy)) rotate(var(--r));
+  transform-origin: center center;
+}
+@media (hover: hover) and (pointer: fine) {
+  .collage-piece { cursor: grab; touch-action: none; }
+  .collage-piece:active { cursor: grabbing; }
+}
+.collage-sticker { display: block; width: 100%; height: auto; -webkit-user-drag: none; filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08)); }
+.collage-photo svg { display: block; width: 100%; aspect-ratio: 4 / 5; }
+.collage-title p { margin: 0; }
+.collage-heading { font: 400 4.6cqw/1.05 "EB Garamond", serif; }
+.collage-period { font-size: 1.05cqw; opacity: 0.55; margin-top: 0.6cqw !important; }
+.collage-quote p { margin: 0; font: 400 1.9cqw/1.3 "EB Garamond", serif; }
+.collage-playlist .playlist-card { aspect-ratio: 3 / 4; height: auto; }
+.collage-voice .voice-note { aspect-ratio: 6 / 1; height: auto; }
+
+.landing-section { max-width: 1280px; margin: 0 auto; padding: 88px 32px 0; }
+.landing-section h2 { font: 400 clamp(28px, 3.6vw, 44px)/1.1 "EB Garamond", serif; margin: 0 0 32px; }
+.landing-items, .landing-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0 32px; border-top: 1px solid #e3e3df; }
+.landing-items li, .landing-steps li { display: flex; flex-direction: column; gap: 4px; padding: 16px 0 20px; border-bottom: 1px solid #e3e3df; }
+.landing-item-name { font-weight: 600; }
+.landing-traits { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 40px 32px; }
+.landing-traits h3 { font: 400 26px/1.15 "EB Garamond", serif; margin: 0 0 8px; }
+.landing-traits h3::before { content: "◦ "; color: #e5336d; }
+.landing-traits p { margin: 0; }
+.landing-run-lede { font: 400 clamp(20px, 2.2vw, 26px)/1.3 "EB Garamond", serif; max-width: 30em; margin: 0 0 28px; }
+.landing-steps { counter-reset: step; margin-bottom: 28px; }
+.landing-steps li { counter-increment: step; }
+.landing-steps .landing-item-name::before { content: counter(step) ". "; opacity: 0.45; font-weight: 400; }
+.landing-license { max-width: 40em; margin: 24px 0 0; }
+.landing .season-footer { margin-top: 72px; border-top: 1px solid #e3e3df; }
+
+/* The phone layout of the sample season, placed separately, as in the editor. */
+@media (max-width: 959.98px) {
+  .collage { aspect-ratio: 3 / 4.6; }
+  .collage-piece { left: var(--mx); top: var(--my); width: var(--mw); transform: translate(var(--dx), var(--dy)) rotate(var(--mr)); }
+  .collage-heading { font-size: 9.5cqw; }
+  .collage-period { font-size: 2.6cqw; margin-top: 1.4cqw !important; }
+  .collage-quote p { font-size: 5cqw; }
+}
+@media (max-width: 640px) {
+  .landing-hero { padding: 48px 16px 16px; }
+  .landing-sample, .landing-section { padding-left: 16px; padding-right: 16px; }
+  .landing-section { padding-top: 64px; }
+}
