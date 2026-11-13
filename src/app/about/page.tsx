@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { Collage, type CollagePiece } from "@/components/landing/Collage";
+import { existsSync } from "node:fs";
+import path from "node:path";
 import { Wordmark } from "@/components/landing/Wordmark";
+import { mapUrl } from "@/components/ItemContent";
+import { VoiceNoteView } from "@/components/items/VoiceNoteView";
 import { BASE_PATH, config } from "@/lib/config";
 
 // The landing page for the project: what it is and how to run your own copy. It
@@ -11,7 +16,7 @@ export const dynamic = "force-static";
 
 const NAME = "seeaassoonnss";
 const DESCRIPTION =
-  "One page for one period of your life: photos, songs, quotes and voice notes, each placed by hand. Open source; run your own copy for free.";
+  "A period of your life, set to photos, voice notes, quotes. Open source; run your own copy for free.";
 
 export function generateMetadata(): Metadata {
   const site = process.env.SITE_URL;
@@ -156,24 +161,209 @@ const PIECES: CollagePiece[] = [
   },
 ];
 
-const ITEMS: [string, string][] = [
-  ["photo", "Upload and crop inside its box. Location data is removed. Optional parallax, like a view through a window."],
-  ["video", "Plays as a silent loop on screen; sound only after a click."],
-  ["quote", "Markdown in EB Garamond, IBM Plex Mono or a sans-serif. Doubles as the title and subtitle."],
-  ["playlist or song", "Paste a Spotify link. A card with its cover; the player loads on click."],
-  ["sticker", "Your own cut-outs, or the built-in packs: botanical plates, Open Doodles, Open Peeps, Humaaans."],
-  ["map", "Search a place. A plain outline map with a dot and a label."],
-  ["voice note", "Record in the browser or upload. Nothing plays until someone presses play."],
-  ["route map", "Import GeoJSON. The map stays on screen and the route draws in as the page scrolls."],
-  ["3D model", "Upload a .glb. It can spin, turn toward the cursor or play its animation."],
-];
+/** The landing page's own voice note, kept with the page (public/landing/media/voice-note/audio.mp3). */
+const VOICE_MEDIA_BASE = `${BASE_PATH}/landing`;
+const VOICE_FILE = path.join(process.cwd(), "public/landing/media/voice-note/audio.mp3");
+const VOICE_NOTE = { caption: "what this is, in my words", duration: 0, waveform: [] as number[] };
 
-const TRAITS: [string, string][] = [
-  ["hand-placed", "Drag, rotate, resize, layer and lock every item. The phone layout is placed by hand too, so it is not a squashed copy of the desktop."],
-  ["quiet", "No other accounts, comments or likes. Nothing makes a sound until a visitor clicks."],
-  ["yours", "One owner, signed in with a passkey. Your database, your storage, your domain. Drafts stay private until you publish."],
-  ["generative, if you want", "Shuffle the layout from a seed, let items follow the cursor, set letters rippling, or put a p5.js sketch or a 3D model behind it all. All of it turns off for visitors who ask for less motion."],
-];
+const EAGLES_MERE = { lat: 41.4087, lon: -76.5833, zoom: 3, label: "eagles mere, pa", borders: false };
+
+/** A short handwritten-looking note beside an item: its name, then what it does. */
+function Note({ name, mark = false, children }: { name: string; mark?: boolean; children: ReactNode }) {
+  return (
+    <p className="tour-note">
+      <span className="tour-note-name">
+        {mark ? <span className="tour-mark">◦ </span> : null}
+        {name}
+      </span>{" "}
+      {children}
+    </p>
+  );
+}
+
+/** A voice note that does nothing yet: shown until the recording is in place. */
+function VoiceNotePlaceholder({ caption }: { caption: string }) {
+  return (
+    <div className="voice-note">
+      <span className="voice-play">▶</span>
+      <span className="voice-body">
+        <svg className="voice-wave" viewBox={`0 0 ${WAVE.length * 3} 20`} preserveAspectRatio="none" aria-hidden>
+          {WAVE.map((h, i) => (
+            <rect key={i} x={i * 3} y={10 - h * 10} width={2} height={h * 20} />
+          ))}
+        </svg>
+        <span className="voice-meta">
+          <span className="voice-caption">{caption}</span>
+          <span className="voice-time">soon</span>
+        </span>
+      </span>
+    </div>
+  );
+}
+
+function tourPieces(): CollagePiece[] {
+  const voice = existsSync(VOICE_FILE) ? (
+    <VoiceNoteView
+      item={{ id: "voice", type: "voice_note", desktop: null, mobile: null, content: { mediaId: "voice-note", ...VOICE_NOTE } } as never}
+      mediaBase={VOICE_MEDIA_BASE}
+      interactive
+    />
+  ) : (
+    <VoiceNotePlaceholder caption={VOICE_NOTE.caption} />
+  );
+  return [
+    {
+      id: "tour-heading",
+      desktop: [3, 1, 50, -1],
+      mobile: [4, 0.2, 90, -1],
+      z: 5,
+      className: "tour-heading",
+      children: <h2 id="tour-heading">// what goes on a page</h2>,
+    },
+    {
+      id: "map",
+      desktop: [5, 9, 22, -2],
+      mobile: [6, 3.2, 60, -2],
+      z: 3,
+      className: "tour-map",
+      children: (
+        <div className="map-item">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={mapUrl(EAGLES_MERE)} alt="Map: Eagles Mere, Pennsylvania" loading="lazy" decoding="async" draggable={false} />
+          <span className="map-label">{EAGLES_MERE.label}</span>
+        </div>
+      ),
+    },
+    {
+      id: "map-note",
+      desktop: [6, 38, 20, 0],
+      mobile: [8, 18, 80, 0],
+      z: 4,
+      children: <Note name="map">Search a place. A plain outline, a dot and a label; no tiles, no API key.</Note>,
+    },
+    {
+      id: "voice",
+      desktop: [35, 9, 30, 1],
+      mobile: [4, 23.6, 90, 1],
+      z: 5,
+      className: "tour-voice",
+      children: voice,
+    },
+    {
+      id: "voice-note",
+      desktop: [36, 17, 26, 0],
+      mobile: [6, 27.9, 86, 0],
+      z: 4,
+      children: <Note name="voice note">Record it in the browser or upload one. Nothing plays until someone presses play.</Note>,
+    },
+    {
+      id: "lake",
+      desktop: [75, 5, 17, 4],
+      mobile: [52, 34.6, 42, 4],
+      z: 3,
+      className: "collage-photo",
+      children: (
+        <svg viewBox="0 0 1600 2000" preserveAspectRatio="xMidYMid slice" role="img" aria-label="A drawing of a lake at dusk">
+          <rect width="1600" height="2000" fill="#e9e4d8" />
+          <path d="M0 980 C300 860 520 900 760 820 C1040 730 1300 800 1600 760 V1160 H0Z" fill="#7d8f6a" />
+          <rect y="1140" width="1600" height="860" fill="#4f6670" />
+          <path d="M140 1360 H700 M900 1500 H1460 M300 1680 H1000" stroke="#8fa6ad" strokeWidth="14" strokeLinecap="round" />
+          <circle cx="1180" cy="520" r="120" fill="#f3d9a4" />
+        </svg>
+      ),
+    },
+    {
+      id: "lake-note",
+      desktop: [73, 36, 21, 0],
+      mobile: [52, 48, 42, 0],
+      z: 4,
+      children: <Note name="photo">Cropped inside its box, or set to parallax, like a view through a window. Location data is removed.</Note>,
+    },
+    {
+      id: "rain",
+      desktop: [34, 29, 32, -1],
+      mobile: [4, 35.1, 46, -1],
+      z: 4,
+      className: "tour-quote",
+      children: (
+        <p>
+          it rained the whole second week, and <em>nobody minded.</em>
+        </p>
+      ),
+    },
+    {
+      id: "rain-note",
+      desktop: [35, 42, 27, 0],
+      mobile: [4, 42, 44, 0],
+      z: 4,
+      children: <Note name="quote">Markdown in a serif, a mono or a sans. The letters can ripple, or follow the cursor.</Note>,
+    },
+    {
+      id: "rose",
+      desktop: [5, 50, 13, -6],
+      mobile: [8, 51.3, 30, -6],
+      z: 2,
+      children: <Sticker file="rose-bush-and-butterfly" />,
+    },
+    {
+      id: "rose-note",
+      desktop: [19, 60, 17, 0],
+      mobile: [46, 57.7, 48, 0],
+      z: 4,
+      children: <Note name="sticker">Your own cut-outs, or the built-in packs of botanical plates and doodles.</Note>,
+    },
+    {
+      id: "route",
+      desktop: [42, 55, 30, 0],
+      mobile: [4, 65.1, 92, 0],
+      z: 3,
+      className: "tour-route",
+      children: (
+        <svg viewBox="0 0 600 260" role="img" aria-label="A route drawn from Philadelphia up to Eagles Mere">
+          <path
+            className="tour-route-line"
+            d="M70 220 C120 200 150 170 200 168 C260 166 270 120 330 112 C390 104 420 70 470 62 C500 58 520 50 540 40"
+          />
+          <circle cx="70" cy="220" r="7" />
+          <circle cx="540" cy="40" r="7" />
+          <text x="86" y="236">philadelphia</text>
+          <text x="420" y="30">eagles mere</text>
+        </svg>
+      ),
+    },
+    {
+      id: "route-note",
+      desktop: [44, 76, 26, 0],
+      mobile: [6, 75.3, 86, 0],
+      z: 4,
+      children: <Note name="route map">The map stays put while the line draws in as you scroll.</Note>,
+    },
+    {
+      id: "hand",
+      desktop: [76, 52, 19, 2],
+      mobile: [6, 80.8, 42, 2],
+      z: 4,
+      className: "tour-trait",
+      children: <Note name="hand-placed" mark>Even the phone layout. It is never a squashed copy of the desktop.</Note>,
+    },
+    {
+      id: "quiet",
+      desktop: [78, 68, 17, -2],
+      mobile: [52, 80.8, 42, -2],
+      z: 4,
+      className: "tour-trait",
+      children: <Note name="quiet" mark>No likes, no comments, no other accounts. Nothing makes a sound until you click.</Note>,
+    },
+    {
+      id: "more",
+      desktop: [6, 84, 32, 0],
+      mobile: [6, 91.9, 88, 0],
+      z: 4,
+      className: "tour-trait tour-more",
+      children: <Note name="also">Video loops, Spotify songs and playlists, 3D models that turn toward the cursor, and p5.js sketches behind it all.</Note>,
+    },
+  ];
+}
 
 const STEPS: [string, string][] = [
   ["fork", "Fork the repository on GitHub."],
@@ -192,12 +382,12 @@ export default function Landing() {
           <Wordmark />
         </h1>
         <p className="landing-lede">
-          One page for one period of your life. Photos, songs, quotes and voice notes, each <em>placed by hand.</em>
+          A period of your life, set to photos, voice notes, quotes.
         </p>
         <div className="landing-actions">
-          <Link className="button primary" href="/demo">
-            see a season ▸
-          </Link>
+          <a className="button primary" href="#tour">
+            see a season ▾
+          </a>
           <a className="button" href={guide}>
             run your own
           </a>
@@ -214,28 +404,11 @@ export default function Landing() {
         />
       </section>
 
-      <section className="landing-section" aria-labelledby="items-heading">
-        <h2 id="items-heading">// what goes on a page</h2>
-        <ul className="landing-items">
-          {ITEMS.map(([name, text]) => (
-            <li key={name}>
-              <span className="landing-item-name">{name}</span>
-              <span>{text}</span>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="landing-section" aria-labelledby="traits-heading">
-        <h2 id="traits-heading">// how it feels</h2>
-        <div className="landing-traits">
-          {TRAITS.map(([name, text]) => (
-            <div key={name}>
-              <h3>{name}</h3>
-              <p>{text}</p>
-            </div>
-          ))}
-        </div>
+      <section className="landing-sample landing-tour" id="tour" aria-labelledby="tour-heading">
+        <p className="landing-hint">
+          // this part is a season too<span className="landing-hint-drag"> — move things around</span>
+        </p>
+        <Collage pieces={tourPieces()} aspect="16 / 12" mobileAspect="3 / 13" readable />
       </section>
 
       <section className="landing-section landing-run" aria-labelledby="run-heading">
