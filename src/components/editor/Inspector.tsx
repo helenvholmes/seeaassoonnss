@@ -629,8 +629,8 @@ function CropControls({ item, p, cropping, setCropping, updateItem }: { item: Ph
       </Field>
       <span className="small muted">
         {cropping
-          ? "Drag the photo to choose what shows. Scroll to zoom. Esc or Enter when done."
-          : "Double-click the photo to crop it: drag to move it inside its box, scroll to zoom."}
+          ? "Drag the photo to choose what shows. Scroll or use Zoom to zoom. Esc, Enter or Done cropping when done."
+          : "Double-click the photo, or press Crop, to crop it: drag to move it inside its box, scroll or use Zoom to zoom."}
       </span>
     </div>
   );
@@ -773,7 +773,7 @@ function ItemSettings(props: Props & { item: Item }) {
             </select>
           </Field>
           {item.content.binding ? (
-            <p className="small muted">Edit the {item.content.binding} in the season settings (click the empty canvas).</p>
+            <p className="small muted">Edit the {item.content.binding} in the season settings (click the empty canvas, or Season on a phone).</p>
           ) : (
             <>
               <Field label="Text (Markdown: **bold**, *italic*, [link](https://…))">

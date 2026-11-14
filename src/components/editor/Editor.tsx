@@ -57,6 +57,27 @@ const SAVE_DELAY = 1000;
 /** Snap by edges and centers, on both axes. */
 const SNAP_DIRECTIONS = { left: true, top: true, right: true, bottom: true, center: true, middle: true };
 
+/** Below this width the tools and the inspector become sheets that slide up from the bottom. */
+const COMPACT_QUERY = "(max-width: 899.98px)";
+/** Phones open the editor on the mobile layout, the one they can judge best. */
+const PHONE_QUERY = "(max-width: 640px)";
+/** Fingers rather than a mouse: bigger handles, and a tap selects before a drag moves. */
+const COARSE_QUERY = "(pointer: coarse)";
+/** Mouse events a browser fires after a tap arrive within this many ms of the touch. */
+const TOUCH_MOUSE_WINDOW = 1000;
+
+function useMediaQuery(query: string) {
+  const [matches, setMatches] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(query);
+    const update = () => setMatches(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, [query]);
+  return matches;
+}
+
 function isTyping(target: EventTarget | null) {
   const el = target as HTMLElement | null;
   return !!el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.tagName === "SELECT" || el.isContentEditable);
@@ -132,6 +153,16 @@ export function Editor(props: EditorProps) {
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
   const [sortOrder, setSortOrder] = useState(props.initialSortOrder);
+  const compact = useMediaQuery(COMPACT_QUERY);
+  const coarse = useMediaQuery(COARSE_QUERY);
+  // On a small screen, which sheet is open over the page.
+  const [sheet, setSheet] = useState<null | "tools" | "inspector">(null);
+  useEffect(() => {
+    if (window.matchMedia(PHONE_QUERY).matches) setLayout("mobile");
+  }, []);
+  // When the last touch happened, to tell a tap's mouse events from a real mouse.
+  const lastTouch = useRef(0);
+  const fromTouch = () => Date.now() - lastTouch.current < TOUCH_MOUSE_WINDOW;
 
   const stageWrapRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef(new Map<string, HTMLDivElement>());
@@ -204,9 +235,11 @@ export function Editor(props: EditorProps) {
     if (!el) return;
     // The mobile canvas shows at a comfortable zoom; the desktop canvas fills the stage.
     const measure = () => {
-      setStageWidth(layout === "mobile" ? Math.min(520, Math.max(320, el.clientWidth - 64)) : Math.max(320, el.clientWidth - 64));
+      const cs = getComputedStyle(el);
+      const width = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+      setStageWidth(layout === "mobile" ? Math.min(520, Math.max(280, width)) : Math.max(280, width));
       // A background layer fills one screen of the stage (see .bg-layer-screen).
-      el.style.setProperty("--stage-height", `${el.clientHeight - 64}px`);
+      el.style.setProperty("--stage-height", `${el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)}px`);
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -239,6 +272,7 @@ export function Editor(props: EditorProps) {
   };
 
   const addAndSelect = (item: Item) => {
+    setSheet((s) => (s === "tools" ? null : s));
     change((d) => addItem(d, item));
     setSelectedId(item.id);
   };
@@ -413,6 +447,7 @@ export function Editor(props: EditorProps) {
 
   /** Photos (3 at a time), videos (one at a time; compression is heavy) and audio files. */
   const uploadFiles = async (files: File[], at?: { x: number; y: number }) => {
+    if (files.length) setSheet((s) => (s === "tools" ? null : s));
     // A .glb dropped or pasted becomes a 3D model item.
     for (const f of files.filter(isModelFile)) void addModel(f, 2048);
     files = files.filter((f) => !isModelFile(f));
@@ -655,31 +690,37 @@ export function Editor(props: EditorProps) {
     else change(update, key);
   };
 
-  /** Drag inside a photo in crop mode: the photo follows the pointer. */
-  const startCropPan = (item: Item, e: React.MouseEvent) => {
+  /** Drag inside a photo in crop mode: the photo follows the pointer or the finger. */
+  const startCropPan = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
     const p = placementOf(item, layout);
     if (!p || item.type !== "photo") return;
     const startCrop = item.content.crop ?? NO_CROP;
     const rect = photoRect(item.content.width, item.content.height, p.w, p.h, startCrop);
     const before = latestDoc.current;
     const rad = (-p.rotation * Math.PI) / 180;
-    const sx = e.clientX;
-    const sy = e.clientY;
-    const move = (ev: MouseEvent) => {
+    const touch = "touches" in e;
+    const point = (ev: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => ("touches" in ev ? ev.touches[0] ?? ev.changedTouches[0] : ev);
+    const { clientX: sx, clientY: sy } = point(e);
+    const move = (ev: MouseEvent | TouchEvent) => {
+      if (touch) ev.preventDefault();
       // Pointer movement in the photo's own (unrotated) frame, as fractions of its box.
-      const dx = ev.clientX - sx;
-      const dy = ev.clientY - sy;
+      const { clientX, clientY } = point(ev);
+      const dx = clientX - sx;
+      const dy = clientY - sy;
       const lx = (dx * Math.cos(rad) - dy * Math.sin(rad)) / (p.w * scale);
       const ly = (dx * Math.sin(rad) + dy * Math.cos(rad)) / (p.h * scale);
       setCrop(item.id, panCrop(startCrop, rect, lx, ly), null, true);
     };
+    const [moveEvent, upEvent] = touch ? (["touchmove", "touchend"] as const) : (["mousemove", "mouseup"] as const);
     const up = () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
+      window.removeEventListener(moveEvent, move);
+      window.removeEventListener(upEvent, up);
+      if (touch) window.removeEventListener("touchcancel", up);
       setHistory((h) => commitGesture(h, before));
     };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
+    window.addEventListener(moveEvent, move, { passive: false });
+    window.addEventListener(upEvent, up);
+    if (touch) window.addEventListener("touchcancel", up);
   };
 
   // The wheel zooms the photo in crop mode (a native listener, so the page does not scroll).
@@ -704,7 +745,7 @@ export function Editor(props: EditorProps) {
   const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
     if ("button" in e && e.button !== 0) return;
     e.stopPropagation();
-    if (cropId === item.id && "clientX" in e) return startCropPan(item, e);
+    if (cropId === item.id) return startCropPan(item, e);
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
     if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
@@ -716,83 +757,167 @@ export function Editor(props: EditorProps) {
   const saveLabel =
     save.kind === "saved" ? "saved" : save.kind === "saving" ? "saving…" : save.kind === "pending" ? "unsaved changes" : `not saved: ${save.message}`;
 
-  return (
-    <div className="editor">
-      <header className="editor-bar">
-        <div className="row">
-          <Link href="/edit" className="quiet-link">
-            ← seasons
-          </Link>
-          <strong>{doc.title || "untitled"}</strong>
-          <span className="segmented" role="group" aria-label="Layout">
-            {(["desktop", "mobile"] as const).map((l) => (
-              <button
-                key={l}
-                className={layout === l ? "primary" : ""}
-                aria-pressed={layout === l}
-                onClick={() => {
-                  setLayout(l);
-                  if (selected && l === "mobile" && !selected.mobile) setSelectedId(null);
-                }}
-              >
-                {l === "desktop" ? "Desktop" : "Mobile"}
-              </button>
-            ))}
-          </span>
-          <button
-            className={snapOn ? "primary snap-toggle" : "snap-toggle"}
-            aria-pressed={snapOn}
-            onClick={toggleSnap}
-            title="Snap to the page and to other items while dragging and resizing. Hold ⌘ or Ctrl during a move to skip snapping once."
-          >
-            Snap {snapOn ? "on" : "off"}
+  // Upload progress, size reports and errors. Beside the tools on a wide screen;
+  // above the bottom bar on a small one, where the tools are usually hidden.
+  const hasMessages = (uploads.total > 0 && uploads.done < uploads.total) || !!videoProgress || !!info || uploads.failed.length > 0 || !!notice;
+  const messages = (
+    <>
+      {uploads.total > 0 && uploads.done < uploads.total ? (
+        <p className="small" role="status">
+          uploading {uploads.done + 1} of {uploads.total}…
+        </p>
+      ) : null}
+      {videoProgress ? <p className="small">{videoProgress}</p> : null}
+      {info ? (
+        <p className="small muted size-report" onClick={() => setInfo(null)}>
+          {info}
+        </p>
+      ) : null}
+      {uploads.failed.length ? (
+        <div className="small error">
+          {uploads.failed.map((f, i) => (
+            <p key={i}>{f}</p>
+          ))}
+          <button className="quiet" onClick={() => setUploads((u) => ({ ...u, failed: [] }))}>
+            Clear
           </button>
-          <button
-            onClick={() => change((d) => scatterLayout(d, layout, { ...(d.scatter ?? DEFAULT_SCATTER), seed: Math.floor(Math.random() * 1_000_000) }))}
-            title={`Place every unlocked item on the ${layout} page at random, with a new seed. The page grows when there are many items. Lock items to keep them; Undo goes back. Seed and size range: Season settings (click an empty spot on the page).`}
-          >
-            Shuffle
-          </button>
-          <span className={save.kind === "error" ? "error" : "muted"} role="status">
-            {saveLabel}
-          </span>
         </div>
-        <div className="row">
-          <button className="quiet" onClick={() => setHistory(undo)} disabled={!history.past.length} title="Undo (⌘Z)">
-            Undo
+      ) : null}
+      {notice ? (
+        <p className="small error" onClick={() => setNotice(null)}>
+          {notice}
+        </p>
+      ) : null}
+    </>
+  );
+  const sheetHead = (title: string) =>
+    compact ? (
+      <div className="sheet-head">
+        <strong>{title}</strong>
+        <button className="quiet" onClick={() => setSheet(null)}>
+          Done
+        </button>
+      </div>
+    ) : null;
+
+  // The bar's controls, arranged in two rows: on a wide screen by kind; on a small
+  // one the title and save state come first and the actions scroll sideways below.
+  const layoutControls = (
+    <>
+      <span className="segmented" role="group" aria-label="Layout">
+        {(["desktop", "mobile"] as const).map((l) => (
+          <button
+            key={l}
+            className={layout === l ? "primary" : ""}
+            aria-pressed={layout === l}
+            onClick={() => {
+              setLayout(l);
+              if (selected && l === "mobile" && !selected.mobile) setSelectedId(null);
+            }}
+          >
+            {l === "desktop" ? "Desktop" : "Mobile"}
           </button>
-          <button className="quiet" onClick={() => setHistory(redo)} disabled={!history.future.length} title="Redo (⇧⌘Z)">
-            Redo
-          </button>
-          <a className="button" href={`${BASE_PATH}/edit/${id}/preview?device=${layout === "mobile" ? "phone" : "laptop"}`} target="_blank" rel="noreferrer" onClick={() => void saveNow().catch(() => {})}>
-            Preview
+        ))}
+      </span>
+      <button
+        className={snapOn ? "primary snap-toggle" : "snap-toggle"}
+        aria-pressed={snapOn}
+        onClick={toggleSnap}
+        title="Snap to the page and to other items while dragging and resizing. Hold ⌘ or Ctrl during a move to skip snapping once."
+      >
+        Snap {snapOn ? "on" : "off"}
+      </button>
+      <button
+        onClick={() => change((d) => scatterLayout(d, layout, { ...(d.scatter ?? DEFAULT_SCATTER), seed: Math.floor(Math.random() * 1_000_000) }))}
+        title={`Place every unlocked item on the ${layout} page at random, with a new seed. The page grows when there are many items. Lock items to keep them; Undo goes back. Seed and size range: Season settings (click an empty spot on the page).`}
+      >
+        Shuffle
+      </button>
+    </>
+  );
+  const saveStatus = (
+    <span className={save.kind === "error" ? "error" : "muted"} role="status">
+      {saveLabel}
+    </span>
+  );
+  const historyControls = (
+    <>
+      <button className="quiet" onClick={() => setHistory(undo)} disabled={!history.past.length} title="Undo (⌘Z)">
+        Undo
+      </button>
+      <button className="quiet" onClick={() => setHistory(redo)} disabled={!history.future.length} title="Redo (⇧⌘Z)">
+        Redo
+      </button>
+    </>
+  );
+  const publishControls = (
+    <>
+      <a className="button" href={`${BASE_PATH}/edit/${id}/preview?device=${layout === "mobile" ? "phone" : "laptop"}`} target="_blank" rel="noreferrer" onClick={() => void saveNow().catch(() => {})}>
+        Preview
+      </a>
+      {status === "published" ? (
+        <>
+          <a className="quiet-link" href={`${BASE_PATH}/${slug}`} target="_blank" rel="noreferrer">
+            /{slug}
           </a>
-          {status === "published" ? (
-            <>
-              <a className="quiet-link" href={`${BASE_PATH}/${slug}`} target="_blank" rel="noreferrer">
-                /{slug}
-              </a>
-              {hasChanges ? (
-                <button className="quiet" onClick={discard}>
-                  Discard changes
-                </button>
-              ) : null}
-              <button className="quiet" onClick={unpublish}>
-                Unpublish
-              </button>
-              <button className="primary" onClick={publish} disabled={!hasChanges || fatal}>
-                {hasChanges ? "Publish changes" : "Published"}
-              </button>
-            </>
-          ) : (
-            <button className="primary" onClick={publish} disabled={fatal}>
-              Publish
+          {hasChanges ? (
+            <button className="quiet" onClick={discard}>
+              Discard changes
             </button>
-          )}
-        </div>
+          ) : null}
+          <button className="quiet" onClick={unpublish}>
+            Unpublish
+          </button>
+          <button className="primary" onClick={publish} disabled={!hasChanges || fatal}>
+            {hasChanges ? "Publish changes" : "Published"}
+          </button>
+        </>
+      ) : (
+        <button className="primary" onClick={publish} disabled={fatal}>
+          Publish
+        </button>
+      )}
+    </>
+  );
+
+  return (
+    <div className={`editor${compact ? " is-compact" : ""}`}>
+      <header className="editor-bar">
+        {compact ? (
+          <>
+            <div className="row editor-bar-main">
+              <Link href="/edit" className="quiet-link">
+                ← seasons
+              </Link>
+              <strong className="editor-title">{doc.title || "untitled"}</strong>
+              {saveStatus}
+            </div>
+            <div className="row editor-bar-actions">
+              {historyControls}
+              {layoutControls}
+              {publishControls}
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="row">
+              <Link href="/edit" className="quiet-link">
+                ← seasons
+              </Link>
+              <strong className="editor-title">{doc.title || "untitled"}</strong>
+              {layoutControls}
+              {saveStatus}
+            </div>
+            <div className="row">
+              {historyControls}
+              {publishControls}
+            </div>
+          </>
+        )}
       </header>
 
-      <aside className="editor-tools">
+      <aside className={`editor-tools${sheet === "tools" ? " is-open" : ""}`} aria-label="Add">
+        {sheetHead("Add")}
         <Tools
           onFiles={(files) => void uploadFiles(files)}
           onQuote={() => addQuote()}
@@ -809,37 +934,15 @@ export function Editor(props: EditorProps) {
           setNotice={setNotice}
           mediaBase={mediaBase}
         />
-        {uploads.total > 0 && uploads.done < uploads.total ? (
-          <p className="small" role="status">
-            uploading {uploads.done + 1} of {uploads.total}…
-          </p>
-        ) : null}
-        {videoProgress ? <p className="small">{videoProgress}</p> : null}
-        {info ? (
-          <p className="small muted size-report" onClick={() => setInfo(null)}>
-            {info}
-          </p>
-        ) : null}
-        {uploads.failed.length ? (
-          <div className="small error">
-            {uploads.failed.map((f, i) => (
-              <p key={i}>{f}</p>
-            ))}
-            <button className="quiet" onClick={() => setUploads((u) => ({ ...u, failed: [] }))}>
-              Clear
-            </button>
-          </div>
-        ) : null}
-        {notice ? (
-          <p className="small error" onClick={() => setNotice(null)}>
-            {notice}
-          </p>
-        ) : null}
+        {!compact || sheet === "tools" ? messages : null}
       </aside>
 
       <div
         className="editor-stage"
         ref={stageWrapRef}
+        onTouchStart={() => {
+          lastTouch.current = Date.now();
+        }}
         onMouseDown={(e) => {
           // Moveable's handles live inside the stage; clicks on them keep the selection.
           if (!(e.target as HTMLElement).closest(".moveable-control-box")) setSelectedId(null);
@@ -882,8 +985,19 @@ export function Editor(props: EditorProps) {
                   setCropId(item.id);
                 }
               }}
-              onMouseDown={(e) => onItemPress(item, e)}
-              onTouchStart={(e) => onItemPress(item, e)}
+              // A mouse selects and drags in one press. A finger first taps to select,
+              // so that swiping across the page scrolls it; then it drags the selected item.
+              onMouseDown={(e) => {
+                if (fromTouch()) e.stopPropagation();
+                else onItemPress(item, e);
+              }}
+              onTouchStart={(e) => {
+                lastTouch.current = Date.now();
+                if (item.id === selectedId || item.id === cropId) onItemPress(item, e);
+              }}
+              onClick={() => {
+                if (fromTouch() && item.id !== selectedId) setSelectedId(item.id);
+              }}
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
             >
@@ -929,7 +1043,10 @@ export function Editor(props: EditorProps) {
           throttleRotate={shift ? 15 : 0}
           rotationPosition="top"
           origin={false}
-          renderDirections={locked ? [] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
+          renderDirections={locked ? [] : coarse ? ["nw", "ne", "sw", "se"] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
+          // Fingers need a bigger target than the drawn handle.
+          controlPadding={coarse ? 14 : 0}
+          displayAroundControls={coarse}
           snappable={snapOn && !snapSkip}
           snapContainer={canvasRef}
           snapThreshold={6}
@@ -948,7 +1065,7 @@ export function Editor(props: EditorProps) {
             e.target.style.top = `${e.top}px`;
             live({ x: e.left / scale, y: e.top / scale });
           }}
-          onDragEnd={() => endGesture(true)}
+          onDragEnd={(e) => endGesture(e.isDrag)}
           onResizeStart={startGesture}
           onResize={(e) => {
             e.target.style.width = `${e.width}px`;
@@ -967,7 +1084,8 @@ export function Editor(props: EditorProps) {
         />
       </div>
 
-      <aside className="editor-inspector">
+      <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={selected ? "Item" : "Season settings"}>
+        {sheetHead(selected ? "Item" : "Season settings")}
         <Inspector
           id={id}
           doc={doc}
@@ -1004,6 +1122,26 @@ export function Editor(props: EditorProps) {
           }}
         />
       </aside>
+
+      {compact ? (
+        <>
+          {hasMessages && !sheet ? <div className="editor-toasts">{messages}</div> : null}
+          {sheet ? <div className="sheet-backdrop" onClick={() => setSheet(null)} aria-hidden /> : null}
+          <nav className="editor-dock" aria-label="Editor">
+            <button className={sheet === "tools" ? "primary" : ""} aria-pressed={sheet === "tools"} onClick={() => setSheet((s) => (s === "tools" ? null : "tools"))}>
+              + Add
+            </button>
+            <button className={sheet === "inspector" ? "primary" : ""} aria-pressed={sheet === "inspector"} onClick={() => setSheet((s) => (s === "inspector" ? null : "inspector"))}>
+              {selected ? "Edit item" : "Season"}
+            </button>
+            {selected ? (
+              <button className="quiet" onClick={() => setSelectedId(null)}>
+                Deselect
+              </button>
+            ) : null}
+          </nav>
+        </>
+      ) : null}
     </div>
   );
 }
