@@ -127,6 +127,8 @@ Open `https://<your site>/seasons/edit`. Enter your setup token and register a p
 
 Each setup token works once. Nobody can register a passkey without it, so a stranger cannot claim your copy before you do.
 
+**On your phone**, the editor works as an app. Open `https://<your site>/seasons/edit` in Safari, tap Share, then **Add to Home Screen** (on Android, Chrome's menu → **Install app**). The installed app keeps its own sign-in, so sign in once more inside it with your passkey. On a small screen, **+ Add** and **Edit item** / **Season** open the tools and settings as sheets. Tap an item to select it, then drag it; swiping elsewhere scrolls the page.
+
 ### 6. Make your first season
 
 In the editor, click **New season**. Or, to see an example first, click **Create demo season**: it makes a draft at `/seasons/demo` with placeholder photos, a 3D pear, a type effect, cursor follow and a p5.js sketch background, and adds three example sketches to your sketch library. Publish it to see it as visitors would, or delete it from its season settings.

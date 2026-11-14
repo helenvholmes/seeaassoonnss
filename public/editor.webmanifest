@@ -1,0 +1,17 @@
+{
+  "id": "/seasons/edit",
+  "name": "seeaassoonnss editor",
+  "short_name": "seasons",
+  "description": "Make and publish your seasons.",
+  "start_url": "/seasons/edit",
+  "scope": "/seasons/",
+  "display": "standalone",
+  "background_color": "#fbfbf9",
+  "theme_color": "#ffffff",
+  "icons": [
+    { "src": "/seasons/app-icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/seasons/app-icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/seasons/app-icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "/seasons/app-icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
