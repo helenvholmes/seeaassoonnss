@@ -920,7 +920,7 @@ function ItemSettings(props: Props & { item: Item }) {
           <select value={item.content.effect ?? "none"} onChange={(e) => content({ effect: e.target.value as QuoteEffect }, "effect")}>
             {QUOTE_EFFECTS.map((fx) => (
               <option key={fx} value={fx}>
-                {{ none: "None", repel: "Letters move away from the cursor", wave: "Letters ripple as the page scrolls", gather: "Letters gather mid-screen" }[fx]}
+                {{ none: "None", repel: "Letters move away from the cursor", wave: "Letters ripple as the page scrolls", gather: "Letters gather mid-screen", typewriter: "Typewriter: types in when it scrolls into view" }[fx]}
               </option>
             ))}
           </select>

@@ -241,7 +241,7 @@ seeaassoonnss uses p5.js for 2D generative backgrounds and React Three Fiber for
 2. **Random scale:** photos, videos, stickers and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
 3. **Background objects:** one 3D model or one p5.js sketch can be the season background, behind all items. It fills the screen and stays there while the page scrolls.
 4. **Cursor follow:** any item can drift toward the cursor (strength 0–100%, at most 40 design units). 3D models can also turn toward it. On touch devices, the "cursor" moves down the screen with the scroll position.
-5. **Type:** quotes can use one of three effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), or start scattered and gather as the quote reaches the middle of the screen (gather).
+5. **Type:** quotes can use one of four effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), start scattered and gather as the quote reaches the middle of the screen (gather), or type in one at a time behind a blinking caret the first time the quote scrolls into view (typewriter).
 6. **Embedded 3D items:** a 3D model is an item on the canvas. It has position, size, rotation and z-order, the same as other items. Inside its box it can be scaled, tilted, turned and rolled, spin slowly, and play its own animation.
 
 ### Tools

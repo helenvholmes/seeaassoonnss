@@ -94,9 +94,10 @@ export const QUOTE_FONTS = ["serif", "mono", "sans"] as const;
 /**
  * Generative type. repel: letters move away from the cursor. wave: letters ripple
  * as the page scrolls. gather: letters start scattered and come together as the
- * quote reaches the middle of the screen.
+ * quote reaches the middle of the screen. typewriter: letters appear one at a time,
+ * behind a blinking caret, the first time the quote scrolls into view.
  */
-export const QUOTE_EFFECTS = ["none", "repel", "wave", "gather"] as const;
+export const QUOTE_EFFECTS = ["none", "repel", "wave", "gather", "typewriter"] as const;
 export type QuoteEffect = (typeof QUOTE_EFFECTS)[number];
 
 export const quoteSchema = z.object({
