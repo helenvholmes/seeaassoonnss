@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { VoiceNoteItem } from "@/lib/schema";
+import { PlayIcon } from "@/components/PlayIcon";
 
 export function audioUrl(mediaBase: string, mediaId: string) {
   return `${mediaBase}/media/${mediaId}/audio.mp3`;
@@ -51,10 +52,10 @@ export function VoiceNoteView({ item, mediaBase, interactive }: { item: VoiceNot
     <div className="voice-note">
       {interactive ? (
         <button className="voice-play" onClick={toggle} aria-label={playing ? "Pause voice note" : "Play voice note"}>
-          {playing ? "❚❚" : "▶"}
+          <PlayIcon playing={playing} />
         </button>
       ) : (
-        <span className="voice-play">▶</span>
+        <span className="voice-play"><PlayIcon /></span>
       )}
       <span className="voice-body">
         <svg className="voice-wave" viewBox={`0 0 ${bars.length * 3} 20`} preserveAspectRatio="none" aria-hidden>
