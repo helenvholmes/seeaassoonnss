@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
 import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, ROUTE_MAX_STOPS, SHAPES, slugProblem, type ShapeKind, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
 import { ModelPanel, PlaceSearch } from "./Tools";
+import { ColorPicker, docColors } from "./ColorPicker";
 import { formatBytes } from "./upload";
 import { imageUrl, quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
@@ -36,6 +37,8 @@ interface Props {
   select: (id: string | null) => void;
   setMobileVisible: (id: string, visible: boolean) => void;
   resetMobile: (kind: "scaled" | "column") => void;
+  /** Turns the automatic mobile layout on (rebuilding mobile now) or off. */
+  setMobileAuto: (on: boolean) => void;
   addBackgroundModel: (file: File, textureSize: 1024 | 2048) => void;
   /** Changes a model on an item (its id) or on the background ("background"). A string `undoable` merges steps with the same key. */
   setModelContent: (target: string, patch: Partial<ModelContent>, undoable: boolean | string) => void;
@@ -171,12 +174,28 @@ function SortOrderField({ id, sortOrder, onSortOrderChange }: Pick<Props, "id" |
   );
 }
 
-function MobileSettings({ doc, resetMobile, setMobileVisible, select }: Props) {
+function MobileSettings({ doc, resetMobile, setMobileVisible, select, setMobileAuto }: Props) {
   const hidden = doc.items.filter((i) => !i.mobile);
   return (
     <div className="stack">
       <p className="tools-heading">mobile layout</p>
       <p className="small muted">Content is shared with desktop. Positions, sizes, layers and text sizes here are for screens narrower than 960 px.</p>
+      <label className="row small">
+        <input
+          type="checkbox"
+          checked={!!doc.mobileAuto}
+          onChange={(e) => {
+            if (e.target.checked && !confirm("Replace the mobile layout with one built from desktop? It then follows every desktop change until you move something on mobile.")) return;
+            setMobileAuto(e.target.checked);
+          }}
+        />
+        Build automatically from desktop
+      </label>
+      <span className="small muted">
+        {doc.mobileAuto
+          ? "Mobile follows desktop: side-by-side items stack in reading order, small items pair up, stickers stay on what they sit on. Moving anything here turns this off; undo turns it back on."
+          : "You arrange mobile yourself. Turn this on to have it built from desktop again."}
+      </span>
       <div className="row">
         <button onClick={() => resetMobile("scaled")}>Reset: scaled desktop</button>
         <button onClick={() => resetMobile("column")}>Reset: single column</button>
@@ -310,8 +329,7 @@ function SeasonSettings(props: Props) {
       </Field>
       <Field label="Background">
         <div className="row">
-          <input type="color" value={doc.background.value} onChange={(e) => set("background", { type: "color", value: e.target.value })} />
-          <code className="small">{doc.background.value}</code>
+          <ColorPicker label="Background" value={doc.background.value} swatches={docColors(doc)} onChange={(value) => set("background", { type: "color", value })} />
         </div>
       </Field>
       <BackgroundLayerSettings {...props} />
@@ -638,7 +656,7 @@ function CropControls({ item, p, cropping, setCropping, updateItem }: { item: Ph
   );
 }
 
-function RouteSettings({ item, updateItem, change }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"] }) {
+function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"]; swatches: string[] }) {
   const c = item.content;
   const input = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -722,7 +740,7 @@ function RouteSettings({ item, updateItem, change }: { item: RouteItem; updateIt
       {message ? <span className="small muted">{message}</span> : null}
       <div className="grid2">
         <Field label="Route color">
-          <input type="color" value={c.color} onChange={(e) => set({ color: e.target.value }, "color")} />
+          <ColorPicker label="Route color" value={c.color} swatches={swatches} onChange={(color) => set({ color }, "color")} />
         </Field>
         <Field label={`Zoom on a stop: ${c.stepZoom}×`}>
           <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
@@ -851,7 +869,7 @@ function ItemSettings(props: Props & { item: Item }) {
               </select>
             </Field>
             <Field label="Color">
-              <input type="color" value={item.content.color} onChange={(e) => content({ color: e.target.value }, "color")} />
+              <ColorPicker label="Text color" value={item.content.color} swatches={docColors(doc)} onChange={(color) => content({ color }, "color")} />
             </Field>
           </div>
         </>
@@ -927,7 +945,7 @@ function ItemSettings(props: Props & { item: Item }) {
           </label>
           {item.content.fill !== null ? (
             <Field label="Fill color">
-              <input type="color" value={item.content.fill} onChange={(e) => content({ fill: e.target.value }, "fill")} />
+              <ColorPicker label="Fill color" value={item.content.fill} swatches={docColors(doc)} onChange={(fill) => content({ fill }, "fill")} />
             </Field>
           ) : null}
           <Field label={`Outline: ${item.content.strokeWidth}`}>
@@ -935,7 +953,7 @@ function ItemSettings(props: Props & { item: Item }) {
           </Field>
           {item.content.strokeWidth > 0 ? (
             <Field label="Outline color">
-              <input type="color" value={item.content.stroke} onChange={(e) => content({ stroke: e.target.value }, "stroke")} />
+              <ColorPicker label="Outline color" value={item.content.stroke} swatches={docColors(doc)} onChange={(stroke) => content({ stroke }, "stroke")} />
             </Field>
           ) : null}
         </>
@@ -980,7 +998,7 @@ function ItemSettings(props: Props & { item: Item }) {
         </>
       ) : null}
 
-      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} /> : null}
+      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} swatches={docColors(doc)} /> : null}
 
       {item.type === "model_3d" ? <ModelFields {...props} target={item.id} content={item.content} /> : null}
 

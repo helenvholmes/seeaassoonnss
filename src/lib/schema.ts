@@ -335,6 +335,12 @@ export const seasonDocSchema = z.object({
    * mobile placement yet, and the page uses the scaled-down desktop layout.
    */
   mobileLayout: z.boolean().default(false),
+  /**
+   * The editor rebuilds the mobile layout from desktop after every change (see
+   * autoMobileLayout in components/editor/ops.ts). Arranging anything on mobile by
+   * hand turns it off. Off for seasons from before it existed.
+   */
+  mobileAuto: z.boolean().optional(),
   items: z
     .array(itemSchema)
     .max(500)
@@ -397,6 +403,7 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     desktopHeight: 900,
     mobileHeight: Math.round(900 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
     mobileLayout: true,
+    mobileAuto: true,
     items: [],
   };
 }
