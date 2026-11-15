@@ -111,3 +111,14 @@ test("driving directions split long routes into legs that join up", async () => 
   assert.deepEqual(chunkStops([1], 25), []);
   assert.deepEqual(joinPaths([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), [[0, 0], [1, 1], [2, 2]]);
 });
+
+test("a rotated route still fits the frame, and the frame keeps its angle", () => {
+  const content = { stops: [{ name: "moscow", lon: 37.62, lat: 55.75 }, { name: "st petersburg", lon: 30.32, lat: 59.94 }], line: [], angle: -55 };
+  const f = fitRoute(content, 400, 900);
+  assert.equal(f.angle, -55);
+  const [a, b] = content.stops.map((s) => routeProjection(f)([s.lon, s.lat])!);
+  for (const [x, y] of [a, b]) assert.ok(x > 0 && x < 400 && y > 0 && y < 900, `${x},${y}`);
+  // Turned so the route runs mostly up and down the tall frame.
+  assert.ok(Math.abs(b[1] - a[1]) > Math.abs(b[0] - a[0]));
+  assert.equal(fitRoute({ stops: content.stops, line: [] }, 400, 900).angle, 0);
+});

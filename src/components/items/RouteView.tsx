@@ -21,6 +21,7 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
     h: String(f.height),
     k: String(k),
   });
+  if (f.angle) q.set("angle", String(f.angle));
   if (borders) q.set("borders", "1");
   q.set("v", String(MAP_VERSION));
   return `${BASE_PATH}/map/frame?${q}`;
@@ -36,6 +37,7 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
 export function RouteView({ item, interactive, layout, placement }: { item: RouteItem; interactive: boolean; layout: Layout; placement: Placement }) {
   const c = item.content;
   const lineOnly = c.style === "line";
+  const lineWidth = c.lineWidth ?? 3.5;
   const band = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const drawn = useRef<SVGPathElement>(null);
@@ -77,7 +79,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
   }, [c, size]);
 
   useEffect(() => {
-    if (drawn.current) setLength(drawn.current.getTotalLength());
+    if (drawn.current) setLength(drawn.current.getTotalLength() || 0);
   }, [geometry]);
 
   // Scroll: progress through the band, and the linked item nearest above mid-screen.
@@ -144,7 +146,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
               {lineOnly ? null : (
                 <>
                   <image href={frameUrl(geometry.frame, c.stepZoom, c.borders)} x={-size.w / 2} y={-size.h / 2} width={size.w * 2} height={size.h * 2} />
-                  <path d={geometry.d} className="route-line-base" strokeWidth={3 / zoom} />
+                  <path d={geometry.d} className="route-line-base" strokeWidth={(lineWidth * 0.85) / zoom} />
                 </>
               )}
               <path
@@ -152,25 +154,44 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                 d={geometry.d}
                 className="route-line"
                 stroke={c.color}
-                strokeWidth={3.5 / zoom}
+                strokeWidth={lineWidth / zoom}
                 strokeDasharray={length ? `${length} ${length}` : undefined}
-                strokeDashoffset={length ? length * (1 - progress) : undefined}
+                strokeDashoffset={length && Number.isFinite(progress) ? length * (1 - progress) : undefined}
               />
               {lineOnly ? null : geometry.points.map(([x, y], i) => (
                 <circle
                   key={i}
                   cx={x}
                   cy={y}
-                  r={(i === labelIndex ? 7 : 4.5) / zoom}
+                  r={((i === labelIndex ? 7 : 4.5) + Math.max(0, lineWidth - 3.5) / 2) / zoom}
                   strokeWidth={2 / zoom}
                   className={`route-stop${geometry.fractions[i] <= progress + 1e-6 ? " reached" : ""}`}
                   style={{ fill: geometry.fractions[i] <= progress + 1e-6 ? c.color : undefined }}
                 />
               ))}
+              {c.labels
+                ? c.stops.map((s, i) => {
+                    const [x, y] = geometry.points[i];
+                    const reached = geometry.fractions[i] <= progress + 1e-6;
+                    return (
+                      <text
+                        key={`label${i}`}
+                        x={x + (lineWidth / 2 + 7) / zoom}
+                        y={y}
+                        dy="0.35em"
+                        fontSize={13 / zoom}
+                        strokeWidth={3 / zoom}
+                        className={`route-place${reached ? " reached" : ""}${i === labelIndex ? " current" : ""}`}
+                      >
+                        {s.name}
+                      </text>
+                    );
+                  })
+                : null}
             </g>
           </svg>
         ) : null}
-        {!lineOnly && labelIndex >= 0 && c.stops[labelIndex] ? (
+        {!lineOnly && !c.labels && labelIndex >= 0 && c.stops[labelIndex] ? (
           <span className="route-label" aria-live="polite">
             {c.stops[labelIndex].name}
           </span>

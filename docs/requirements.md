@@ -223,6 +223,7 @@ Odyssey is built with seeaassoonnss: it is one season, and the route map is part
 5. **Reduced motion:** when the reader has reduced motion turned on, show the full route immediately with no animation.
 6. **Follow roads (added Nov 15).** A button in the route settings replaces the straight lines between stops with the driving route through them, from the public OSRM server on OpenStreetMap data (no key). Only the owner's editor asks for it; the path is saved with the route, so readers never call the service. The path is the fastest route, so a stop placed on a road the owner took pulls the line onto it. Adding or moving stops leaves the saved path as it is until the owner follows roads again.
 7. **Line-only style (added Nov 15).** A style setting shows only the route line on the page's own background, with no land, grey base line, stop dots or place label, as in "The Russia Left Behind". Linked items still move the map to their stop.
+8. **Place names, rotation, line thickness (added Nov 15).** In either style, place names can sit along the line; each fades in when the line reaches it and the current one is bold (they replace the corner label). The map can be turned (−180° to 180°): the route is fitted to the frame at that angle and the land is drawn turned to match, so a route can run up and down a tall band as the railway does in "The Russia Left Behind". The line thickness can be set from 1 to 16 pixels.
 
 ### Data and tools
 

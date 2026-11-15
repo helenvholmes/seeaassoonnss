@@ -771,6 +771,18 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           <option value="line">Line only: just the route drawing in</option>
         </select>
       </Field>
+      <label className="row small">
+        <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
+        Place names along the line (each appears when the line reaches it)
+      </label>
+      <div className="grid2">
+        <Field label={`Rotate map: ${c.angle ?? 0}°`}>
+          <input type="range" min={-180} max={180} step={5} value={c.angle ?? 0} onChange={(e) => set({ angle: Number(e.target.value) }, "angle")} />
+        </Field>
+        <Field label={`Line thickness: ${c.lineWidth ?? 3.5}`}>
+          <input type="range" min={1} max={16} step={0.5} value={c.lineWidth ?? 3.5} onChange={(e) => set({ lineWidth: Number(e.target.value) }, "lineWidth")} />
+        </Field>
+      </div>
       {(c.style ?? "map") === "map" ? (
         <label className="row small">
           <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
