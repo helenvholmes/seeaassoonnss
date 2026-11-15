@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, slugProblem, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
+import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, SHAPES, slugProblem, type ShapeKind, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
 import { ModelPanel } from "./Tools";
 import { formatBytes } from "./upload";
 import { imageUrl, quoteSize } from "../ItemContent";
@@ -66,6 +66,8 @@ function itemLabel(item: Item): string {
       return `route map: ${item.content.stops.length} stops`;
     case "model_3d":
       return item.content.alt ? `3D model: ${cut(item.content.alt)}` : "3D model";
+    case "shape":
+      return `shape: ${item.content.shape}`;
   }
 }
 
@@ -870,6 +872,37 @@ function ItemSettings(props: Props & { item: Item }) {
             Original aspect ratio
           </button>
         </div>
+      ) : null}
+
+      {item.type === "shape" ? (
+        <>
+          <Field label="Shape">
+            <select value={item.content.shape} onChange={(e) => content({ shape: e.target.value as ShapeKind }, "shape")}>
+              {SHAPES.map((sh) => (
+                <option key={sh} value={sh}>
+                  {sh === "rounded" ? "rounded square" : sh}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <label className="row small">
+            <input type="checkbox" checked={item.content.fill !== null} onChange={(e) => content({ fill: e.target.checked ? "#1d1d1b" : null }, "fill-on")} />
+            Fill
+          </label>
+          {item.content.fill !== null ? (
+            <Field label="Fill color">
+              <input type="color" value={item.content.fill} onChange={(e) => content({ fill: e.target.value }, "fill")} />
+            </Field>
+          ) : null}
+          <Field label={`Outline: ${item.content.strokeWidth}`}>
+            <input type="range" min={0} max={30} step={0.5} value={item.content.strokeWidth} onChange={(e) => content({ strokeWidth: Number(e.target.value) }, "strokeWidth")} />
+          </Field>
+          {item.content.strokeWidth > 0 ? (
+            <Field label="Outline color">
+              <input type="color" value={item.content.stroke} onChange={(e) => content({ stroke: e.target.value }, "stroke")} />
+            </Field>
+          ) : null}
+        </>
       ) : null}
 
       {item.type === "map" ? (

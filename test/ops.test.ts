@@ -26,6 +26,14 @@ test("addItem puts the new item on top", () => {
   assert.ok(seasonDocSchema.safeParse(doc).success);
 });
 
+test("a shape item validates", () => {
+  const shape: Item = { id: id(9), type: "shape", desktop: { x: 0, y: 0, w: 200, h: 200, rotation: 0, z: 1, locked: false }, mobile: null, content: { shape: "star", fill: null, stroke: "#123456", strokeWidth: 4 } };
+  const doc = { ...emptySeasonDoc("t"), items: [shape] };
+  assert.ok(seasonDocSchema.safeParse(doc).success);
+  const bad = { ...doc, items: [{ ...shape, content: { ...shape.content, shape: "blob" } }] };
+  assert.equal(seasonDocSchema.safeParse(bad).success, false);
+});
+
 test("moveItems moves the chosen unlocked items together", () => {
   let doc = emptySeasonDoc("t");
   doc = addItem(doc, quote(1));
