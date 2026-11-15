@@ -3,13 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, SHAPES, slugProblem, type ShapeKind, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
-import { ModelPanel } from "./Tools";
+import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, ROUTE_MAX_STOPS, SHAPES, slugProblem, type ShapeKind, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
+import { ModelPanel, PlaceSearch } from "./Tools";
 import { formatBytes } from "./upload";
 import { imageUrl, quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
-import { normalizeRotation, placementOf } from "./ops";
+import { normalizeRotation, placementOf, setRouteStops } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isCropped, NO_CROP, zoomCrop } from "@/lib/crop";
 
@@ -638,12 +638,26 @@ function CropControls({ item, p, cropping, setCropping, updateItem }: { item: Ph
   );
 }
 
-function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Props["updateItem"] }) {
+function RouteSettings({ item, updateItem, change }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"] }) {
   const c = item.content;
   const input = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const set = (patch: Partial<RouteItem["content"]>, field: string) =>
     updateItem((i) => ({ ...i, content: { ...(i as RouteItem).content, ...patch } }) as Item, `content:${item.id}:${field}`);
+  // Adding, moving and removing stops renumbers them; items linked to a stop follow it.
+  const editStops = (order: number[], added?: RouteItem["content"]["stops"][number]) =>
+    change((d) => setRouteStops(d, item.id, order.map((old) => (old < 0 ? added! : c.stops[old])), order));
+  const indexes = () => c.stops.map((_, i) => i);
+  const moveStop = (index: number, by: -1 | 1) => {
+    const order = indexes();
+    [order[index], order[index + by]] = [order[index + by], order[index]];
+    editStops(order);
+  };
+  const removeStop = (index: number) => editStops(indexes().filter((i) => i !== index));
+  const addStop = (p: { label: string; lat: number; lon: number }) => {
+    editStops([...indexes(), -1], { name: p.label || `stop ${c.stops.length + 1}`, lat: p.lat, lon: p.lon });
+    setMessage(null);
+  };
   return (
     <>
       <p className="small muted">
@@ -652,16 +666,38 @@ function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Prop
       <Field label={`Stops (${c.stops.length})${c.line.length ? `, path of ${c.line.length} points` : ""}`}>
         <div className="route-stops">
           {c.stops.map((stop, index) => (
-            <input
-              key={index}
-              type="text"
-              value={stop.name}
-              aria-label={`Stop ${index + 1} name`}
-              onChange={(e) => set({ stops: c.stops.map((s, i) => (i === index ? { ...s, name: e.target.value } : s)) }, `stop${index}`)}
-            />
+            <div key={index} className="route-stop">
+              <span className="small muted">{index + 1}</span>
+              <input
+                type="text"
+                value={stop.name}
+                aria-label={`Stop ${index + 1} name`}
+                onChange={(e) => set({ stops: c.stops.map((s, i) => (i === index ? { ...s, name: e.target.value } : s)) }, `stop${index}`)}
+              />
+              <button className="quiet" title="Move up" aria-label={`Move stop ${index + 1} up`} disabled={index === 0} onClick={() => moveStop(index, -1)}>
+                ↑
+              </button>
+              <button className="quiet" title="Move down" aria-label={`Move stop ${index + 1} down`} disabled={index === c.stops.length - 1} onClick={() => moveStop(index, 1)}>
+                ↓
+              </button>
+              <button className="quiet" title="Remove" aria-label={`Remove stop ${index + 1}`} disabled={c.stops.length === 1} onClick={() => removeStop(index)}>
+                ×
+              </button>
+            </div>
           ))}
         </div>
       </Field>
+      {c.stops.length < ROUTE_MAX_STOPS ? (
+        <Field label="Add a stop at the end">
+          <PlaceSearch onPick={addStop} onError={setMessage} label="Search" />
+        </Field>
+      ) : null}
+      {c.line.length ? (
+        <div className="stack" style={{ gap: 4 }}>
+          <span className="small muted">This route follows the path from the imported file, so new or moved stops are not on it.</span>
+          <button onClick={() => set({ line: [] }, "line")}>Use straight lines between stops</button>
+        </div>
+      ) : null}
       <div className="row">
         <button onClick={() => input.current?.click()}>Replace with another file…</button>
         <input
@@ -944,7 +980,7 @@ function ItemSettings(props: Props & { item: Item }) {
         </>
       ) : null}
 
-      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} /> : null}
+      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} /> : null}
 
       {item.type === "model_3d" ? <ModelFields {...props} target={item.id} content={item.content} /> : null}
 

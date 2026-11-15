@@ -281,7 +281,11 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
   font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84;
 }
 .editor .item-route { outline: 1px dashed #b9b9b0; background: repeating-linear-gradient(0deg, transparent 0 22px, rgb(0 0 0 / 0.02) 22px 24px); }
-.route-stops { display: flex; flex-direction: column; gap: 4px; max-height: 220px; overflow-y: auto; }
+.route-stops { display: flex; flex-direction: column; gap: 4px; max-height: 260px; overflow-y: auto; }
+.route-stop { display: flex; align-items: center; gap: 2px; }
+.route-stop > span { min-width: 1.5em; text-align: right; padding-right: 2px; }
+.route-stop input { flex: 1; min-width: 0; }
+.route-stop button { padding: 2px 6px; }
 
 /* ---------- Editor: Alt measuring ---------- */
 .measure-overlay { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100001; overflow: visible; }

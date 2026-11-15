@@ -1,6 +1,6 @@
 // Pure operations on a season document. Each returns a new document.
 // Content is shared by both layouts; placement is separate per layout.
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type RouteContent, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
 import { bottomOf } from "../../lib/layout.ts";
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
@@ -116,6 +116,23 @@ export function moveItems(doc: SeasonDoc, ids: readonly string[], dx: number, dy
       if (!p || p.locked) return i;
       const moved = { ...p, x: Math.round(p.x + dx), y: Math.round(p.y + dy) };
       return layout === "desktop" ? { ...i, desktop: moved } : { ...i, mobile: moved };
+    }),
+  };
+}
+
+/**
+ * Replaces a route's stops. `order[newIndex]` is the stop's old index, or -1 for a
+ * new stop. Items linked to a stop follow it to its new number; links to removed
+ * stops are cleared.
+ */
+export function setRouteStops(doc: SeasonDoc, routeId: string, stops: RouteContent["stops"], order: readonly number[]): SeasonDoc {
+  return {
+    ...doc,
+    items: doc.items.map((i) => {
+      if (i.id === routeId && i.type === "route") return { ...i, content: { ...i.content, stops } };
+      if (i.routeStop?.routeId !== routeId) return i;
+      const index = order.indexOf(i.routeStop.index);
+      return { ...i, routeStop: index < 0 ? null : { routeId, index } };
     }),
   };
 }
