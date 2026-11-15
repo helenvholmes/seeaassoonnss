@@ -102,3 +102,12 @@ test("editing a route's stops keeps items linked to the same place", () => {
   assert.equal(r.type === "route" && r.content.stops.map((s) => s.name).join(""), "cad");
   assert.deepEqual(next.items.slice(1).map((i) => i.routeStop?.index ?? null), [1, null, 0]);
 });
+
+test("driving directions split long routes into legs that join up", async () => {
+  const { chunkStops, joinPaths } = await import("../src/lib/directions.ts");
+  const stops = Array.from({ length: 60 }, (_, i) => i);
+  const chunks = chunkStops(stops, 25);
+  assert.deepEqual(chunks.map((c) => [c[0], c[c.length - 1]]), [[0, 24], [24, 48], [48, 59]]);
+  assert.deepEqual(chunkStops([1], 25), []);
+  assert.deepEqual(joinPaths([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), [[0, 0], [1, 1], [2, 2]]);
+});

@@ -219,6 +219,8 @@ export const routeSchema = z.object({
     borders: z.boolean(),
     /** How far the map zooms in on a stop when an item linked to it is in view. */
     stepZoom: num.min(1).max(16),
+    /** "map" (default): land, stops and the line. "line": only the line, on the page's own background. */
+    style: z.enum(["map", "line"]).optional(),
   }),
 });
 
