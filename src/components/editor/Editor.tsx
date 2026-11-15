@@ -377,6 +377,19 @@ export function Editor(props: EditorProps) {
     }
   };
 
+  /** A route map built in the editor: it starts with one stop, and the owner adds the rest. */
+  const startRoute = (p: Place) => {
+    const desktop = place(720, 2700);
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "route",
+      desktop,
+      mobile: { x: 0, y: Math.round(desktop.y * MOBILE_FACTOR), w: 390, h: 2400, rotation: 0, z: 0, locked: false },
+      content: { stops: [{ name: p.label || "stop 1", lat: p.lat, lon: p.lon }], line: [], color: "#c63d32", borders: true, stepZoom: 3 },
+    });
+    setNotice(null);
+  };
+
   const addMap = (p: Place) => {
     addAndSelect({
       id: crypto.randomUUID(),
@@ -1028,6 +1041,7 @@ export function Editor(props: EditorProps) {
           onShape={addShape}
           onRecording={(blob) => void addVoiceNote(blob)}
           onRoute={(file) => void addRoute(file)}
+          onRouteStart={startRoute}
           onModel={(file, textureSize) => void addModel(file, textureSize)}
           playlistUrl={playlistUrl}
           setPlaylistUrl={setPlaylistUrl}
