@@ -338,7 +338,8 @@ export const seasonDocSchema = z.object({
   /**
    * The editor rebuilds the mobile layout from desktop after every change (see
    * autoMobileLayout in components/editor/ops.ts). Arranging anything on mobile by
-   * hand turns it off. Off for seasons from before it existed.
+   * hand turns it off (false). Empty, for seasons from before it existed, counts as
+   * on: the editor switches it on when the season is next opened.
    */
   mobileAuto: z.boolean().optional(),
   items: z

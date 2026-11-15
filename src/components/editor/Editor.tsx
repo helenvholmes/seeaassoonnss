@@ -230,7 +230,7 @@ export function Editor(props: EditorProps) {
   // turns the automatic layout off (undo brings it back).
   const lastAuto = useRef<SeasonDoc | null>(null);
   useEffect(() => {
-    if (!doc.mobileAuto) {
+    if (doc.mobileAuto === false) {
       lastAuto.current = null;
       return;
     }
@@ -241,6 +241,14 @@ export function Editor(props: EditorProps) {
       return;
     }
     const auto = autoMobileLayout(doc);
+    if (doc.mobileAuto === undefined) {
+      // A season from before the setting: switch it on once, as an undo step whose
+      // undo restores the hand-made layout with the setting off.
+      const on = { ...auto, mobileAuto: true };
+      lastAuto.current = on;
+      setHistory((h) => (h.present === doc ? commitGesture(replace(h, on), { ...doc, mobileAuto: false }) : h));
+      return;
+    }
     if (sameMobileLayout(auto, doc)) {
       lastAuto.current = doc;
       return;

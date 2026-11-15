@@ -184,7 +184,7 @@ function MobileSettings({ doc, resetMobile, setMobileVisible, select, setMobileA
       <label className="row small">
         <input
           type="checkbox"
-          checked={!!doc.mobileAuto}
+          checked={doc.mobileAuto !== false}
           onChange={(e) => {
             if (e.target.checked && !confirm("Replace the mobile layout with one built from desktop? It then follows every desktop change until you move something on mobile.")) return;
             setMobileAuto(e.target.checked);
@@ -193,7 +193,7 @@ function MobileSettings({ doc, resetMobile, setMobileVisible, select, setMobileA
         Build automatically from desktop
       </label>
       <span className="small muted">
-        {doc.mobileAuto
+        {doc.mobileAuto !== false
           ? "Mobile follows desktop: side-by-side items stack in reading order, small items pair up, stickers stay on what they sit on. Moving anything here turns this off; undo turns it back on."
           : "You arrange mobile yourself. Turn this on to have it built from desktop again."}
       </span>
