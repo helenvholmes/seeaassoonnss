@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { SeasonCanvas } from "@/components/SeasonCanvas";
+import { Lightbox } from "@/components/Lightbox";
+import { lightboxPhotos } from "@/lib/lightbox";
 import { config } from "@/lib/config";
 import { getPublishedSeason } from "@/lib/seasons";
 import { seasonMetadata } from "@/lib/share";
@@ -45,6 +47,7 @@ export default async function SeasonPage({ params }: Props) {
   return (
     <main className="season-page" style={{ background: doc.background.value }}>
       <SeasonCanvas doc={doc} mediaBase={mediaBase} />
+      <Lightbox photos={lightboxPhotos(doc)} mediaBase={mediaBase} />
       <nav className="season-footer">
         <Link href="/">// all seasons</Link>
         <a href={sourceUrl}>seeaassoonnss is open source</a>
