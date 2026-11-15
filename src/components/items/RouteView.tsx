@@ -38,6 +38,8 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
   const c = item.content;
   const lineOnly = c.style === "line";
   const lineWidth = c.lineWidth ?? 3.5;
+  const aheadFaint = lineOnly && (c.ahead ?? "faint") === "faint";
+  const labelLeft = c.labelSide === "left";
   const band = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const drawn = useRef<SVGPathElement>(null);
@@ -71,7 +73,9 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
 
   const geometry = useMemo(() => {
     if (!size) return null;
-    const frame = fitRoute(c, size.w, size.h);
+    // Room for the longest place name (about 0.55em per character).
+    const nameRoom = c.labels ? Math.max(0, ...c.stops.map((s) => s.name.length)) * (c.style === "line" ? 15 : 13) * 0.55 + 16 : 0;
+    const frame = fitRoute(c, size.w, size.h, c.labelSide === "left" ? { left: nameRoom } : { right: nameRoom });
     const projection = routeProjection(frame);
     const d = geoPath(projection)({ type: "LineString", coordinates: routeCoordinates(c) }) ?? "";
     const points = c.stops.map((s) => projection([s.lon, s.lat]) ?? [0, 0]);
@@ -141,7 +145,10 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
     <div className="route-band" ref={band}>
       <div className={`route-panel${interactive ? " route-sticky" : ""}`} ref={panel} style={editorPanelHeight ? { height: editorPanelHeight } : undefined}>
         {geometry && size ? (
-          <svg viewBox={`0 0 ${size.w} ${size.h}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Route map: ${c.stops.map((s) => s.name).join(", ")}`}>
+          <svg
+            className={`${lineOnly ? "route-svg-line" : ""}${aheadFaint ? " ahead-faint" : ""}`}
+            viewBox={`0 0 ${size.w} ${size.h}`}
+            preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Route map: ${c.stops.map((s) => s.name).join(", ")}`}>
             <g className="route-move" style={{ transform, transition: reduced || !interactive ? "none" : undefined }}>
               {lineOnly ? null : (
                 <>
@@ -149,6 +156,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                   <path d={geometry.d} className="route-line-base" strokeWidth={(lineWidth * 0.85) / zoom} />
                 </>
               )}
+              {aheadFaint ? <path d={geometry.d} className="route-line-ahead" strokeWidth={1.2 / zoom} strokeDasharray={`${4 / zoom} ${3 / zoom}`} /> : null}
               <path
                 ref={drawn}
                 d={geometry.d}
@@ -158,7 +166,13 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                 strokeDasharray={length ? `${length} ${length}` : undefined}
                 strokeDashoffset={length && Number.isFinite(progress) ? length * (1 - progress) : undefined}
               />
-              {lineOnly ? null : geometry.points.map(([x, y], i) => (
+              {lineOnly
+                ? geometry.points.map(([x, y], i) => {
+                    const reached = geometry.fractions[i] <= progress + 1e-6;
+                    if (!aheadFaint && !reached) return null;
+                    return <circle key={i} cx={x} cy={y} r={(i === labelIndex ? 4.5 : 3.5) / zoom} className={`route-dot${i === labelIndex ? " current" : ""}`} />;
+                  })
+                : geometry.points.map(([x, y], i) => (
                 <circle
                   key={i}
                   cx={x}
@@ -176,10 +190,11 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                     return (
                       <text
                         key={`label${i}`}
-                        x={x + (lineWidth / 2 + 7) / zoom}
+                        x={x + ((labelLeft ? -1 : 1) * (Math.max(lineWidth / 2, 4.5) + 7)) / zoom}
                         y={y}
                         dy="0.35em"
-                        fontSize={13 / zoom}
+                        textAnchor={labelLeft ? "end" : "start"}
+                        fontSize={(lineOnly ? 15 : 13) / zoom}
                         strokeWidth={3 / zoom}
                         className={`route-place${reached ? " reached" : ""}${i === labelIndex ? " current" : ""}`}
                       >

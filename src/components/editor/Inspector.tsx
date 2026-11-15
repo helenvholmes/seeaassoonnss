@@ -771,10 +771,26 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           <option value="line">Line only: just the route drawing in</option>
         </select>
       </Field>
-      <label className="row small">
-        <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
-        Place names along the line (each appears when the line reaches it)
-      </label>
+      {c.style === "line" ? (
+        <Field label="The route ahead">
+          <select value={c.ahead ?? "faint"} onChange={(e) => set({ ahead: e.target.value as "faint" | "hidden" }, "ahead")}>
+            <option value="faint">Faint: a grey dashed line, grey stops and names</option>
+            <option value="hidden">Hidden: the line draws in from nothing</option>
+          </select>
+        </Field>
+      ) : null}
+      <div className="row small" style={{ flexWrap: "wrap" }}>
+        <label className="row">
+          <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
+          Place names along the line
+        </label>
+        {c.labels ? (
+          <select aria-label="Side for place names" value={c.labelSide ?? "right"} onChange={(e) => set({ labelSide: e.target.value as "left" | "right" }, "labelSide")}>
+            <option value="right">on the right</option>
+            <option value="left">on the left</option>
+          </select>
+        ) : null}
+      </div>
       <div className="grid2">
         <Field label={`Rotate map: ${c.angle ?? 0}°`}>
           <input type="range" min={-180} max={180} step={5} value={c.angle ?? 0} onChange={(e) => set({ angle: Number(e.target.value) }, "angle")} />

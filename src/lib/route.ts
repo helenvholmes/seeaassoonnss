@@ -138,8 +138,11 @@ export function routeProjection(f: RouteFrame): GeoProjection {
   return geoMercator().rotate([-f.lon, 0]).angle(f.angle).scale(f.scale).translate([f.tx, f.ty]);
 }
 
-/** Fits the whole route into a width × height frame with some padding. */
-export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">, width: number, height: number): RouteFrame {
+/**
+ * Fits the whole route into a width × height frame with some padding, plus room
+ * on the left or right for place names (`inset`, in pixels).
+ */
+export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">, width: number, height: number, inset: { left?: number; right?: number } = {}): RouteFrame {
   const angle = r(content.angle ?? 0, 1);
   const w = Math.max(50, Math.round(width));
   const h = Math.max(50, Math.round(height));
@@ -152,11 +155,15 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
   );
   const lon = r((mean * 180) / Math.PI, 3);
   const pad = Math.min(w, h) * 0.12;
+  // Names may take at most half the frame's width.
+  const room = Math.max(0, w - 2 * pad);
+  const left = Math.min(inset.left ?? 0, room / 2);
+  const right = Math.min(inset.right ?? 0, room / 2);
   const target = { type: "MultiPoint" as const, coordinates: coords };
   const p = geoMercator().rotate([-lon, 0]).angle(angle).fitExtent(
     [
-      [pad, pad],
-      [w - pad, h - pad],
+      [pad + left, pad],
+      [w - pad - right, h - pad],
     ],
     target,
   );
@@ -167,7 +174,7 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
     // Re-center at the capped scale.
     const capped = geoMercator().rotate([-lon, 0]).angle(angle).scale(scale).translate([0, 0]);
     const [cx, cy] = capped(coords[0])!;
-    tx = w / 2 - cx;
+    tx = (w + left - right) / 2 - cx;
     ty = h / 2 - cy;
   }
   return { lon, scale, tx: r(tx, 1), ty: r(ty, 1), width: w, height: h, angle };
