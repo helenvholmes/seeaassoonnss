@@ -7,6 +7,7 @@ import path from "node:path";
 import { Wordmark } from "@/components/landing/Wordmark";
 import { mapUrl } from "@/components/ItemContent";
 import { VoiceNoteView } from "@/components/items/VoiceNoteView";
+import { PlayIcon } from "@/components/PlayIcon";
 import { BASE_PATH, config } from "@/lib/config";
 
 // The landing page for the project: what it is and how to run your own copy. It
@@ -130,7 +131,7 @@ const PIECES: CollagePiece[] = [
     className: "collage-voice",
     children: (
       <div className="voice-note">
-        <span className="voice-play">▶</span>
+        <span className="voice-play"><PlayIcon /></span>
         <span className="voice-body">
           <svg className="voice-wave" viewBox={`0 0 ${WAVE.length * 3} 20`} preserveAspectRatio="none">
             {WAVE.map((h, i) => (
@@ -185,7 +186,7 @@ function Note({ name, mark = false, children }: { name: string; mark?: boolean; 
 function VoiceNotePlaceholder({ caption }: { caption: string }) {
   return (
     <div className="voice-note">
-      <span className="voice-play">▶</span>
+      <span className="voice-play"><PlayIcon /></span>
       <span className="voice-body">
         <svg className="voice-wave" viewBox={`0 0 ${WAVE.length * 3} 20`} preserveAspectRatio="none" aria-hidden>
           {WAVE.map((h, i) => (

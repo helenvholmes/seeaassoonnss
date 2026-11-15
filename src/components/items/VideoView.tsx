@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { VideoItem } from "@/lib/schema";
+import { PlayIcon } from "@/components/PlayIcon";
 
 export function videoUrl(mediaBase: string, mediaId: string) {
   return `${mediaBase}/media/${mediaId}/video.mp4`;
@@ -69,7 +70,7 @@ export function VideoView({ item, mediaBase, posterUrl, interactive }: { item: V
       />
       {reduced && paused ? (
         <button className="media-button media-button-center" onClick={() => ref.current?.play()} aria-label="Play video">
-          ▶
+          <PlayIcon />
         </button>
       ) : null}
       {c.hasAudio ? (
