@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { handle, readJson } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
-import { finishTimed, isMediaKind, MediaError, processImage, processModel, processSticker } from "@/lib/media";
+import { finishTimed, isMediaKind, MediaError } from "@/lib/media";
+import { processImage, processModel, processSticker } from "@/lib/media-process";
 import { isUuid } from "@/lib/seasons";
 
 export const maxDuration = 60;
