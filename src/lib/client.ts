@@ -1,5 +1,10 @@
 // Browser-side helpers.
 export const BASE_PATH = "/seasons";
+/**
+ * Map images (/map, /map/frame) are cached forever by URL, so their URLs carry this.
+ * Bump it whenever the drawing changes (2: US state lines with borders).
+ */
+export const MAP_VERSION = 2;
 
 export async function api<T = unknown>(path: string, init?: { method?: string; body?: unknown }): Promise<T> {
   const res = await fetch(`${BASE_PATH}/api${path}`, {

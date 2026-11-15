@@ -730,7 +730,7 @@ function RouteSettings({ item, updateItem, change }: { item: RouteItem; updateIt
       </div>
       <label className="row small">
         <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
-        Country borders
+        Borders (countries, US states)
       </label>
     </>
   );
@@ -966,7 +966,7 @@ function ItemSettings(props: Props & { item: Item }) {
           </div>
           <label className="row small">
             <input type="checkbox" checked={item.content.borders} onChange={(e) => content({ borders: e.target.checked }, "borders")} />
-            Country borders
+            Borders (countries, US states)
           </label>
         </>
       ) : null}

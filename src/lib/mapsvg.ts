@@ -1,6 +1,7 @@
 import "server-only";
-// Draws a Map item as a small SVG: land, coastlines, optional country borders and a
-// dot. Vector outlines from Natural Earth (world-atlas), no tiles and no API key.
+// Draws a Map item as a small SVG: land, coastlines, optional borders (countries, and
+// US states) and a dot. Vector outlines from Natural Earth (world-atlas) and the US
+// Census (us-atlas), no tiles and no API key.
 import { geoArea, geoOrthographic, geoPath } from "d3-geo";
 import type { Feature, FeatureCollection, Geometry, MultiLineString, MultiPolygon, Polygon } from "geojson";
 import { routeProjection, zoomOfScale, type RouteFrame } from "./route";
@@ -44,6 +45,38 @@ function loadShapes(res: Resolution) {
     );
   }
   return shapes.get(res)!;
+}
+
+/** Lines between US states (us-atlas has one resolution, 1:10m). */
+let stateLines: Promise<MultiLineString> | null = null;
+function loadStateLines() {
+  stateLines ??= import("us-atlas/states-10m.json").then((m) => {
+    const topology = (m.default ?? m) as unknown as Topology;
+    const states = (topology.objects as { states: GeometryCollection }).states;
+    return mesh(topology, states, (a, b) => a !== b);
+  });
+  return stateLines;
+}
+
+/** State lines from this zoom up; further out they are too small to read. */
+export const STATE_LINES_ZOOM = 2;
+
+/** Country borders, plus state lines when zoomed in enough. */
+async function borderPaths(path: (g: MultiLineString) => string | null, borderShape: MultiLineString, zoom: number) {
+  const country = path(borderShape) ?? "";
+  const states = zoom >= STATE_LINES_ZOOM ? (path(await loadStateLines()) ?? "") : "";
+  return { country, states };
+}
+
+function borderSvg({ country, states }: { country: string; states: string }, scaled: boolean) {
+  // A Map item's 1000px image is usually shown at a third of that or less, so its
+  // strokes are drawn heavier; route frames keep a fixed on-screen width instead.
+  const fixed = scaled ? ' vector-effect="non-scaling-stroke"' : "";
+  const [stateWidth, countryWidth, k] = scaled ? [0.7, 0.8, 1] : [1.6, 2, 1.6];
+  return [
+    states ? `<path d="${states}" fill="none" stroke="#b9b9b0" stroke-width="${stateWidth}" stroke-dasharray="${3 * k} ${3 * k}"${fixed}/>` : "",
+    country ? `<path d="${country}" fill="none" stroke="#a9a9a0" stroke-width="${countryWidth}" stroke-dasharray="${4 * k} ${3 * k}"${fixed}/>` : "",
+  ].join("\n");
 }
 
 function load(res: Resolution): Promise<Topology> {
@@ -107,13 +140,13 @@ export async function renderMapSvg({ lat, lon, zoom, borders }: MapParams): Prom
     .precision(0.2);
   const path = geoPath(projection).digits(1);
   const land = path(landShape) ?? "";
-  const borderPath = borders ? (path(borderShape) ?? "") : "";
+  const borderLines = borders ? borderSvg(await borderPaths(path, borderShape, zoom), false) : "";
   // The globe's edge, while it is on the image.
   const globe = radius < half * 1.5 ? `<circle cx="${half}" cy="${half}" r="${radius.toFixed(1)}" fill="none" stroke="#c9c9c2" stroke-width="1"/>` : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MAP_SIZE} ${MAP_SIZE}" width="${MAP_SIZE}" height="${MAP_SIZE}">
 ${globe}
 <path d="${land}" fill="#e7e7e0" stroke="#a9a9a0" stroke-width="1.2" stroke-linejoin="round"/>
-${borderPath ? `<path d="${borderPath}" fill="none" stroke="#bdbdb4" stroke-width="0.8" stroke-dasharray="3 3"/>` : ""}
+${borderLines}
 <circle cx="${half}" cy="${half}" r="9" fill="#1d1d1b" stroke="#fbfbf9" stroke-width="3"/>
 </svg>`;
 }
@@ -137,7 +170,8 @@ export function parseFrameParams(search: URLSearchParams): (RouteFrame & { k: nu
 export async function renderFrameSvg(f: RouteFrame & { k: number; borders: boolean }): Promise<string> {
   // Detail between the overview and the stop zoom: full detail for the zoomed view
   // would make the image for a long route several megabytes.
-  const { land: landShape, borders: borderShape } = await loadShapes(resolutionFor(zoomOfScale(f.scale) + Math.log2(f.k) / 2));
+  const detailZoom = zoomOfScale(f.scale) + Math.log2(f.k) / 2;
+  const { land: landShape, borders: borderShape } = await loadShapes(resolutionFor(detailZoom));
   const x0 = -f.width / 2;
   const y0 = -f.height / 2;
   const projection = routeProjection(f)
@@ -148,9 +182,9 @@ export async function renderFrameSvg(f: RouteFrame & { k: number; borders: boole
     .precision(0.5);
   const path = geoPath(projection).digits(0);
   const land = path(landShape) ?? "";
-  const borderPath = f.borders ? (path(borderShape) ?? "") : "";
+  const borderLines = f.borders ? borderSvg(await borderPaths(path, borderShape, detailZoom), true) : "";
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0} ${y0} ${f.width * 2} ${f.height * 2}" width="${f.width * 2}" height="${f.height * 2}">
 <path d="${land}" fill="#e7e7e0" stroke="#a9a9a0" stroke-width="1" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
-${borderPath ? `<path d="${borderPath}" fill="none" stroke="#bdbdb4" stroke-width="0.7" stroke-dasharray="3 3" vector-effect="non-scaling-stroke"/>` : ""}
+${borderLines}
 </svg>`;
 }
