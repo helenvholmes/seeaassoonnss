@@ -1058,7 +1058,8 @@ export function Editor(props: EditorProps) {
           throttleRotate={shift ? 15 : 0}
           rotationPosition="top"
           origin={false}
-          renderDirections={locked ? [] : coarse ? ["nw", "ne", "sw", "se"] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
+          // Side handles stretch one way only, which text boxes need, on touch screens too.
+          renderDirections={locked ? [] : ["nw", "n", "ne", "w", "e", "sw", "s", "se"]}
           // Fingers need a bigger target than the drawn handle.
           controlPadding={coarse ? 14 : 0}
           displayAroundControls={coarse}
