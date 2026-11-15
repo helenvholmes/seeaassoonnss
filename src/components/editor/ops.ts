@@ -155,14 +155,15 @@ export function removeItem(doc: SeasonDoc, id: string): SeasonDoc {
   };
 }
 
-export function duplicateItem(doc: SeasonDoc, id: string, newId: string, layout: Layout = "desktop"): SeasonDoc {
+/** Copies an item on top of the others. With `offset`, the copy sits a little down and right of the original; without, exactly on it. */
+export function duplicateItem(doc: SeasonDoc, id: string, newId: string, layout: Layout = "desktop", offset = true): SeasonDoc {
   const source = doc.items.find((i) => i.id === id);
   if (!source) return doc;
   const copy = structuredClone(source) as Item;
   copy.id = newId;
   const shift = (p: Placement, d: number): Placement => ({ ...p, x: p.x + d, y: p.y + d, locked: false });
-  copy.desktop = shift(copy.desktop, layout === "desktop" ? 24 : 0);
-  copy.mobile = copy.mobile ? shift(copy.mobile, layout === "mobile" ? 12 : 0) : null;
+  copy.desktop = shift(copy.desktop, offset && layout === "desktop" ? 24 : 0);
+  copy.mobile = copy.mobile ? shift(copy.mobile, offset && layout === "mobile" ? 12 : 0) : null;
   const added = addItem(doc, { ...copy, mobile: copy.mobile ?? scaledToMobile(copy.desktop, copy) });
   // A copy of an item hidden on mobile stays hidden there.
   return source.mobile ? added : setMobileVisible(added, newId, false);

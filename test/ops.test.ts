@@ -34,6 +34,17 @@ test("a shape item validates", () => {
   assert.equal(seasonDocSchema.safeParse(bad).success, false);
 });
 
+test("duplicateItem can copy exactly in place, on top", () => {
+  let doc = emptySeasonDoc("t");
+  doc = addItem(doc, quote(1));
+  doc = addItem(doc, quote(2));
+  const copy = duplicateItem(doc, id(1), id(3), "desktop", false).items.find((i) => i.id === id(3))!;
+  assert.deepEqual([copy.desktop.x, copy.desktop.y], [0, 0]);
+  assert.equal(copy.desktop.z, 3);
+  const nudged = duplicateItem(doc, id(1), id(3)).items.find((i) => i.id === id(3))!;
+  assert.deepEqual([nudged.desktop.x, nudged.desktop.y], [24, 24]);
+});
+
 test("moveItems moves the chosen unlocked items together", () => {
   let doc = emptySeasonDoc("t");
   doc = addItem(doc, quote(1));
