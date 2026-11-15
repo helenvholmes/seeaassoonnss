@@ -335,7 +335,7 @@ Two public routes exist: the index and one page per season. Drafts are never pub
 | Route | Shows | Notes |
 | --- | --- | --- |
 | `/seasons` | List of published seasons | Each entry: cover image, `// title`, period. Newest first; an optional `sort_order` pins a season to a position |
-| `/seasons/about` | Landing page for the project | What the app is, a sample season visitors can drag about, and how to run a copy. Static; no database. With `LANDING_PAGE=on`, `/` redirects to it |
+| `/seasons/about` | Landing page for the project | What the app is, a sample season visitors can drag about, and how to run a copy. Static; no database. With `LANDING_PAGE=on`, `/` redirects to it. On seeaassoonnss.app, `vercel.json` serves it at `/` and `/about` and redirects `/seasons/about` to `/about` |
 | `/seasons/[slug]` | One season canvas | Desktop or mobile layout by screen width |
 | `/seasons/edit/...` | Editor | Owner only; requires passkey session |
 

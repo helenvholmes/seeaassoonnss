@@ -176,7 +176,7 @@ Any other site on Vercel can add the same two rewrites to its `vercel.json`. The
 2. Update the CORS rule on both buckets to the main domain.
 3. Sign in at `https://<main domain>/seasons/edit`, not at the `*.vercel.app` address. Passkeys only work on the domain in `SITE_URL`. If you already registered a passkey on the old address, set a new `SETUP_TOKEN` and register again.
 
-On its own, without a main site, a seeaassoonnss deployment sends `/` to `/seasons`. Set `LANDING_PAGE=on` to send it to the landing page at `/seasons/about` instead, as [seeaassoonnss.app](https://seeaassoonnss.app) does. Its "see a season" button opens `/seasons/demo`, so publish the demo season on that deployment.
+On its own, without a main site, a seeaassoonnss deployment sends `/` to `/seasons`. Set `LANDING_PAGE=on` to send it to the landing page at `/seasons/about` instead. [seeaassoonnss.app](https://seeaassoonnss.app) goes one step further: `vercel.json` serves the landing page at both `/` and `/about` there (Next.js cannot serve pages outside `/seasons` itself), and sends `/seasons/about` to `/about`. Those rules only apply on that host; to do the same on your domain, change the `host` values in `vercel.json`. Its "see a season" button opens `/seasons/demo`, so publish the demo season on that deployment.
 
 ## Updating your copy
 
