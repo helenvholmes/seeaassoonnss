@@ -2,7 +2,7 @@
 
 import { geoPath } from "d3-geo";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { BASE_PATH } from "@/lib/client";
+import { BASE_PATH, MAP_VERSION } from "@/lib/client";
 import { fitRoute, routeCoordinates, routeProjection, stopFractions, type RouteFrame } from "@/lib/route";
 import type { Layout, Placement, RouteItem } from "@/lib/schema";
 
@@ -22,6 +22,7 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
     k: String(k),
   });
   if (borders) q.set("borders", "1");
+  q.set("v", String(MAP_VERSION));
   return `${BASE_PATH}/map/frame?${q}`;
 }
 
