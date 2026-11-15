@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { FOLLOW_DISTANCE, MAX_EFFECT_LETTERS, splitLetters } from "./letters";
 import { prefersReducedMotion, subscribeMotion, type MotionState } from "./motion";
 import type { QuoteEffect } from "@/lib/schema";
+import { typedCount, typeSchedule } from "@/lib/typewriter";
 
 interface Mover {
   el: HTMLElement;
@@ -32,9 +33,25 @@ interface Effect {
   el: HTMLElement;
   kind: Exclude<QuoteEffect, "none">;
   letters: Letter[];
+  /** Typewriter: when typing started (ms, performance.now), and letters typed so far. */
+  start?: number;
+  typed?: number;
+  /** Typewriter: when each letter appears, ms after the start. */
+  schedule?: number[];
 }
 
 const EASE = 0.12;
+/** How long the caret keeps blinking after the last letter, in ms. */
+const CARET_LINGER = 1800;
+
+/** Shows the first `n` letters of a typewriter quote, with the caret after the last one. */
+function showTyped(e: Effect, n: number) {
+  const prev = e.typed ?? 0;
+  for (let i = prev; i < n; i++) e.letters[i].el.classList.remove("fx-untyped");
+  if (prev > 0) e.letters[prev - 1].el.classList.remove("fx-caret");
+  if (n > 0) e.letters[n - 1].el.classList.add("fx-caret");
+  e.typed = n;
+}
 
 function seeded(i: number, seed: number) {
   const s = Math.sin(i * 12.9898 + seed * 78.233) * 43758.5453;
@@ -62,6 +79,7 @@ export function MotionLayer({ canvasWidth }: { canvasWidth: number }) {
     const effects: Effect[] = Array.from(canvas.querySelectorAll<HTMLElement>("[data-effect]")).map((el, n) => {
       const spans = splitLetters(el, MAX_EFFECT_LETTERS);
       const seed = n + 1;
+      if (el.dataset.effect === "typewriter") for (const s of spans) s.classList.add("fx-untyped");
       return {
         el,
         kind: el.dataset.effect as Effect["kind"],
@@ -77,6 +95,7 @@ export function MotionLayer({ canvasWidth }: { canvasWidth: number }) {
     let motion: MotionState | null = null;
     let raf = 0;
     let measured = false;
+    const timers: number[] = [];
     const remeasure = () => {
       measured = false;
       kick();
@@ -117,6 +136,25 @@ export function MotionLayer({ canvasWidth }: { canvasWidth: number }) {
       for (const e of effects) {
         const box = e.el.getBoundingClientRect();
         if (box.bottom < -vh || box.top > 2 * vh) continue;
+        if (e.kind === "typewriter") {
+          if (e.start === undefined) {
+            // Start once most of the screen is above the quote's top, or it is fully on screen.
+            if (box.top > vh * 0.85 || box.bottom < 0) continue;
+            e.start = performance.now();
+            showTyped(e, 0);
+          }
+          const total = e.letters.length;
+          if ((e.typed ?? 0) >= total) continue;
+          e.schedule ??= typeSchedule(e.letters.map((l) => l.el.textContent ?? ""));
+          const n = typedCount(e.schedule, performance.now() - e.start, e.typed ?? 0);
+          if (n !== e.typed) showTyped(e, n);
+          if (n < total) moving = true;
+          else {
+            const last = e.letters[total - 1].el;
+            timers.push(window.setTimeout(() => last.classList.remove("fx-caret"), CARET_LINGER));
+          }
+          continue;
+        }
         // Progress toward the middle of the screen: 0 far away, 1 at the middle.
         const mid = 1 - Math.min(1, Math.abs(box.top + box.height / 2 - vh / 2) / (vh * 0.6));
         for (let i = 0; i < e.letters.length; i++) {
@@ -166,6 +204,7 @@ export function MotionLayer({ canvasWidth }: { canvasWidth: number }) {
       unsubscribe();
       ro.disconnect();
       if (raf) cancelAnimationFrame(raf);
+      timers.forEach((t) => window.clearTimeout(t));
     };
   }, [canvasWidth]);
 

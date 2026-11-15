@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, DEFAULT_SCATTER, slugFollowsTitle, slugProblem, titleSlug } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, type ShapeKind, DEFAULT_SCATTER, slugFollowsTitle, slugProblem, titleSlug } from "@/lib/schema";
 import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
@@ -14,14 +14,19 @@ import { BackgroundLayer } from "../BackgroundLayer";
 import { modelUrl } from "../items/model-url";
 import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
 import { Inspector } from "./Inspector";
+import { InlineQuoteEditor } from "./InlineQuoteEditor";
 import {
   addItem,
+  autoMobileLayout,
   convertPoint,
   duplicateItem,
+  moveItems,
   moveLayer,
+  onlyMobileDiffers,
   placementOf,
   removeItem,
   roundPlacement,
+  sameMobileLayout,
   scaledMobileLayout,
   scatterLayout,
   setMobileVisible,
@@ -87,7 +92,14 @@ export function Editor(props: EditorProps) {
   const { id, mediaBase } = props;
   const [history, setHistory] = useState<History<SeasonDoc>>(() => createHistory(withMobileLayout(props.initialDoc)));
   const doc = history.present;
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setPrimaryId] = useState<string | null>(null);
+  // Shift-click adds items to the selection. The first one stays the primary
+  // selection; these are the others. Selecting one item clears them.
+  const [extraIds, setExtraIds] = useState<string[]>([]);
+  const setSelectedId = useCallback((itemId: string | null) => {
+    setPrimaryId(itemId);
+    setExtraIds([]);
+  }, []);
   const [slug, setSlug] = useState(props.initialSlug);
   const [status, setStatus] = useState(props.initialStatus);
   // While a draft's slug was made from its title, it follows the title. It stops
@@ -149,6 +161,8 @@ export function Editor(props: EditorProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // Crop mode for one photo: drag moves the photo inside its box, the wheel zooms.
   const [cropId, setCropId] = useState<string | null>(null);
+  // A quote whose text is being edited right on the canvas (double-click).
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
@@ -169,6 +183,10 @@ export function Editor(props: EditorProps) {
   const moveableRef = useRef<Moveable>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
+  // Alt+drag: the press copies the item in place and the drag moves the copy.
+  // `before` is the document without the copy, so one undo removes it; `dragged`
+  // turns true once the copy has moved (a press without a drag leaves no copy).
+  const altCopy = useRef<{ before: SeasonDoc; originals: string[]; dragged: boolean } | null>(null);
 
   const canvasWidth = CANVAS_WIDTH[layout];
   // The page grows to fit its lowest item. Below the end of the page the editor
@@ -178,6 +196,22 @@ export function Editor(props: EditorProps) {
   const scale = stageWidth / canvasWidth;
   const selected = doc.items.find((i) => i.id === selectedId) ?? null;
   const selectedPlacement = selected ? placementOf(selected, layout) : null;
+  const editing = !!selected && selected.id === editingId && selected.type === "quote";
+  // Two or more items selected with shift-click: they move together, with no handles.
+  const groupIds = selected && extraIds.length ? [selected.id, ...extraIds.filter((x) => doc.items.some((i) => i.id === x && placementOf(i, layout)))] : [];
+  const grouped = groupIds.length > 1;
+  const isSelected = (itemId: string) => itemId === selectedId || (grouped && groupIds.includes(itemId));
+  /** Shift-click: adds the item to the selection, or takes it out. */
+  const toggleSelected = (itemId: string) => {
+    if (!selectedId) return setSelectedId(itemId);
+    if (itemId === selectedId) {
+      const [next, ...rest] = extraIds;
+      setPrimaryId(next ?? null);
+      setExtraIds(rest);
+    } else {
+      setExtraIds((ids) => (ids.includes(itemId) ? ids.filter((x) => x !== itemId) : [...ids, itemId]));
+    }
+  };
 
   // ---------- document changes ----------
   const change = useCallback((next: SeasonDoc | ((d: SeasonDoc) => SeasonDoc), key: string | null = null) => {
@@ -190,6 +224,38 @@ export function Editor(props: EditorProps) {
   const saving = useRef<Promise<void> | null>(null);
   const latestDoc = useRef(doc);
   latestDoc.current = doc;
+
+  // Automatic mobile layout: after every change, rebuild mobile from desktop. A
+  // change to the mobile layout alone means the owner arranged it by hand, which
+  // turns the automatic layout off (undo brings it back).
+  const lastAuto = useRef<SeasonDoc | null>(null);
+  useEffect(() => {
+    if (doc.mobileAuto === false) {
+      lastAuto.current = null;
+      return;
+    }
+    const prev = lastAuto.current;
+    if (prev && prev !== doc && onlyMobileDiffers(prev, doc) && !sameMobileLayout(prev, doc)) {
+      lastAuto.current = null;
+      setHistory((h) => replace(h, { ...h.present, mobileAuto: false }));
+      return;
+    }
+    const auto = autoMobileLayout(doc);
+    if (doc.mobileAuto === undefined) {
+      // A season from before the setting: switch it on once, as an undo step whose
+      // undo restores the hand-made layout with the setting off.
+      const on = { ...auto, mobileAuto: true };
+      lastAuto.current = on;
+      setHistory((h) => (h.present === doc ? commitGesture(replace(h, on), { ...doc, mobileAuto: false }) : h));
+      return;
+    }
+    if (sameMobileLayout(auto, doc)) {
+      lastAuto.current = doc;
+      return;
+    }
+    lastAuto.current = auto;
+    setHistory((h) => (h.present === doc ? replace(h, auto) : h));
+  }, [doc]);
   const fatal = save.kind === "error" && save.fatal;
 
   const saveNow = useCallback(async (): Promise<void> => {
@@ -354,6 +420,19 @@ export function Editor(props: EditorProps) {
     }
   };
 
+  /** A route map built in the editor: it starts with one stop, and the owner adds the rest. */
+  const startRoute = (p: Place) => {
+    const desktop = place(720, 2700);
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "route",
+      desktop,
+      mobile: { x: 0, y: Math.round(desktop.y * MOBILE_FACTOR), w: 390, h: 2400, rotation: 0, z: 0, locked: false },
+      content: { stops: [{ name: p.label || "stop 1", lat: p.lat, lon: p.lon }], line: [], color: "#c63d32", borders: true, stepZoom: 3 },
+    });
+    setNotice(null);
+  };
+
   const addMap = (p: Place) => {
     addAndSelect({
       id: crypto.randomUUID(),
@@ -361,6 +440,17 @@ export function Editor(props: EditorProps) {
       desktop: place(320, 320),
       mobile: null,
       content: { lat: p.lat, lon: p.lon, zoom: 5, label: p.label, borders: true },
+    });
+  };
+
+  const addShape = (shape: ShapeKind) => {
+    const [w, h] = shape === "arrow" ? [240, 160] : [200, 200];
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "shape",
+      desktop: place(w, h),
+      mobile: null,
+      content: { shape, fill: "#1d1d1b", stroke: "#1d1d1b", strokeWidth: 0 },
     });
   };
 
@@ -537,6 +627,13 @@ export function Editor(props: EditorProps) {
     change((d) => removeItem(d, selectedId));
     setSelectedId(null);
   };
+  /** Deletes every selected item that is not locked. */
+  const removeGroup = () => {
+    const ids = groupIds.filter((x) => !placementOf(doc.items.find((i) => i.id === x)!, layout)?.locked);
+    if (!ids.length) return;
+    change((d) => ids.reduce(removeItem, d));
+    setSelectedId(null);
+  };
 
   // ---------- keyboard and paste ----------
   useEffect(() => {
@@ -556,7 +653,16 @@ export function Editor(props: EditorProps) {
         setHistory(redo);
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        duplicate();
+        if (!grouped) duplicate();
+      } else if (grouped && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        removeGroup();
+      } else if (grouped && e.key.startsWith("Arrow") && !cropId) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        change((d) => moveItems(d, groupIds, dx, dy, layout), `nudge:${layout}:${groupIds.join(",")}`);
       } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selectedPlacement?.locked) {
         e.preventDefault();
         remove();
@@ -647,18 +753,23 @@ export function Editor(props: EditorProps) {
   };
 
   // ---------- Moveable ----------
-  const target = selected && selectedPlacement && cropId !== selected.id ? itemRefs.current.get(selected.id) ?? null : null;
+  const target = !grouped && selected && selectedPlacement && cropId !== selected.id ? itemRefs.current.get(selected.id) ?? null : null;
   const locked = !!selectedPlacement?.locked;
   const live = (patch: Partial<Placement>) => {
     if (!selectedId) return;
     setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch, layout)));
   };
   const startGesture = () => {
-    gestureStart.current = latestDoc.current;
+    gestureStart.current = altCopy.current?.before ?? latestDoc.current;
   };
   const endGesture = (moved = false) => {
     const before = gestureStart.current;
     gestureStart.current = null;
+    if (altCopy.current) {
+      // A press without a drag: the release handler in startAltCopy takes the copy away.
+      if (!moved) return;
+      altCopy.current.dragged = true;
+    }
     if (!before || !selectedId) return;
     const snapping = moved && snapOn && !snapSkip;
     setHistory((h) => {
@@ -742,10 +853,89 @@ export function Editor(props: EditorProps) {
     return () => stage.removeEventListener("wheel", onWheel);
   });
 
+  /**
+   * Drag on one of several selected items: they all follow the pointer or the
+   * finger. A press that does not move calls `onTap`. `before` is what one undo
+   * goes back to; the items move from where they are now.
+   */
+  const startGroupDrag = (ids: string[], e: React.MouseEvent | React.TouchEvent, onTap: () => void, before = latestDoc.current) => {
+    const base = latestDoc.current;
+    const touch = "touches" in e;
+    const point = (ev: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => ("touches" in ev ? ev.touches[0] ?? ev.changedTouches[0] : ev);
+    const { clientX: sx, clientY: sy } = point(e);
+    let moved = false;
+    const move = (ev: MouseEvent | TouchEvent) => {
+      if (touch) ev.preventDefault();
+      const { clientX, clientY } = point(ev);
+      if (!moved && Math.hypot(clientX - sx, clientY - sy) < 3) return;
+      moved = true;
+      const next = moveItems(base, ids, (clientX - sx) / scale, (clientY - sy) / scale, layout);
+      setHistory((h) => replace(h, next));
+    };
+    const [moveEvent, upEvent] = touch ? (["touchmove", "touchend"] as const) : (["mousemove", "mouseup"] as const);
+    const up = () => {
+      window.removeEventListener(moveEvent, move);
+      window.removeEventListener(upEvent, up);
+      if (touch) window.removeEventListener("touchcancel", up);
+      if (moved) setHistory((h) => commitGesture(h, before));
+      else onTap();
+    };
+    window.addEventListener(moveEvent, move, { passive: false });
+    window.addEventListener(upEvent, up);
+    if (touch) window.addEventListener("touchcancel", up);
+  };
+
+  /**
+   * Alt+drag: copies the pressed item (or every selected item, when it is one of
+   * several) exactly in place, selects the copies and drags them. The originals
+   * stay. Returns false when there is nothing to copy (locked items).
+   */
+  const startAltCopy = (item: Item, e: React.MouseEvent) => {
+    const isLocked = (itemId: string) => {
+      const it = latestDoc.current.items.find((i) => i.id === itemId);
+      return !it || !!placementOf(it, layout)?.locked;
+    };
+    const originals = (grouped && groupIds.includes(item.id) ? groupIds : [item.id]).filter((x) => !isLocked(x));
+    if (!originals.length) return false;
+    const before = latestDoc.current;
+    const copies = originals.map(() => crypto.randomUUID());
+    const next = originals.reduce((d, id, n) => duplicateItem(d, id, copies[n], layout, false), before);
+    flushSync(() => {
+      setHistory((h) => replace(h, next));
+      setPrimaryId(copies[0]);
+      setExtraIds(copies.slice(1));
+    });
+    const takeBack = () => {
+      setHistory((h) => replace(h, before));
+      setPrimaryId(originals[0]);
+      setExtraIds(originals.slice(1));
+    };
+    if (copies.length > 1) {
+      startGroupDrag(copies, e, takeBack, before);
+      return true;
+    }
+    altCopy.current = { before, originals, dragged: false };
+    const up = () => {
+      window.removeEventListener("mouseup", up);
+      // After Moveable's own release handling (endGesture), which marks a real drag.
+      setTimeout(() => {
+        const a = altCopy.current;
+        altCopy.current = null;
+        if (a && !a.dragged) takeBack();
+      });
+    };
+    window.addEventListener("mouseup", up);
+    moveableRef.current?.dragStart(e.nativeEvent);
+    return true;
+  };
+
   const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
     if ("button" in e && e.button !== 0) return;
     e.stopPropagation();
     if (cropId === item.id) return startCropPan(item, e);
+    if (e.shiftKey && !("touches" in e)) return toggleSelected(item.id);
+    if (e.altKey && !("touches" in e) && startAltCopy(item, e)) return;
+    if (grouped && groupIds.includes(item.id)) return startGroupDrag(groupIds, e, () => setSelectedId(item.id));
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
     if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
@@ -914,20 +1104,20 @@ export function Editor(props: EditorProps) {
             </div>
           </>
         ) : (
-          <>
-            <div className="row">
-              <Link href="/edit" className="quiet-link">
-                ← seasons
-              </Link>
-              <strong className="editor-title">{doc.title || "untitled"}</strong>
-              {layoutControls}
-              {saveStatus}
-            </div>
-            <div className="row">
-              {historyControls}
-              {publishControls}
-            </div>
-          </>
+            <>
+              <div className="row">
+                <Link href="/edit" className="quiet-link">
+                  ← seasons
+                </Link>
+                <strong className="editor-title">{doc.title || "untitled"}</strong>
+                {layoutControls}
+                {saveStatus}
+              </div>
+              <div className="row">
+                {historyControls}
+                {publishControls}
+              </div>
+            </>
         )}
       </header>
 
@@ -941,8 +1131,10 @@ export function Editor(props: EditorProps) {
           onPlaylist={addPlaylist}
           onSticker={addSticker}
           onMap={addMap}
+          onShape={addShape}
           onRecording={(blob) => void addVoiceNote(blob)}
           onRoute={(file) => void addRoute(file)}
+          onRouteStart={startRoute}
           onModel={(file, textureSize) => void addModel(file, textureSize)}
           playlistUrl={playlistUrl}
           setPlaylistUrl={setPlaylistUrl}
@@ -992,10 +1184,13 @@ export function Editor(props: EditorProps) {
                 else itemRefs.current.delete(item.id);
               }}
               data-item-id={item.id}
-              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
+              className={`item item-${item.type}${isSelected(item.id) ? " is-selected" : ""}${editing && item.id === selectedId ? " is-editing" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
               style={{ ...placementStyle(p, canvasHeight, canvasWidth), ...(item.id === cropId ? { zIndex: 100002 } : null) }}
               onDoubleClick={() => {
-                if (canCrop(item) && !p.locked) {
+                if (item.type === "quote") {
+                  setSelectedId(item.id);
+                  setEditingId(item.id);
+                } else if (canCrop(item) && !p.locked) {
                   setSelectedId(item.id);
                   setCropId(item.id);
                 }
@@ -1008,7 +1203,7 @@ export function Editor(props: EditorProps) {
               }}
               onTouchStart={(e) => {
                 lastTouch.current = Date.now();
-                if (item.id === selectedId || item.id === cropId) onItemPress(item, e);
+                if (isSelected(item.id) || item.id === cropId) onItemPress(item, e);
               }}
               onClick={() => {
                 if (fromTouch() && item.id !== selectedId) setSelectedId(item.id);
@@ -1016,7 +1211,11 @@ export function Editor(props: EditorProps) {
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
             >
-              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
+              {editing && item.id === selectedId && item.type === "quote" ? (
+                <InlineQuoteEditor item={item} doc={doc} layout={layout} placement={p} change={change} onDone={() => setEditingId(null)} />
+              ) : (
+                <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
+              )}
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
               {item.type === "photo" && item.content.parallax && item.content.fit === "cover" ? (
@@ -1026,7 +1225,7 @@ export function Editor(props: EditorProps) {
               ) : null}
             </div>
           ))}
-          {alt && selectedPlacement ? (
+          {alt && selectedPlacement && !grouped ? (
             <MeasureOverlay
               m={measure(
                 selectedPlacement,
@@ -1051,7 +1250,7 @@ export function Editor(props: EditorProps) {
         <Moveable
           ref={moveableRef}
           target={target}
-          draggable={!locked}
+          draggable={!locked && !editing}
           resizable={!locked}
           rotatable={!locked && selected?.type !== "route"}
           keepRatio={shift}
@@ -1100,8 +1299,20 @@ export function Editor(props: EditorProps) {
         />
       </div>
 
-      <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={selected ? "Item" : "Season settings"}>
-        {sheetHead(selected ? "Item" : "Season settings")}
+      <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={grouped ? "Items" : selected ? "Item" : "Season settings"}>
+        {sheetHead(grouped ? "Items" : selected ? "Item" : "Season settings")}
+        {grouped ? (
+          <div className="stack">
+            <p className="tools-heading">{groupIds.length} items selected</p>
+            <span className="small muted">Drag any of them, or use the arrow keys, to move them together. Shift-click an item to add it or take it out. Click one without dragging to select just that one.</span>
+            <div className="row">
+              <button onClick={() => setSelectedId(null)}>Deselect</button>
+              <button className="error" onClick={removeGroup}>
+                Delete {groupIds.length} items
+              </button>
+            </div>
+          </div>
+        ) : (
         <Inspector
           id={id}
           doc={doc}
@@ -1131,12 +1342,14 @@ export function Editor(props: EditorProps) {
           scatter={(s: Scatter) => change((d) => scatterLayout(d, layout, s))}
           sketchError={sketchError}
           clearSketchError={() => setSketchError(null)}
+          setMobileAuto={(on) => change((d) => (on ? autoMobileLayout({ ...d, mobileAuto: true }) : { ...d, mobileAuto: false }))}
           resetMobile={(kind) => {
             const what = kind === "scaled" ? "the desktop layout scaled down" : "a single column";
             if (!confirm(`Replace the whole mobile layout with ${what}?`)) return;
             change((d) => (kind === "scaled" ? scaledMobileLayout(d) : singleColumnMobileLayout(d)));
           }}
         />
+        )}
       </aside>
 
       {compact ? (

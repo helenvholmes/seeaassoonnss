@@ -9,7 +9,7 @@ import sharp from "sharp";
 import { addItem, scaledMobileLayout } from "../components/editor/ops";
 import { DEMO_SKETCHES } from "./demo-sketches";
 import { sql } from "./db";
-import { processImage, processModel } from "./media";
+import { processImage, processModel } from "./media-process";
 import { emptySeasonDoc, type Item, type Placement, type SeasonDoc } from "./schema";
 import { createSeason, deleteSeason, renameSlug, saveDraft } from "./seasons";
 import { originalKey, storage } from "./storage";
@@ -143,7 +143,7 @@ export async function createDemoSeason({ replace = false, log = (_: string) => {
 
   let doc: SeasonDoc = {
     ...emptySeasonDoc("demo season"),
-    subtitle: "placeholder items to *try the editor with*",
+    subtitle: "placeholder items to _try the editor with_",
     period: "any time",
     desktopHeight: 1500,
     backgroundLayer: leaves ? { kind: "sketch" as const, sketchId: leaves.id, name: leaves.name, code: leaves.code } : null,

@@ -53,3 +53,7 @@ Open Peeps by Pablo Stanley (openpeeps.com), CC0. License: CC0.
 
 Humaaans by Pablo Stanley (humaaans.com), CC0. Figures composed from the body parts in the humaaans npm package (MIT). License: CC0.
 
+
+## OpenMoji
+
+All emojis designed by [OpenMoji](https://openmoji.org/), the open-source emoji and icon project. License: [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Color SVGs from the `openmoji` npm package (version 17.0.0), in three packs: Animals & nature, Food & drink, and Travel & places. Skin-tone variants are left out.

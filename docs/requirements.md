@@ -142,7 +142,7 @@ The document shapes follow.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID | |
-| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`, `model_3d` |
+| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`, `model_3d`, `shape` |
 | `content` | JSON | Different per type (see [Item types](#item-types)) |
 | `desktop` | placement | Position on the desktop canvas |
 | `mobile` | placement or empty | Empty = item is not shown on mobile |
@@ -185,6 +185,7 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 | Map | Place search or coordinates | Latitude, longitude, zoom, label | Vector outline drawn with D3 and TopoJSON, a dot and a label; no tiles |
 | Voice note | Record in the browser or upload audio | Audio file, duration, optional caption, waveform (optional) | Small player; plays on click |
 | 3D model | Upload a glTF binary file (`.glb`), up to 50 MB | Compressed model file, size, scale, rotation (x, y, z), spin speed, turn toward cursor on or off, play animation on or off, poster image, alt text | 3D view in its box (React Three Fiber); poster image while loading and if WebGL is not available |
+| Shape | Pick from the Shapes panel: square, rounded square, circle, triangle, diamond, pentagon, hexagon, star, heart, arrow | Shape, fill color or none, outline color and width | SVG that stretches to fill its box; the outline keeps its width |
 
 **Quote rules.** Markdown only: bold, italic, links, line breaks. No raw HTML. Quotes can come from any source: own writing, lyrics, books, messages. Preset fonts: EB Garamond (serif), IBM Plex Mono (monospace) and one plain sans-serif (to be picked). Each must look right in lowercase with the `//` prefix.
 
@@ -220,6 +221,8 @@ Odyssey is built with seeaassoonnss: it is one season, and the route map is part
 3. **Method:** draw two copies of the same route path in two colors, one on top of the other. Set the top path's `stroke-dasharray` in proportion to scroll progress through the map section.
 4. **Steps tied to places:** each content section links to a place on the route. When a section comes into view, the map moves to that place and highlights it.
 5. **Reduced motion:** when the reader has reduced motion turned on, show the full route immediately with no animation.
+6. **Follow roads (added Nov 15).** A button in the route settings replaces the straight lines between stops with the driving route through them, from the public OSRM server on OpenStreetMap data (no key). Only the owner's editor asks for it; the path is saved with the route, so readers never call the service. The path is the fastest route, so a stop placed on a road the owner took pulls the line onto it. Adding or moving stops leaves the saved path as it is until the owner follows roads again.
+7. **Line-only style (added Nov 15).** A style setting shows only the route line on the page's own background, with no land, grey base line, stop dots or place label, as in "The Russia Left Behind". Linked items still move the map to their stop.
 
 ### Data and tools
 
@@ -238,10 +241,10 @@ seeaassoonnss uses p5.js for 2D generative backgrounds and React Three Fiber for
 ### Effects
 
 1. **Random placement:** the editor places every unlocked item of the current layout (desktop or mobile) at a random position. A seed keeps the same layout; the owner can change the seed, and lock the items to keep. Route maps and hidden items do not move. Items spread over the minimum page length, and further when they would cover more than 35% of it, so a season with many items gets a longer page instead of a pile. A Shuffle button in the editor bar scatters with a new seed.
-2. **Random scale:** photos, videos, stickers and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
+2. **Random scale:** photos, videos, stickers, shapes and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
 3. **Background objects:** one 3D model or one p5.js sketch can be the season background, behind all items. It fills the screen and stays there while the page scrolls.
 4. **Cursor follow:** any item can drift toward the cursor (strength 0–100%, at most 40 design units). 3D models can also turn toward it. On touch devices, the "cursor" moves down the screen with the scroll position.
-5. **Type:** quotes can use one of three effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), or start scattered and gather as the quote reaches the middle of the screen (gather).
+5. **Type:** quotes can use one of four effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), start scattered and gather as the quote reaches the middle of the screen (gather), or type in one at a time behind a blinking caret the first time the quote scrolls into view (typewriter).
 6. **Embedded 3D items:** a 3D model is an item on the canvas. It has position, size, rotation and z-order, the same as other items. Inside its box it can be scaled, tilted, turned and rolled, spin slowly, and play its own animation.
 
 ### Tools
@@ -316,6 +319,7 @@ Optional (build if time allows):
 3. A new season's first mobile layout is the desktop layout scaled down to 390 units (about 0.27×), which keeps overlaps and composition. The owner then enlarges and moves items by hand.
 4. A "Reset mobile layout" button offers two choices: scale the desktop layout down, or stack every item in a single column scaled to fit.
 5. An item added after the mobile layout exists gets a starting mobile placement from the scaled desktop position.
+6. **Automatic mobile layout (added Nov 15).** New seasons build their mobile layout from desktop and rebuild it after every change. Items that sit side by side on desktop are read as one row; rows go top to bottom and items in a row left to right. Big items go full width; small ones (under 400 desktop units wide) pair up two per line. A sticker or shape sitting mostly on a bigger item stays attached to it. Items beside a route map go inside its band, below the pinned map. Moving, resizing, hiding or resetting anything on mobile turns the automatic layout off; undo turns it back on, and a checkbox in the mobile settings turns it on again. Seasons from before Nov 15 switch to it the next time they are opened in the editor; one undo restores the hand-made layout with the setting off. The published page changes only when the season is published again.
 6. The owner can hide an item on mobile.
 7. A preview button shows each layout at real screen sizes.
 
@@ -333,7 +337,7 @@ Two public routes exist: the index and one page per season. Drafts are never pub
 | Route | Shows | Notes |
 | --- | --- | --- |
 | `/seasons` | List of published seasons | Each entry: cover image, `// title`, period. Newest first; an optional `sort_order` pins a season to a position |
-| `/seasons/about` | Landing page for the project | What the app is, a sample season visitors can drag about, and how to run a copy. Static; no database. With `LANDING_PAGE=on`, `/` redirects to it |
+| `/seasons/about` | Landing page for the project | What the app is, a sample season visitors can drag about, and how to run a copy. Static; no database. With `LANDING_PAGE=on`, `/` redirects to it. On seeaassoonnss.app, `vercel.json` serves it at `/` and `/about` and redirects `/seasons/about` to `/about` |
 | `/seasons/[slug]` | One season canvas | Desktop or mobile layout by screen width |
 | `/seasons/edit/...` | Editor | Owner only; requires passkey session |
 
@@ -519,6 +523,7 @@ Version 1 must replace one Pinterest board with one published season. Everything
 
 1. The route map is its own item type, `route`. Its box is a band of the canvas. While the page scrolls through the band, the map panel stays at the top of the screen (CSS `position: sticky`; the canvas uses `overflow: clip` so sticky works). The panel is one screen tall, or the band's height if shorter. Route bands do not rotate.
 2. GeoJSON import: Point features, in file order, are the stops; LineString and MultiLineString features are the path. Names come from `name`, `title` or Google Takeout's `location.name`. A file with only a line gets start and end stops. Limits: 500 stops, 5,000 path points (longer paths are thinned evenly).
+   Routes can also be built in the editor (added Nov 15): Add → Route map… starts a route at a searched place, and the route's settings add stops at the end (the same place search as Map items), reorder them and remove them. Items linked to a stop follow it when stops are renumbered. Without an imported path, stops are joined by great-circle lines; a route with an imported path keeps it, and a button switches it to straight lines.
 3. Drawing follows the method above: a grey base line, and a colored copy whose `stroke-dashoffset` follows scroll progress through the band. Stops fill in as the line reaches them.
 4. Steps: any item can be linked to a stop ("Route stop" in its settings). When a linked item is at or above the middle of the screen, the map zooms (default 3×, adjustable) to that stop and labels it. Without a linked item in view, the map shows the whole route and labels the last stop reached.
 5. Reduced motion: the whole route shows at once; the map does not zoom or move.

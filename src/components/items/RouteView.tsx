@@ -35,6 +35,7 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
  */
 export function RouteView({ item, interactive, layout, placement }: { item: RouteItem; interactive: boolean; layout: Layout; placement: Placement }) {
   const c = item.content;
+  const lineOnly = c.style === "line";
   const band = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const drawn = useRef<SVGPathElement>(null);
@@ -140,8 +141,12 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
         {geometry && size ? (
           <svg viewBox={`0 0 ${size.w} ${size.h}`} preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Route map: ${c.stops.map((s) => s.name).join(", ")}`}>
             <g className="route-move" style={{ transform, transition: reduced || !interactive ? "none" : undefined }}>
-              <image href={frameUrl(geometry.frame, c.stepZoom, c.borders)} x={-size.w / 2} y={-size.h / 2} width={size.w * 2} height={size.h * 2} />
-              <path d={geometry.d} className="route-line-base" strokeWidth={3 / zoom} />
+              {lineOnly ? null : (
+                <>
+                  <image href={frameUrl(geometry.frame, c.stepZoom, c.borders)} x={-size.w / 2} y={-size.h / 2} width={size.w * 2} height={size.h * 2} />
+                  <path d={geometry.d} className="route-line-base" strokeWidth={3 / zoom} />
+                </>
+              )}
               <path
                 ref={drawn}
                 d={geometry.d}
@@ -151,7 +156,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                 strokeDasharray={length ? `${length} ${length}` : undefined}
                 strokeDashoffset={length ? length * (1 - progress) : undefined}
               />
-              {geometry.points.map(([x, y], i) => (
+              {lineOnly ? null : geometry.points.map(([x, y], i) => (
                 <circle
                   key={i}
                   cx={x}
@@ -165,7 +170,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
             </g>
           </svg>
         ) : null}
-        {labelIndex >= 0 && c.stops[labelIndex] ? (
+        {!lineOnly && labelIndex >= 0 && c.stops[labelIndex] ? (
           <span className="route-label" aria-live="polite">
             {c.stops[labelIndex].name}
           </span>

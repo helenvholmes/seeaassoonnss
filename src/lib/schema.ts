@@ -94,9 +94,10 @@ export const QUOTE_FONTS = ["serif", "mono", "sans"] as const;
 /**
  * Generative type. repel: letters move away from the cursor. wave: letters ripple
  * as the page scrolls. gather: letters start scattered and come together as the
- * quote reaches the middle of the screen.
+ * quote reaches the middle of the screen. typewriter: letters appear one at a time,
+ * behind a blinking caret, the first time the quote scrolls into view.
  */
-export const QUOTE_EFFECTS = ["none", "repel", "wave", "gather"] as const;
+export const QUOTE_EFFECTS = ["none", "repel", "wave", "gather", "typewriter"] as const;
 export type QuoteEffect = (typeof QUOTE_EFFECTS)[number];
 
 export const quoteSchema = z.object({
@@ -218,6 +219,26 @@ export const routeSchema = z.object({
     borders: z.boolean(),
     /** How far the map zooms in on a stop when an item linked to it is in view. */
     stepZoom: num.min(1).max(16),
+    /** "map" (default): land, stops and the line. "line": only the line, on the page's own background. */
+    style: z.enum(["map", "line"]).optional(),
+  }),
+});
+
+/** Simple shapes, drawn as SVG that stretches to fill the item's box. */
+export const SHAPES = ["square", "rounded", "circle", "triangle", "diamond", "pentagon", "hexagon", "star", "heart", "arrow"] as const;
+export type ShapeKind = (typeof SHAPES)[number];
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
+
+export const shapeSchema = z.object({
+  ...base,
+  type: z.literal("shape"),
+  content: z.object({
+    shape: z.enum(SHAPES),
+    /** Fill color; null = no fill (outline only). */
+    fill: hexColor.nullable(),
+    stroke: hexColor,
+    /** Outline width in design units; 0 = no outline. */
+    strokeWidth: num.min(0).max(60),
   }),
 });
 
@@ -252,7 +273,7 @@ export const modelSchema = z.object({
   content: modelContentSchema,
 });
 
-export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema, modelSchema]);
+export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema, modelSchema, shapeSchema]);
 export type Item = z.infer<typeof itemSchema>;
 export type PhotoItem = z.infer<typeof photoSchema>;
 export type QuoteItem = z.infer<typeof quoteSchema>;
@@ -263,6 +284,7 @@ export type MapItem = z.infer<typeof mapSchema>;
 export type VoiceNoteItem = z.infer<typeof voiceNoteSchema>;
 export type RouteItem = z.infer<typeof routeSchema>;
 export type ModelItem = z.infer<typeof modelSchema>;
+export type ShapeItem = z.infer<typeof shapeSchema>;
 export type RouteContent = RouteItem["content"];
 export type ItemType = Item["type"];
 
@@ -315,6 +337,13 @@ export const seasonDocSchema = z.object({
    * mobile placement yet, and the page uses the scaled-down desktop layout.
    */
   mobileLayout: z.boolean().default(false),
+  /**
+   * The editor rebuilds the mobile layout from desktop after every change (see
+   * autoMobileLayout in components/editor/ops.ts). Arranging anything on mobile by
+   * hand turns it off (false). Empty, for seasons from before it existed, counts as
+   * on: the editor switches it on when the season is next opened.
+   */
+  mobileAuto: z.boolean().optional(),
   items: z
     .array(itemSchema)
     .max(500)
@@ -377,6 +406,7 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     desktopHeight: 900,
     mobileHeight: Math.round(900 * (MOBILE_WIDTH / DESKTOP_WIDTH)),
     mobileLayout: true,
+    mobileAuto: true,
     items: [],
   };
 }

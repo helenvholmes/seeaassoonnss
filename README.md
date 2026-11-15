@@ -30,7 +30,7 @@ The full specification and decision log are in [docs/requirements.md](docs/requi
 | Quote | Type Markdown (bold, italic, links) | Text in EB Garamond, IBM Plex Mono or a sans-serif |
 | Title, subtitle | Quote items that show the season's title or subtitle | |
 | Playlist or song | Paste a public Spotify playlist link or a song link | A card with cover and title; the Spotify player loads on click |
-| Sticker | Upload transparent PNG, WebP or SVG, reuse one from your sticker library, or pick one from the built-in packs: botanical plates (public-domain prints, cut out), Open Doodles, Open Peeps and Humaaans | The image with its transparent background |
+| Sticker | Upload transparent PNG, WebP or SVG, reuse one from your sticker library, or pick one from the built-in packs: botanical plates (public-domain prints, cut out), Open Doodles, Open Peeps, Humaaans and OpenMoji (animals & nature, food & drink, travel & places) | The image with its transparent background |
 | Map | Search a place or type coordinates | A simple outline map with a dot and a label |
 | Voice note | Record in the browser or upload audio | A small player; nothing plays until they press play |
 | Route map | Import a GeoJSON file (points are the stops, lines the path) | A band of the page where the map stays on screen while the route draws in as they scroll; linked items move the map to their stop |
@@ -176,7 +176,7 @@ Any other site on Vercel can add the same two rewrites to its `vercel.json`. The
 2. Update the CORS rule on both buckets to the main domain.
 3. Sign in at `https://<main domain>/seasons/edit`, not at the `*.vercel.app` address. Passkeys only work on the domain in `SITE_URL`. If you already registered a passkey on the old address, set a new `SETUP_TOKEN` and register again.
 
-On its own, without a main site, a seeaassoonnss deployment sends `/` to `/seasons`. Set `LANDING_PAGE=on` to send it to the landing page at `/seasons/about` instead, as [seeaassoonnss.app](https://seeaassoonnss.app) does. Its "see a season" button opens `/seasons/demo`, so publish the demo season on that deployment.
+On its own, without a main site, a seeaassoonnss deployment sends `/` to `/seasons`. Set `LANDING_PAGE=on` to send it to the landing page at `/seasons/about` instead. [seeaassoonnss.app](https://seeaassoonnss.app) goes one step further: `vercel.json` serves the landing page at both `/` and `/about` there (Next.js cannot serve pages outside `/seasons` itself), and sends `/seasons/about` to `/about`. Those rules only apply on that host; to do the same on your domain, change the `host` values in `vercel.json`. Its "see a season" button opens `/seasons/demo`, so publish the demo season on that deployment.
 
 ## Updating your copy
 

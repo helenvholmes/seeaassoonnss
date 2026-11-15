@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addItem, removeItem } from "../src/components/editor/ops.ts";
+import { addItem, removeItem, setRouteStops } from "../src/components/editor/ops.ts";
 import { fitRoute, parseRouteGeoJSON, RouteImportError, routeProjection, stopFractions, thin } from "../src/lib/route.ts";
 import { emptySeasonDoc, itemSchema, type Item } from "../src/lib/schema.ts";
 
@@ -75,4 +75,39 @@ test("route items validate; removing a route clears links to it", () => {
   let doc = addItem(addItem(emptySeasonDoc("t"), route), linked);
   doc = removeItem(doc, route.id);
   assert.equal(doc.items[0].routeStop, null);
+});
+
+test("editing a route's stops keeps items linked to the same place", () => {
+  const routeId = "00000000-0000-4000-8000-000000000001";
+  const stop = (name: string) => ({ name, lon: 0, lat: 0 });
+  const route: Item = {
+    id: routeId,
+    type: "route",
+    desktop: { x: 0, y: 0, w: 720, h: 2700, rotation: 0, z: 1, locked: false },
+    mobile: null,
+    content: { stops: [stop("a"), stop("b"), stop("c")], line: [], color: "#c63d32", borders: true, stepZoom: 3 },
+  };
+  const linkedTo = (n: number, index: number): Item => ({
+    id: `00000000-0000-4000-8000-00000000001${n}`,
+    type: "quote",
+    routeStop: { routeId, index },
+    desktop: { x: 0, y: 0, w: 100, h: 100, rotation: 0, z: 2, locked: false },
+    mobile: null,
+    content: { markdown: "", source: "", font: "serif", size: 20, align: "left", color: "#000000", binding: null },
+  });
+  const doc = { ...emptySeasonDoc("t"), items: [route, linkedTo(0, 0), linkedTo(1, 1), linkedTo(2, 2)] };
+  // Remove "b", move "c" first, and add "d" at the end.
+  const next = setRouteStops(doc, routeId, [stop("c"), stop("a"), stop("d")], [2, 0, -1]);
+  const r = next.items[0];
+  assert.equal(r.type === "route" && r.content.stops.map((s) => s.name).join(""), "cad");
+  assert.deepEqual(next.items.slice(1).map((i) => i.routeStop?.index ?? null), [1, null, 0]);
+});
+
+test("driving directions split long routes into legs that join up", async () => {
+  const { chunkStops, joinPaths } = await import("../src/lib/directions.ts");
+  const stops = Array.from({ length: 60 }, (_, i) => i);
+  const chunks = chunkStops(stops, 25);
+  assert.deepEqual(chunks.map((c) => [c[0], c[c.length - 1]]), [[0, 24], [24, 48], [48, 59]]);
+  assert.deepEqual(chunkStops([1], 25), []);
+  assert.deepEqual(joinPaths([[[0, 0], [1, 1]], [[1, 1], [2, 2]]]), [[0, 0], [1, 1], [2, 2]]);
 });

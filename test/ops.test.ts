@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addItem, duplicateItem, moveLayer, normalizeRotation, removeItem, scaledMobileLayout, setMobileVisible, singleColumnMobileLayout, withMobileLayout, MOBILE_FACTOR } from "../src/components/editor/ops.ts";
+import { addItem, duplicateItem, moveItems, moveLayer, normalizeRotation, removeItem, scaledMobileLayout, setMobileVisible, singleColumnMobileLayout, withMobileLayout, MOBILE_FACTOR } from "../src/components/editor/ops.ts";
 import { commit, commitGesture, createHistory, redo, replace, undo, HISTORY_LIMIT } from "../src/components/editor/history.ts";
 import { emptySeasonDoc, seasonDocSchema, slugify, slugProblem, type Item } from "../src/lib/schema.ts";
 import { targetWidths } from "../src/lib/widths.ts";
@@ -24,6 +24,43 @@ test("addItem puts the new item on top", () => {
   doc = addItem(doc, quote(2));
   assert.deepEqual(doc.items.map((i) => i.desktop.z), [1, 2]);
   assert.ok(seasonDocSchema.safeParse(doc).success);
+});
+
+test("a shape item validates", () => {
+  const shape: Item = { id: id(9), type: "shape", desktop: { x: 0, y: 0, w: 200, h: 200, rotation: 0, z: 1, locked: false }, mobile: null, content: { shape: "star", fill: null, stroke: "#123456", strokeWidth: 4 } };
+  const doc = { ...emptySeasonDoc("t"), items: [shape] };
+  assert.ok(seasonDocSchema.safeParse(doc).success);
+  const bad = { ...doc, items: [{ ...shape, content: { ...shape.content, shape: "blob" } }] };
+  assert.equal(seasonDocSchema.safeParse(bad).success, false);
+});
+
+test("duplicateItem can copy exactly in place, on top", () => {
+  let doc = emptySeasonDoc("t");
+  doc = addItem(doc, quote(1));
+  doc = addItem(doc, quote(2));
+  const copy = duplicateItem(doc, id(1), id(3), "desktop", false).items.find((i) => i.id === id(3))!;
+  assert.deepEqual([copy.desktop.x, copy.desktop.y], [0, 0]);
+  assert.equal(copy.desktop.z, 3);
+  const nudged = duplicateItem(doc, id(1), id(3)).items.find((i) => i.id === id(3))!;
+  assert.deepEqual([nudged.desktop.x, nudged.desktop.y], [24, 24]);
+});
+
+test("moveItems moves the chosen unlocked items together", () => {
+  let doc = emptySeasonDoc("t");
+  doc = addItem(doc, quote(1));
+  doc = addItem(doc, quote(2));
+  doc = addItem(doc, quote(3));
+  doc = { ...doc, items: doc.items.map((i) => (i.id === id(2) ? { ...i, desktop: { ...i.desktop, locked: true } } : i)) };
+  const moved = moveItems(doc, [id(1), id(2)], 10.4, -5.6);
+  const at = (n: number) => moved.items.find((i) => i.id === id(n))!.desktop;
+  assert.deepEqual([at(1).x, at(1).y], [10, -6]);
+  assert.deepEqual([at(2).x, at(2).y], [0, 0], "locked items stay");
+  assert.deepEqual([at(3).x, at(3).y], [0, 0], "unselected items stay");
+  // Items hidden on mobile are left alone in the mobile layout.
+  const hidden = { ...doc, items: doc.items.map((i) => (i.id === id(1) ? { ...i, mobile: null } : i)) };
+  assert.equal(moveItems(hidden, [id(1)], 5, 5, "mobile").items[0].mobile, null);
+  const mobile = moveItems(doc, [id(3)], 5, 5, "mobile").items[2];
+  assert.deepEqual([mobile.mobile!.x, mobile.mobile!.y, mobile.desktop.x], [doc.items[2].mobile!.x + 5, doc.items[2].mobile!.y + 5, 0]);
 });
 
 test("moveLayer reorders and renumbers", () => {

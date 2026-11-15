@@ -1,6 +1,6 @@
 // Pure operations on a season document. Each returns a new document.
 // Content is shared by both layouts; placement is separate per layout.
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type RouteContent, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
 import { bottomOf } from "../../lib/layout.ts";
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
@@ -76,6 +76,158 @@ export function singleColumnMobileLayout(doc: SeasonDoc): SeasonDoc {
   };
 }
 
+// ---------- automatic mobile layout ----------
+
+const AUTO_CONTENT = MOBILE_WIDTH - 2 * MOBILE_MARGIN;
+/** Desktop width below which an item counts as small, and pairs up on mobile. */
+const AUTO_SMALL = 400;
+/** A route band's sticky map takes about one phone screen; items scroll over it below this. */
+const AUTO_ROUTE_MAP = 600;
+const DECORATIONS = new Set<Item["type"]>(["sticker", "shape"]);
+
+const area = (p: Placement) => p.w * p.h;
+function overlapArea(a: Placement, b: Placement) {
+  const w = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x);
+  const h = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y);
+  return w > 0 && h > 0 ? w * h : 0;
+}
+
+/**
+ * The editor's guess at a mobile layout, built from the desktop layout:
+ * - Items are read in rows: items that sit side by side on desktop form one row,
+ *   rows go top to bottom and items in a row left to right.
+ * - Big items go full width; small ones (under 400 desktop units wide) pair up two
+ *   per line. Quotes keep their line breaks: text scales with the box.
+ * - A sticker or shape sitting mostly on a bigger item stays attached to it, at the
+ *   same spot and scale.
+ * - Items beside a route map go inside its band, below the pinned map, so they
+ *   scroll over it as on desktop.
+ * Every item is shown; layers follow desktop.
+ */
+export function autoMobileLayout(doc: SeasonDoc): SeasonDoc {
+  const placed = new Map<string, Placement>();
+  const items = doc.items;
+
+  // Decorations attached to the item they sit on most.
+  const host = new Map<string, Item>();
+  for (const it of items) {
+    if (!DECORATIONS.has(it.type)) continue;
+    let best: Item | null = null;
+    let bestShare = 0.5;
+    for (const other of items) {
+      if (other === it || other.type === "route" || DECORATIONS.has(other.type) || area(other.desktop) <= area(it.desktop)) continue;
+      const share = overlapArea(it.desktop, other.desktop) / area(it.desktop);
+      if (share >= bestShare) {
+        best = other;
+        bestShare = share;
+      }
+    }
+    if (best) host.set(it.id, best);
+  }
+
+  // Rows, in reading order.
+  const flow = items.filter((i) => !host.has(i.id)).sort((a, b) => a.desktop.y - b.desktop.y || a.desktop.x - b.desktop.x);
+  const rows: Item[][] = [];
+  let rowBottom = -Infinity;
+  for (const it of flow) {
+    const p = it.desktop;
+    // Joins the row when it starts above the middle of the row's lowest-reaching item.
+    if (rows.length && p.y < rowBottom) {
+      rows[rows.length - 1].push(it);
+      rowBottom = Math.max(rowBottom, p.y + p.h / 2);
+    } else {
+      rows.push([it]);
+      rowBottom = p.y + p.h / 2;
+    }
+  }
+
+  let y = MOBILE_MARGIN;
+  const put = (it: Item, x: number, w: number, top: number, keepRotation: boolean) => {
+    const ratio = w / it.desktop.w;
+    const h = Math.max(1, round(it.desktop.h * ratio));
+    const textSize = it.type === "quote" ? round(it.content.size * ratio) : undefined;
+    placed.set(it.id, { x: round(x), y: round(top), w: round(w), h, rotation: keepRotation ? it.desktop.rotation : 0, z: it.desktop.z, locked: false, ...(textSize ? { textSize } : {}) });
+    return h;
+  };
+  /** Lays out items in lines from `top`; returns the bottom. */
+  const lines = (row: Item[], top: number) => {
+    const ordered = [...row].sort((a, b) => a.desktop.x - b.desktop.x);
+    let cursor = top;
+    for (let i = 0; i < ordered.length; i++) {
+      const it = ordered[i];
+      const small = it.desktop.w < AUTO_SMALL && it.type !== "quote";
+      const next = ordered[i + 1];
+      if (small && next && next.desktop.w < AUTO_SMALL && next.type !== "quote") {
+        const half = (AUTO_CONTENT - MOBILE_GAP / 2) / 2;
+        const h = Math.max(put(it, MOBILE_MARGIN, half, cursor, true), put(next, MOBILE_MARGIN + half + MOBILE_GAP / 2, half, cursor, true));
+        cursor += h + MOBILE_GAP;
+        i++;
+      } else if (small) {
+        // A lone small item keeps a modest size, centered.
+        const w = Math.min(AUTO_CONTENT, Math.max(120, it.desktop.w * 0.6));
+        cursor += put(it, MOBILE_MARGIN + (AUTO_CONTENT - w) / 2, w, cursor, true) + MOBILE_GAP;
+      } else {
+        cursor += put(it, MOBILE_MARGIN, AUTO_CONTENT, cursor, false) + MOBILE_GAP;
+      }
+    }
+    return cursor;
+  };
+
+  for (let r = 0; r < rows.length; r++) {
+    const row = rows[r];
+    const route = row.find((i) => i.type === "route");
+    if (!route) {
+      y = lines(row, y);
+      continue;
+    }
+    // A route band: full width, with its row and any later rows that start inside
+    // the band on desktop laid out below the pinned map.
+    const inside = row.filter((i) => i !== route);
+    while (r + 1 < rows.length && rows[r + 1][0].desktop.y < route.desktop.y + route.desktop.h) inside.push(...rows[++r]);
+    const top = y;
+    const bottom = inside.length ? lines(inside, top + AUTO_ROUTE_MAP) : top;
+    const h = Math.max(round(route.desktop.h * MOBILE_FACTOR * 3.3), bottom - top + AUTO_ROUTE_MAP / 2);
+    placed.set(route.id, { x: 0, y: round(top), w: MOBILE_WIDTH, h: round(h), rotation: 0, z: route.desktop.z, locked: false });
+    y = top + h + MOBILE_GAP;
+  }
+
+  // Attached decorations follow their host.
+  for (const [id, h] of host) {
+    const it = items.find((i) => i.id === id)!;
+    const hp = placed.get(h.id);
+    if (!hp) continue;
+    const k = hp.w / h.desktop.w;
+    placed.set(id, {
+      x: round(hp.x + (it.desktop.x - h.desktop.x) * k),
+      y: round(hp.y + (it.desktop.y - h.desktop.y) * k),
+      w: Math.max(1, round(it.desktop.w * k)),
+      h: Math.max(1, round(it.desktop.h * k)),
+      rotation: it.desktop.rotation,
+      z: it.desktop.z,
+      locked: false,
+    });
+  }
+
+  const bottom = Math.max(MOBILE_MARGIN, ...[...placed.values()].map((p) => p.y + p.h));
+  return {
+    ...doc,
+    mobileLayout: true,
+    mobileHeight: Math.max(200, Math.round(bottom + MOBILE_MARGIN)),
+    items: items.map((i) => ({ ...i, mobile: placed.get(i.id)! })),
+  };
+}
+
+/** True when two documents differ only in their mobile layout (the owner arranged mobile by hand). */
+export function onlyMobileDiffers(a: SeasonDoc, b: SeasonDoc): boolean {
+  const strip = (d: SeasonDoc) => JSON.stringify({ ...d, mobileHeight: 0, mobileAuto: null, items: d.items.map((i) => ({ ...i, mobile: null })) });
+  return strip(a) === strip(b);
+}
+
+/** True when the mobile layouts of two documents are the same. */
+export function sameMobileLayout(a: SeasonDoc, b: SeasonDoc): boolean {
+  return a.mobileHeight === b.mobileHeight && a.items.length === b.items.length && a.items.every((i, n) => JSON.stringify(i.mobile) === JSON.stringify(b.items[n].mobile));
+}
+
 /** Seasons from before phase 2 get their first mobile layout: the scaled desktop layout. */
 export function withMobileLayout(doc: SeasonDoc): SeasonDoc {
   return doc.mobileLayout ? doc : scaledMobileLayout(doc);
@@ -103,6 +255,40 @@ export function setPlacement(doc: SeasonDoc, id: string, patch: Partial<Placemen
   });
 }
 
+/**
+ * Moves several items together by (dx, dy) design units in one layout, rounded to
+ * whole units. Locked items, and items hidden in that layout, stay where they are.
+ */
+export function moveItems(doc: SeasonDoc, ids: readonly string[], dx: number, dy: number, layout: Layout = "desktop"): SeasonDoc {
+  const set = new Set(ids);
+  return {
+    ...doc,
+    items: doc.items.map((i) => {
+      const p = set.has(i.id) ? placementOf(i, layout) : null;
+      if (!p || p.locked) return i;
+      const moved = { ...p, x: Math.round(p.x + dx), y: Math.round(p.y + dy) };
+      return layout === "desktop" ? { ...i, desktop: moved } : { ...i, mobile: moved };
+    }),
+  };
+}
+
+/**
+ * Replaces a route's stops. `order[newIndex]` is the stop's old index, or -1 for a
+ * new stop. Items linked to a stop follow it to its new number; links to removed
+ * stops are cleared.
+ */
+export function setRouteStops(doc: SeasonDoc, routeId: string, stops: RouteContent["stops"], order: readonly number[]): SeasonDoc {
+  return {
+    ...doc,
+    items: doc.items.map((i) => {
+      if (i.id === routeId && i.type === "route") return { ...i, content: { ...i.content, stops } };
+      if (i.routeStop?.routeId !== routeId) return i;
+      const index = order.indexOf(i.routeStop.index);
+      return { ...i, routeStop: index < 0 ? null : { routeId, index } };
+    }),
+  };
+}
+
 /** Hides an item on mobile, or shows it again at its scaled desktop position. */
 export function setMobileVisible(doc: SeasonDoc, id: string, visible: boolean): SeasonDoc {
   return updateItem(doc, id, (i) => {
@@ -121,14 +307,15 @@ export function removeItem(doc: SeasonDoc, id: string): SeasonDoc {
   };
 }
 
-export function duplicateItem(doc: SeasonDoc, id: string, newId: string, layout: Layout = "desktop"): SeasonDoc {
+/** Copies an item on top of the others. With `offset`, the copy sits a little down and right of the original; without, exactly on it. */
+export function duplicateItem(doc: SeasonDoc, id: string, newId: string, layout: Layout = "desktop", offset = true): SeasonDoc {
   const source = doc.items.find((i) => i.id === id);
   if (!source) return doc;
   const copy = structuredClone(source) as Item;
   copy.id = newId;
   const shift = (p: Placement, d: number): Placement => ({ ...p, x: p.x + d, y: p.y + d, locked: false });
-  copy.desktop = shift(copy.desktop, layout === "desktop" ? 24 : 0);
-  copy.mobile = copy.mobile ? shift(copy.mobile, layout === "mobile" ? 12 : 0) : null;
+  copy.desktop = shift(copy.desktop, offset && layout === "desktop" ? 24 : 0);
+  copy.mobile = copy.mobile ? shift(copy.mobile, offset && layout === "mobile" ? 12 : 0) : null;
   const added = addItem(doc, { ...copy, mobile: copy.mobile ?? scaledToMobile(copy.desktop, copy) });
   // A copy of an item hidden on mobile stays hidden there.
   return source.mobile ? added : setMobileVisible(added, newId, false);
@@ -190,7 +377,7 @@ function hash(text: string): number {
 }
 
 /** Item types whose size the random scale changes. Others keep their size and only move. */
-const SCALED = new Set<Item["type"]>(["photo", "video", "sticker", "model_3d"]);
+const SCALED = new Set<Item["type"]>(["photo", "video", "sticker", "model_3d", "shape"]);
 /** The width a scale of 1 means: the width new photos get. */
 export const SCATTER_BASE_WIDTH: Record<Layout, number> = { desktop: 360, mobile: 180 };
 

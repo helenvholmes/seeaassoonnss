@@ -8,6 +8,8 @@ import { imageUrl } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import { startRecording } from "./media-browser";
 import { uploadSticker, type StickerEntry } from "./upload";
+import { SHAPES, type ShapeKind } from "@/lib/schema";
+import { ShapeView } from "../items/ShapeView";
 
 interface Props {
   onFiles: (files: File[]) => void;
@@ -18,8 +20,11 @@ interface Props {
   /** Adds a library sticker to the page; `alt` is the description for screen readers (packs have one). */
   onSticker: (sticker: StickerEntry, alt?: string) => void;
   onMap: (place: Place) => void;
+  onShape: (shape: ShapeKind) => void;
   onRecording: (blob: Blob) => void;
   onRoute: (file: File) => void;
+  /** Starts a route map with one stop; more are added in its settings. */
+  onRouteStart: (place: Place) => void;
   onModel: (file: File, textureSize: 1024 | 2048) => void;
   playlistUrl: string;
   setPlaylistUrl: (url: string) => void;
@@ -27,7 +32,7 @@ interface Props {
   mediaBase: string;
 }
 
-type Panel = null | "stickers" | "map" | "voice" | "model";
+type Panel = null | "stickers" | "shapes" | "map" | "route" | "voice" | "model";
 
 export function Tools(props: Props) {
   const [panel, setPanel] = useState<Panel>(null);
@@ -74,6 +79,20 @@ export function Tools(props: Props) {
         Stickers…
       </button>
       {panel === "stickers" ? <StickerPanel {...props} /> : null}
+      <button className={panel === "shapes" ? "primary" : ""} onClick={() => toggle("shapes")} aria-expanded={panel === "shapes"}>
+        Shapes…
+      </button>
+      {panel === "shapes" ? (
+        <div className="tool-panel">
+          <div className="shape-grid">
+            {SHAPES.map((shape) => (
+              <button key={shape} className="shape-add" title={`Add a ${shape === "rounded" ? "rounded square" : shape}`} aria-label={`Add a ${shape === "rounded" ? "rounded square" : shape}`} onClick={() => props.onShape(shape)}>
+                <ShapeView item={{ id: shape, type: "shape", desktop: { x: 0, y: 0, w: 1, h: 1, rotation: 0, z: 0, locked: false }, mobile: null, content: { shape, fill: "#1d1d1b", stroke: "#1d1d1b", strokeWidth: 0 } }} layout="desktop" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <button className={panel === "voice" ? "primary" : ""} onClick={() => toggle("voice")} aria-expanded={panel === "voice"}>
         Voice note…
       </button>
@@ -82,9 +101,19 @@ export function Tools(props: Props) {
         Map…
       </button>
       {panel === "map" ? <MapPanel {...props} /> : null}
-      <button onClick={() => routeInput.current?.click()} title="Import a GeoJSON file: points are the stops, lines the path">
+      <button className={panel === "route" ? "primary" : ""} onClick={() => toggle("route")} aria-expanded={panel === "route"}>
         Route map…
       </button>
+      {panel === "route" ? (
+        <div className="tool-panel">
+          <span className="small">Build a route: search its first stop. You add the next stops in the route's settings.</span>
+          <PlaceSearch onPick={props.onRouteStart} onError={props.setNotice} label="Start the route here" />
+          <span className="small muted">Or import one:</span>
+          <button onClick={() => routeInput.current?.click()} title="Points are the stops, lines the path">
+            GeoJSON file…
+          </button>
+        </div>
+      ) : null}
       <input
         ref={routeInput}
         type="file"
@@ -339,26 +368,39 @@ function VoicePanel({ onRecording, onFiles, setNotice }: Props) {
   );
 }
 
-function MapPanel({ onMap, setNotice }: Props) {
+/** Place search through the app's geocoder (OpenStreetMap, or typed coordinates). Shared by maps and route maps. */
+export function PlaceSearch({ onPick, onError, placeholder = "A place, or 40.71, -74.01", label = "Search" }: { onPick: (place: Place) => void; onError: (message: string) => void; placeholder?: string; label?: string }) {
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Place[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const search = async () => {
+    if (!q.trim() || busy) return;
+    setBusy(true);
+    try {
+      setResults(await api<Place[]>("/geocode", { body: { q } }));
+    } catch (err) {
+      onError((err as Error).message);
+    }
+    setBusy(false);
+  };
+  // Not a <form>: it is also used inside the inspector, next to other inputs.
   return (
-    <form
-      className="tool-panel"
-      onSubmit={async (e) => {
-        e.preventDefault();
-        setBusy(true);
-        try {
-          setResults(await api<Place[]>("/geocode", { body: { q } }));
-        } catch (err) {
-          setNotice((err as Error).message);
-        }
-        setBusy(false);
-      }}
-    >
-      <input type="text" placeholder="A place, or 40.71, -74.01" value={q} onChange={(e) => setQ(e.target.value)} />
-      <button disabled={!q.trim() || busy}>{busy ? "Searching…" : "Search"}</button>
+    <div className="stack" style={{ gap: 4 }}>
+      <input
+        type="text"
+        placeholder={placeholder}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            void search();
+          }
+        }}
+      />
+      <button type="button" disabled={!q.trim() || busy} onClick={() => void search()}>
+        {busy ? "Searching…" : label}
+      </button>
       {results?.length === 0 ? <span className="small muted">No places found.</span> : null}
       {results?.map((p, i) => (
         <button
@@ -366,7 +408,7 @@ function MapPanel({ onMap, setNotice }: Props) {
           key={i}
           className="quiet place-result"
           onClick={() => {
-            onMap({ ...p, label: p.label || "" });
+            onPick({ ...p, label: p.label || "" });
             setResults(null);
             setQ("");
           }}
@@ -376,7 +418,15 @@ function MapPanel({ onMap, setNotice }: Props) {
           </span>
         </button>
       ))}
+    </div>
+  );
+}
+
+function MapPanel({ onMap, setNotice }: Props) {
+  return (
+    <div className="tool-panel">
+      <PlaceSearch onPick={onMap} onError={setNotice} />
       <span className="small muted">Search uses OpenStreetMap. Maps are drawn as simple outlines.</span>
-    </form>
+    </div>
   );
 }

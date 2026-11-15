@@ -1,15 +1,17 @@
 "use client";
 
+import { MarkdownTextarea } from "./MarkdownTextarea";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
-import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, slugProblem, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
-import { ModelPanel } from "./Tools";
+import { DEFAULT_SCATTER, MAP_ZOOM_MAX, MAP_ZOOM_MIN, MAX_CANVAS_HEIGHT, MAX_CROP_ZOOM, MAX_SKETCH_CODE, QUOTE_EFFECTS, QUOTE_FONTS, ROUTE_MAX_STOPS, SHAPES, slugProblem, type ShapeKind, type Crop, type ModelContent, type PhotoItem, type QuoteEffect, type RouteItem, type Item, type Layout, type Placement, type Scatter, type SeasonDoc } from "@/lib/schema";
+import { ModelPanel, PlaceSearch } from "./Tools";
+import { ColorPicker, docColors } from "./ColorPicker";
 import { formatBytes } from "./upload";
 import { imageUrl, quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
-import { normalizeRotation, placementOf } from "./ops";
+import { normalizeRotation, placementOf, setRouteStops } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isCropped, NO_CROP, zoomCrop } from "@/lib/crop";
 
@@ -36,6 +38,8 @@ interface Props {
   select: (id: string | null) => void;
   setMobileVisible: (id: string, visible: boolean) => void;
   resetMobile: (kind: "scaled" | "column") => void;
+  /** Turns the automatic mobile layout on (rebuilding mobile now) or off. */
+  setMobileAuto: (on: boolean) => void;
   addBackgroundModel: (file: File, textureSize: 1024 | 2048) => void;
   /** Changes a model on an item (its id) or on the background ("background"). A string `undoable` merges steps with the same key. */
   setModelContent: (target: string, patch: Partial<ModelContent>, undoable: boolean | string) => void;
@@ -66,6 +70,8 @@ function itemLabel(item: Item): string {
       return `route map: ${item.content.stops.length} stops`;
     case "model_3d":
       return item.content.alt ? `3D model: ${cut(item.content.alt)}` : "3D model";
+    case "shape":
+      return `shape: ${item.content.shape}`;
   }
 }
 
@@ -169,12 +175,28 @@ function SortOrderField({ id, sortOrder, onSortOrderChange }: Pick<Props, "id" |
   );
 }
 
-function MobileSettings({ doc, resetMobile, setMobileVisible, select }: Props) {
+function MobileSettings({ doc, resetMobile, setMobileVisible, select, setMobileAuto }: Props) {
   const hidden = doc.items.filter((i) => !i.mobile);
   return (
     <div className="stack">
       <p className="tools-heading">mobile layout</p>
       <p className="small muted">Content is shared with desktop. Positions, sizes, layers and text sizes here are for screens narrower than 960 px.</p>
+      <label className="row small">
+        <input
+          type="checkbox"
+          checked={doc.mobileAuto !== false}
+          onChange={(e) => {
+            if (e.target.checked && !confirm("Replace the mobile layout with one built from desktop? It then follows every desktop change until you move something on mobile.")) return;
+            setMobileAuto(e.target.checked);
+          }}
+        />
+        Build automatically from desktop
+      </label>
+      <span className="small muted">
+        {doc.mobileAuto !== false
+          ? "Mobile follows desktop: side-by-side items stack in reading order, small items pair up, stickers stay on what they sit on. Moving anything here turns this off; undo turns it back on."
+          : "You arrange mobile yourself. Turn this on to have it built from desktop again."}
+      </span>
       <div className="row">
         <button onClick={() => resetMobile("scaled")}>Reset: scaled desktop</button>
         <button onClick={() => resetMobile("column")}>Reset: single column</button>
@@ -259,8 +281,8 @@ function SeasonSettings(props: Props) {
       <Field label="Title">
         <input type="text" value={doc.title} onChange={(e) => set("title", e.target.value)} />
       </Field>
-      <Field label="Subtitle (Markdown)">
-        <textarea rows={3} value={doc.subtitle} onChange={(e) => set("subtitle", e.target.value)} />
+      <Field label="Subtitle (Markdown: **bold** ⌘B, _italic_ ⌘I)">
+        <MarkdownTextarea rows={3} value={doc.subtitle} onChange={(v) => set("subtitle", v)} />
       </Field>
       <Field label="Period">
         <input type="text" placeholder="fall 2026" value={doc.period} onChange={(e) => set("period", e.target.value)} />
@@ -308,8 +330,7 @@ function SeasonSettings(props: Props) {
       </Field>
       <Field label="Background">
         <div className="row">
-          <input type="color" value={doc.background.value} onChange={(e) => set("background", { type: "color", value: e.target.value })} />
-          <code className="small">{doc.background.value}</code>
+          <ColorPicker label="Background" value={doc.background.value} swatches={docColors(doc)} onChange={(value) => set("background", { type: "color", value })} />
         </div>
       </Field>
       <BackgroundLayerSettings {...props} />
@@ -636,12 +657,41 @@ function CropControls({ item, p, cropping, setCropping, updateItem }: { item: Ph
   );
 }
 
-function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Props["updateItem"] }) {
+function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"]; swatches: string[] }) {
   const c = item.content;
   const input = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
   const set = (patch: Partial<RouteItem["content"]>, field: string) =>
     updateItem((i) => ({ ...i, content: { ...(i as RouteItem).content, ...patch } }) as Item, `content:${item.id}:${field}`);
+  // Adding, moving and removing stops renumbers them; items linked to a stop follow it.
+  const editStops = (order: number[], added?: RouteItem["content"]["stops"][number]) =>
+    change((d) => setRouteStops(d, item.id, order.map((old) => (old < 0 ? added! : c.stops[old])), order));
+  const indexes = () => c.stops.map((_, i) => i);
+  const moveStop = (index: number, by: -1 | 1) => {
+    const order = indexes();
+    [order[index], order[index + by]] = [order[index + by], order[index]];
+    editStops(order);
+  };
+  const removeStop = (index: number) => editStops(indexes().filter((i) => i !== index));
+  const [routing, setRouting] = useState(false);
+  // Asks for the driving route through the stops and saves it as the drawn path.
+  const followRoads = async () => {
+    setRouting(true);
+    setMessage(null);
+    try {
+      const { line } = await api<{ line: [number, number][] }>("/directions", { body: { stops: c.stops } });
+      set({ line }, "line");
+      setMessage("The line now follows the fastest driving route between stops. If you took a different road, add a stop on it.");
+    } catch (err) {
+      setMessage((err as Error).message);
+    } finally {
+      setRouting(false);
+    }
+  };
+  const addStop = (p: { label: string; lat: number; lon: number }) => {
+    editStops([...indexes(), -1], { name: p.label || `stop ${c.stops.length + 1}`, lat: p.lat, lon: p.lon });
+    setMessage(null);
+  };
   return (
     <>
       <p className="small muted">
@@ -650,16 +700,41 @@ function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Prop
       <Field label={`Stops (${c.stops.length})${c.line.length ? `, path of ${c.line.length} points` : ""}`}>
         <div className="route-stops">
           {c.stops.map((stop, index) => (
-            <input
-              key={index}
-              type="text"
-              value={stop.name}
-              aria-label={`Stop ${index + 1} name`}
-              onChange={(e) => set({ stops: c.stops.map((s, i) => (i === index ? { ...s, name: e.target.value } : s)) }, `stop${index}`)}
-            />
+            <div key={index} className="route-stop">
+              <span className="small muted">{index + 1}</span>
+              <input
+                type="text"
+                value={stop.name}
+                aria-label={`Stop ${index + 1} name`}
+                onChange={(e) => set({ stops: c.stops.map((s, i) => (i === index ? { ...s, name: e.target.value } : s)) }, `stop${index}`)}
+              />
+              <button className="quiet" title="Move up" aria-label={`Move stop ${index + 1} up`} disabled={index === 0} onClick={() => moveStop(index, -1)}>
+                ↑
+              </button>
+              <button className="quiet" title="Move down" aria-label={`Move stop ${index + 1} down`} disabled={index === c.stops.length - 1} onClick={() => moveStop(index, 1)}>
+                ↓
+              </button>
+              <button className="quiet" title="Remove" aria-label={`Remove stop ${index + 1}`} disabled={c.stops.length === 1} onClick={() => removeStop(index)}>
+                ×
+              </button>
+            </div>
           ))}
         </div>
       </Field>
+      {c.stops.length < ROUTE_MAX_STOPS ? (
+        <Field label="Add a stop at the end">
+          <PlaceSearch onPick={addStop} onError={setMessage} label="Search" />
+        </Field>
+      ) : null}
+      <div className="stack" style={{ gap: 4 }}>
+        {c.line.length ? <span className="small muted">The line follows a saved path (roads or an imported file). After adding or moving stops, follow roads again to update it.</span> : null}
+        <div className="row">
+          <button disabled={c.stops.length < 2 || routing} onClick={followRoads}>
+            {routing ? "Finding roads…" : c.line.length ? "Follow roads again" : "Follow roads (driving)"}
+          </button>
+          {c.line.length ? <button onClick={() => set({ line: [] }, "line")}>Use straight lines</button> : null}
+        </div>
+      </div>
       <div className="row">
         <button onClick={() => input.current?.click()}>Replace with another file…</button>
         <input
@@ -684,16 +759,24 @@ function RouteSettings({ item, updateItem }: { item: RouteItem; updateItem: Prop
       {message ? <span className="small muted">{message}</span> : null}
       <div className="grid2">
         <Field label="Route color">
-          <input type="color" value={c.color} onChange={(e) => set({ color: e.target.value }, "color")} />
+          <ColorPicker label="Route color" value={c.color} swatches={swatches} onChange={(color) => set({ color }, "color")} />
         </Field>
         <Field label={`Zoom on a stop: ${c.stepZoom}×`}>
           <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
         </Field>
       </div>
-      <label className="row small">
-        <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
-        Borders (countries, US states)
-      </label>
+      <Field label="Style">
+        <select value={c.style ?? "map"} onChange={(e) => set({ style: e.target.value as "map" | "line" }, "style")}>
+          <option value="map">Map: land, stops and the route</option>
+          <option value="line">Line only: just the route drawing in</option>
+        </select>
+      </Field>
+      {(c.style ?? "map") === "map" ? (
+        <label className="row small">
+          <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
+          Borders (countries, US states)
+        </label>
+      ) : null}
     </>
   );
 }
@@ -776,8 +859,8 @@ function ItemSettings(props: Props & { item: Item }) {
             <p className="small muted">Edit the {item.content.binding} in the season settings (click the empty canvas, or Season on a phone).</p>
           ) : (
             <>
-              <Field label="Text (Markdown: **bold**, *italic*, [link](https://…))">
-                <textarea rows={6} value={item.content.markdown} onChange={(e) => content({ markdown: e.target.value }, "markdown")} />
+              <Field label="Text (Markdown: **bold** ⌘B, _italic_ ⌘I, [link](https://…); or double-click the text)">
+                <MarkdownTextarea rows={6} value={item.content.markdown} onChange={(markdown) => content({ markdown }, "markdown")} />
               </Field>
               <Field label="Source">
                 <input type="text" value={item.content.source} onChange={(e) => content({ source: e.target.value }, "source")} />
@@ -813,7 +896,7 @@ function ItemSettings(props: Props & { item: Item }) {
               </select>
             </Field>
             <Field label="Color">
-              <input type="color" value={item.content.color} onChange={(e) => content({ color: e.target.value }, "color")} />
+              <ColorPicker label="Text color" value={item.content.color} swatches={docColors(doc)} onChange={(color) => content({ color }, "color")} />
             </Field>
           </div>
         </>
@@ -872,6 +955,37 @@ function ItemSettings(props: Props & { item: Item }) {
         </div>
       ) : null}
 
+      {item.type === "shape" ? (
+        <>
+          <Field label="Shape">
+            <select value={item.content.shape} onChange={(e) => content({ shape: e.target.value as ShapeKind }, "shape")}>
+              {SHAPES.map((sh) => (
+                <option key={sh} value={sh}>
+                  {sh === "rounded" ? "rounded square" : sh}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <label className="row small">
+            <input type="checkbox" checked={item.content.fill !== null} onChange={(e) => content({ fill: e.target.checked ? "#1d1d1b" : null }, "fill-on")} />
+            Fill
+          </label>
+          {item.content.fill !== null ? (
+            <Field label="Fill color">
+              <ColorPicker label="Fill color" value={item.content.fill} swatches={docColors(doc)} onChange={(fill) => content({ fill }, "fill")} />
+            </Field>
+          ) : null}
+          <Field label={`Outline: ${item.content.strokeWidth}`}>
+            <input type="range" min={0} max={30} step={0.5} value={item.content.strokeWidth} onChange={(e) => content({ strokeWidth: Number(e.target.value) }, "strokeWidth")} />
+          </Field>
+          {item.content.strokeWidth > 0 ? (
+            <Field label="Outline color">
+              <ColorPicker label="Outline color" value={item.content.stroke} swatches={docColors(doc)} onChange={(stroke) => content({ stroke }, "stroke")} />
+            </Field>
+          ) : null}
+        </>
+      ) : null}
+
       {item.type === "map" ? (
         <>
           <Field label="Label">
@@ -911,7 +1025,7 @@ function ItemSettings(props: Props & { item: Item }) {
         </>
       ) : null}
 
-      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} /> : null}
+      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} swatches={docColors(doc)} /> : null}
 
       {item.type === "model_3d" ? <ModelFields {...props} target={item.id} content={item.content} /> : null}
 
@@ -920,7 +1034,7 @@ function ItemSettings(props: Props & { item: Item }) {
           <select value={item.content.effect ?? "none"} onChange={(e) => content({ effect: e.target.value as QuoteEffect }, "effect")}>
             {QUOTE_EFFECTS.map((fx) => (
               <option key={fx} value={fx}>
-                {{ none: "None", repel: "Letters move away from the cursor", wave: "Letters ripple as the page scrolls", gather: "Letters gather mid-screen" }[fx]}
+                {{ none: "None", repel: "Letters move away from the cursor", wave: "Letters ripple as the page scrolls", gather: "Letters gather mid-screen", typewriter: "Typewriter: types in when it scrolls into view" }[fx]}
               </option>
             ))}
           </select>
