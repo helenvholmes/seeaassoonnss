@@ -9,7 +9,7 @@ import sharp from "sharp";
 import { addItem, scaledMobileLayout } from "../components/editor/ops";
 import { DEMO_SKETCHES } from "./demo-sketches";
 import { sql } from "./db";
-import { processImage, processModel } from "./media";
+import { processImage, processModel } from "./media-process";
 import { emptySeasonDoc, type Item, type Placement, type SeasonDoc } from "./schema";
 import { createSeason, deleteSeason, renameSlug, saveDraft } from "./seasons";
 import { originalKey, storage } from "./storage";
