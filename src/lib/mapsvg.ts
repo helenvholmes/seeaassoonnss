@@ -154,9 +154,9 @@ ${borderLines}
 /** Validates route frame parameters (see lib/route.ts fitRoute). */
 export function parseFrameParams(search: URLSearchParams): (RouteFrame & { k: number; borders: boolean }) | null {
   const n = (name: string) => Number(search.get(name));
-  const f = { lon: n("lon"), scale: n("scale"), tx: n("tx"), ty: n("ty"), width: n("w"), height: n("h"), k: n("k") || 1 };
+  const f = { lon: n("lon"), scale: n("scale"), tx: n("tx"), ty: n("ty"), width: n("w"), height: n("h"), k: n("k") || 1, angle: n("angle") };
   if (!Object.values(f).every(Number.isFinite)) return null;
-  if (Math.abs(f.lon) > 180 || f.scale <= 0 || f.scale > 1e7) return null;
+  if (Math.abs(f.lon) > 180 || Math.abs(f.angle) > 180 || f.scale <= 0 || f.scale > 1e7) return null;
   if (f.width < 50 || f.width > 4000 || f.height < 50 || f.height > 4000 || f.k < 1 || f.k > 16) return null;
   if (Math.abs(f.tx) > 1e8 || Math.abs(f.ty) > 1e8) return null;
   return { ...f, borders: search.get("borders") === "1" };

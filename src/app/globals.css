@@ -298,7 +298,13 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .route-line-base { fill: none; stroke: #c9c9c2; stroke-linecap: round; stroke-linejoin: round; }
 .route-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .route-stop { fill: #fbfbf9; stroke: #1d1d1b; transition: r 0.3s; }
-@media (prefers-reduced-motion: reduce) { .route-move, .route-stop { transition: none; } }
+.route-place {
+  font-family: "IBM Plex Mono", ui-monospace, monospace; fill: #1d1d1b; stroke: #fbfbf9; paint-order: stroke; stroke-linejoin: round;
+  opacity: 0; transition: opacity 0.5s;
+}
+.route-place.reached { opacity: 0.75; }
+.route-place.current { opacity: 1; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .route-move, .route-stop, .route-place { transition: none; } }
 .route-label {
   position: absolute; left: 12px; top: 12px; z-index: 1;
   font: 13px "IBM Plex Mono", ui-monospace, monospace; background: rgb(251 251 249 / 0.9); padding: 2px 8px;

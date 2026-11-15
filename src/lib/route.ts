@@ -128,16 +128,19 @@ export interface RouteFrame {
   ty: number;
   width: number;
   height: number;
+  /** Clockwise turn of the map in degrees, after projecting. */
+  angle: number;
 }
 
 const r = (n: number, places: number) => Math.round(n * 10 ** places) / 10 ** places;
 
 export function routeProjection(f: RouteFrame): GeoProjection {
-  return geoMercator().rotate([-f.lon, 0]).scale(f.scale).translate([f.tx, f.ty]);
+  return geoMercator().rotate([-f.lon, 0]).angle(f.angle).scale(f.scale).translate([f.tx, f.ty]);
 }
 
 /** Fits the whole route into a width × height frame with some padding. */
-export function fitRoute(content: Pick<RouteContent, "stops" | "line">, width: number, height: number): RouteFrame {
+export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">, width: number, height: number): RouteFrame {
+  const angle = r(content.angle ?? 0, 1);
   const w = Math.max(50, Math.round(width));
   const h = Math.max(50, Math.round(height));
   const coords = [...routeCoordinates(content), ...content.stops.map((s) => [s.lon, s.lat] as Position)];
@@ -150,7 +153,7 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line">, width: n
   const lon = r((mean * 180) / Math.PI, 3);
   const pad = Math.min(w, h) * 0.12;
   const target = { type: "MultiPoint" as const, coordinates: coords };
-  const p = geoMercator().rotate([-lon, 0]).fitExtent(
+  const p = geoMercator().rotate([-lon, 0]).angle(angle).fitExtent(
     [
       [pad, pad],
       [w - pad, h - pad],
@@ -162,12 +165,12 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line">, width: n
   let [tx, ty] = p.translate();
   if (scale !== r(p.scale(), 2)) {
     // Re-center at the capped scale.
-    const capped = geoMercator().rotate([-lon, 0]).scale(scale).translate([0, 0]);
+    const capped = geoMercator().rotate([-lon, 0]).angle(angle).scale(scale).translate([0, 0]);
     const [cx, cy] = capped(coords[0])!;
     tx = w / 2 - cx;
     ty = h / 2 - cy;
   }
-  return { lon, scale, tx: r(tx, 1), ty: r(ty, 1), width: w, height: h };
+  return { lon, scale, tx: r(tx, 1), ty: r(ty, 1), width: w, height: h, angle };
 }
 
 /** The equivalent zoom level of a Mercator scale (0 = the world 1000 px wide). */

@@ -221,6 +221,12 @@ export const routeSchema = z.object({
     stepZoom: num.min(1).max(16),
     /** "map" (default): land, stops and the line. "line": only the line, on the page's own background. */
     style: z.enum(["map", "line"]).optional(),
+    /** Place names along the line, each appearing when the line reaches it. */
+    labels: z.boolean().optional(),
+    /** Turns the map this many degrees clockwise (0 = north up). */
+    angle: num.min(-180).max(180).optional(),
+    /** Line thickness in screen pixels (default 3.5). */
+    lineWidth: num.min(1).max(24).optional(),
   }),
 });
 
