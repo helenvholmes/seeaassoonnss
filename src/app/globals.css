@@ -240,8 +240,9 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .sticker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .sticker-tile { position: relative; }
 .sticker-adding { position: absolute; inset: auto 0 4px; text-align: center; font-size: 11px; background: rgb(255 255 255 / 0.85); }
-.sticker-add { width: 100%; aspect-ratio: 1; padding: 4px; border-color: #e3e3df; background: repeating-conic-gradient(#f0f0ec 0 25%, #fff 0 50%) 0 0 / 12px 12px; }
-.sticker-add:hover:not(:disabled) { background: repeating-conic-gradient(#e6e6e0 0 25%, #fff 0 50%) 0 0 / 12px 12px; border-color: #1d1d1b; }
+/* Plain white, so stickers with transparent backgrounds stay visible. */
+.sticker-add { width: 100%; aspect-ratio: 1; padding: 4px; border-color: #e3e3df; background: #fff; }
+.sticker-add:hover:not(:disabled) { background: #fff; border-color: #1d1d1b; }
 .sticker-add img { width: 100%; height: 100%; object-fit: contain; display: block; }
 .sticker-remove { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; padding: 0; line-height: 1; border-radius: 50%; font-size: 12px; opacity: 0; }
 .sticker-tile:hover .sticker-remove, .sticker-remove:focus-visible { opacity: 1; }
