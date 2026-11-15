@@ -21,8 +21,18 @@ const nextConfig: NextConfig = {
     // A copy deployed on its own (without a main site in front) has nothing at "/".
     // It sends visitors to the index of seasons, or with LANDING_PAGE=on to the
     // landing page. (Next.js cannot rewrite outside the base path, so it redirects.)
+    // seeaassoonnss.app is left out: there vercel.json serves the landing page at "/"
+    // itself, and this redirect would otherwise run first.
     const home = process.env.LANDING_PAGE === "on" ? "/seasons/about" : "/seasons";
-    return [{ source: "/", destination: home, basePath: false, permanent: false }];
+    return [
+      {
+        source: "/",
+        missing: [{ type: "host", value: "seeaassoonnss.app" }],
+        destination: home,
+        basePath: false,
+        permanent: false,
+      },
+    ];
   },
 };
 
