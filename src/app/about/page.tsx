@@ -166,7 +166,7 @@ const VOICE_MEDIA_BASE = `${BASE_PATH}/landing`;
 const VOICE_FILE = path.join(process.cwd(), "public/landing/media/voice-note/audio.mp3");
 const VOICE_NOTE = { caption: "what this is, in my words", duration: 0, waveform: [] as number[] };
 
-const EAGLES_MERE = { lat: 41.4087, lon: -76.5833, zoom: 3, label: "eagles mere, pa", borders: false };
+const EAGLES_MERE = { lat: 41.4087, lon: -76.5833, zoom: 3, label: "eagles mere, pa", borders: true };
 
 /** A short handwritten-looking note beside an item: its name, then what it does. */
 function Note({ name, mark = false, children }: { name: string; mark?: boolean; children: ReactNode }) {
@@ -322,12 +322,13 @@ function tourPieces(): CollagePiece[] {
         <svg viewBox="0 0 600 260" role="img" aria-label="A route drawn from Philadelphia up to Eagles Mere">
           <path
             className="tour-route-line"
-            d="M70 220 C120 200 150 170 200 168 C260 166 270 120 330 112 C390 104 420 70 470 62 C500 58 520 50 540 40"
+            d="M400 222 C370 206 330 198 338 166 C346 134 300 124 302 96 C304 70 284 56 267 40"
           />
-          <circle cx="70" cy="220" r="7" />
-          <circle cx="540" cy="40" r="7" />
-          <text x="86" y="236">philadelphia</text>
-          <text x="420" y="30">eagles mere</text>
+          {/* Eagles Mere is north-northwest of Philadelphia (about 1.5° N, 1.4° W). */}
+          <circle cx="400" cy="222" r="7" />
+          <circle cx="267" cy="40" r="7" />
+          <text x="416" y="238">philadelphia</text>
+          <text x="283" y="36">eagles mere</text>
         </svg>
       ),
     },

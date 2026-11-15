@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import remarkBreaks from "remark-breaks";
 import type { Item, Layout, MapItem, ModelContent, Placement, PhotoItem, QuoteItem, SeasonDoc, StickerItem } from "@/lib/schema";
-import { BASE_PATH } from "@/lib/client";
+import { BASE_PATH, MAP_VERSION } from "@/lib/client";
 import { CANVAS_WIDTH, MAX_SCALE } from "@/lib/schema";
 import { units } from "./geometry";
 import { photoRect } from "@/lib/crop";
@@ -128,7 +128,7 @@ function Sticker({ item, mediaBase, layout, placement }: { item: StickerItem; me
 }
 
 export function mapUrl(c: MapItem["content"]) {
-  return `${BASE_PATH}/map?lat=${c.lat.toFixed(4)}&lon=${c.lon.toFixed(4)}&zoom=${Math.round(c.zoom * 4) / 4}${c.borders ? "&borders=1" : ""}`;
+  return `${BASE_PATH}/map?lat=${c.lat.toFixed(4)}&lon=${c.lon.toFixed(4)}&zoom=${Math.round(c.zoom * 4) / 4}${c.borders ? "&borders=1" : ""}&v=${MAP_VERSION}`;
 }
 
 function MapView({ item, layout }: { item: MapItem; layout: Layout }) {
