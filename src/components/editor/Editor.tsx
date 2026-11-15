@@ -5,7 +5,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { flushSync } from "react-dom";
 import Moveable from "react-moveable";
 import { api, BASE_PATH } from "@/lib/client";
-import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, DEFAULT_SCATTER, slugFollowsTitle, slugProblem, titleSlug } from "@/lib/schema";
+import { CANVAS_WIDTH, DESKTOP_WIDTH, MAX_MODEL_ITEMS, MODEL_WARN_BYTES, type Crop, type Item, type Layout, type ModelContent, type PhotoItem, type Placement, type Scatter, type SeasonDoc, type ShapeKind, DEFAULT_SCATTER, slugFollowsTitle, slugProblem, titleSlug } from "@/lib/schema";
 import { NO_CROP, panCrop, photoRect, zoomCrop } from "@/lib/crop";
 import { pageHeight } from "@/lib/layout";
 import { placementStyle } from "../geometry";
@@ -384,6 +384,17 @@ export function Editor(props: EditorProps) {
       desktop: place(320, 320),
       mobile: null,
       content: { lat: p.lat, lon: p.lon, zoom: 5, label: p.label, borders: true },
+    });
+  };
+
+  const addShape = (shape: ShapeKind) => {
+    const [w, h] = shape === "arrow" ? [240, 160] : [200, 200];
+    addAndSelect({
+      id: crypto.randomUUID(),
+      type: "shape",
+      desktop: place(w, h),
+      mobile: null,
+      content: { shape, fill: "#1d1d1b", stroke: "#1d1d1b", strokeWidth: 0 },
     });
   };
 
@@ -1014,6 +1025,7 @@ export function Editor(props: EditorProps) {
           onPlaylist={addPlaylist}
           onSticker={addSticker}
           onMap={addMap}
+          onShape={addShape}
           onRecording={(blob) => void addVoiceNote(blob)}
           onRoute={(file) => void addRoute(file)}
           onModel={(file, textureSize) => void addModel(file, textureSize)}

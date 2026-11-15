@@ -11,6 +11,7 @@ import { VoiceNoteView } from "./items/VoiceNoteView";
 import { RouteView } from "./items/RouteView";
 import { ParallaxPhoto } from "./items/ParallaxPhoto";
 import { ModelView } from "./items/ModelView";
+import { ShapeView } from "./items/ShapeView";
 
 export const FONT_STACKS: Record<QuoteItem["content"]["font"], string> = {
   serif: '"EB Garamond", Garamond, "Times New Roman", serif',
@@ -213,5 +214,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
       return <RouteView item={item} interactive={interactive} layout={layout} placement={placement} />;
     case "model_3d":
       return <ModelView content={item.content} mediaBase={mediaBase} live={interactive} poster={modelPoster(mediaBase, item.content)} />;
+    case "shape":
+      return <ShapeView item={item} layout={layout} />;
   }
 }

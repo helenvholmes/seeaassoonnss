@@ -142,7 +142,7 @@ The document shapes follow.
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | UUID | |
-| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`, `model_3d` |
+| `type` | enum | `photo`, `video`, `quote`, `playlist`, `sticker`, `map`, `voice_note`, `route`, `model_3d`, `shape` |
 | `content` | JSON | Different per type (see [Item types](#item-types)) |
 | `desktop` | placement | Position on the desktop canvas |
 | `mobile` | placement or empty | Empty = item is not shown on mobile |
@@ -185,6 +185,7 @@ Eight item types are in scope. The route map is a separate item type (see [Scrol
 | Map | Place search or coordinates | Latitude, longitude, zoom, label | Vector outline drawn with D3 and TopoJSON, a dot and a label; no tiles |
 | Voice note | Record in the browser or upload audio | Audio file, duration, optional caption, waveform (optional) | Small player; plays on click |
 | 3D model | Upload a glTF binary file (`.glb`), up to 50 MB | Compressed model file, size, scale, rotation (x, y, z), spin speed, turn toward cursor on or off, play animation on or off, poster image, alt text | 3D view in its box (React Three Fiber); poster image while loading and if WebGL is not available |
+| Shape | Pick from the Shapes panel: square, rounded square, circle, triangle, diamond, pentagon, hexagon, star, heart, arrow | Shape, fill color or none, outline color and width | SVG that stretches to fill its box; the outline keeps its width |
 
 **Quote rules.** Markdown only: bold, italic, links, line breaks. No raw HTML. Quotes can come from any source: own writing, lyrics, books, messages. Preset fonts: EB Garamond (serif), IBM Plex Mono (monospace) and one plain sans-serif (to be picked). Each must look right in lowercase with the `//` prefix.
 
@@ -238,7 +239,7 @@ seeaassoonnss uses p5.js for 2D generative backgrounds and React Three Fiber for
 ### Effects
 
 1. **Random placement:** the editor places every unlocked item of the current layout (desktop or mobile) at a random position. A seed keeps the same layout; the owner can change the seed, and lock the items to keep. Route maps and hidden items do not move. Items spread over the minimum page length, and further when they would cover more than 35% of it, so a season with many items gets a longer page instead of a pile. A Shuffle button in the editor bar scatters with a new seed.
-2. **Random scale:** photos, videos, stickers and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
+2. **Random scale:** photos, videos, stickers, shapes and 3D models get a random width between a minimum and a maximum that the owner sets, as a multiple of the width a new photo gets (360 desktop units, 180 mobile). Aspect ratios and rotations are kept. Quotes, playlists and maps keep their size.
 3. **Background objects:** one 3D model or one p5.js sketch can be the season background, behind all items. It fills the screen and stays there while the page scrolls.
 4. **Cursor follow:** any item can drift toward the cursor (strength 0–100%, at most 40 design units). 3D models can also turn toward it. On touch devices, the "cursor" moves down the screen with the scroll position.
 5. **Type:** quotes can use one of four effects: letters move away from the cursor (repel), ripple as the page scrolls (wave), start scattered and gather as the quote reaches the middle of the screen (gather), or type in one at a time behind a blinking caret the first time the quote scrolls into view (typewriter).

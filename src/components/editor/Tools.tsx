@@ -8,6 +8,8 @@ import { imageUrl } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import { startRecording } from "./media-browser";
 import { uploadSticker, type StickerEntry } from "./upload";
+import { SHAPES, type ShapeKind } from "@/lib/schema";
+import { ShapeView } from "../items/ShapeView";
 
 interface Props {
   onFiles: (files: File[]) => void;
@@ -18,6 +20,7 @@ interface Props {
   /** Adds a library sticker to the page; `alt` is the description for screen readers (packs have one). */
   onSticker: (sticker: StickerEntry, alt?: string) => void;
   onMap: (place: Place) => void;
+  onShape: (shape: ShapeKind) => void;
   onRecording: (blob: Blob) => void;
   onRoute: (file: File) => void;
   onModel: (file: File, textureSize: 1024 | 2048) => void;
@@ -27,7 +30,7 @@ interface Props {
   mediaBase: string;
 }
 
-type Panel = null | "stickers" | "map" | "voice" | "model";
+type Panel = null | "stickers" | "shapes" | "map" | "voice" | "model";
 
 export function Tools(props: Props) {
   const [panel, setPanel] = useState<Panel>(null);
@@ -74,6 +77,20 @@ export function Tools(props: Props) {
         Stickers…
       </button>
       {panel === "stickers" ? <StickerPanel {...props} /> : null}
+      <button className={panel === "shapes" ? "primary" : ""} onClick={() => toggle("shapes")} aria-expanded={panel === "shapes"}>
+        Shapes…
+      </button>
+      {panel === "shapes" ? (
+        <div className="tool-panel">
+          <div className="shape-grid">
+            {SHAPES.map((shape) => (
+              <button key={shape} className="shape-add" title={`Add a ${shape === "rounded" ? "rounded square" : shape}`} aria-label={`Add a ${shape === "rounded" ? "rounded square" : shape}`} onClick={() => props.onShape(shape)}>
+                <ShapeView item={{ id: shape, type: "shape", desktop: { x: 0, y: 0, w: 1, h: 1, rotation: 0, z: 0, locked: false }, mobile: null, content: { shape, fill: "#1d1d1b", stroke: "#1d1d1b", strokeWidth: 0 } }} layout="desktop" />
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
       <button className={panel === "voice" ? "primary" : ""} onClick={() => toggle("voice")} aria-expanded={panel === "voice"}>
         Voice note…
       </button>

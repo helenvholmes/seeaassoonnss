@@ -207,7 +207,7 @@ function hash(text: string): number {
 }
 
 /** Item types whose size the random scale changes. Others keep their size and only move. */
-const SCALED = new Set<Item["type"]>(["photo", "video", "sticker", "model_3d"]);
+const SCALED = new Set<Item["type"]>(["photo", "video", "sticker", "model_3d", "shape"]);
 /** The width a scale of 1 means: the width new photos get. */
 export const SCATTER_BASE_WIDTH: Record<Layout, number> = { desktop: 360, mobile: 180 };
 

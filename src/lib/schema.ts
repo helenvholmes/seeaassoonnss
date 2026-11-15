@@ -222,6 +222,24 @@ export const routeSchema = z.object({
   }),
 });
 
+/** Simple shapes, drawn as SVG that stretches to fill the item's box. */
+export const SHAPES = ["square", "rounded", "circle", "triangle", "diamond", "pentagon", "hexagon", "star", "heart", "arrow"] as const;
+export type ShapeKind = (typeof SHAPES)[number];
+const hexColor = z.string().regex(/^#[0-9a-f]{6}$/i);
+
+export const shapeSchema = z.object({
+  ...base,
+  type: z.literal("shape"),
+  content: z.object({
+    shape: z.enum(SHAPES),
+    /** Fill color; null = no fill (outline only). */
+    fill: hexColor.nullable(),
+    stroke: hexColor,
+    /** Outline width in design units; 0 = no outline. */
+    strokeWidth: num.min(0).max(60),
+  }),
+});
+
 /** How a 3D model is shown: shared by model items and a 3D season background. */
 export const modelContentSchema = z.object({
   /** The processed model, stored as media/<mediaId>/model.glb. */
@@ -253,7 +271,7 @@ export const modelSchema = z.object({
   content: modelContentSchema,
 });
 
-export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema, modelSchema]);
+export const itemSchema = z.discriminatedUnion("type", [photoSchema, quoteSchema, playlistSchema, videoSchema, stickerSchema, mapSchema, voiceNoteSchema, routeSchema, modelSchema, shapeSchema]);
 export type Item = z.infer<typeof itemSchema>;
 export type PhotoItem = z.infer<typeof photoSchema>;
 export type QuoteItem = z.infer<typeof quoteSchema>;
@@ -264,6 +282,7 @@ export type MapItem = z.infer<typeof mapSchema>;
 export type VoiceNoteItem = z.infer<typeof voiceNoteSchema>;
 export type RouteItem = z.infer<typeof routeSchema>;
 export type ModelItem = z.infer<typeof modelSchema>;
+export type ShapeItem = z.infer<typeof shapeSchema>;
 export type RouteContent = RouteItem["content"];
 export type ItemType = Item["type"];
 
