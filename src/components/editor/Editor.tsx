@@ -18,6 +18,7 @@ import {
   addItem,
   convertPoint,
   duplicateItem,
+  moveItems,
   moveLayer,
   placementOf,
   removeItem,
@@ -87,7 +88,14 @@ export function Editor(props: EditorProps) {
   const { id, mediaBase } = props;
   const [history, setHistory] = useState<History<SeasonDoc>>(() => createHistory(withMobileLayout(props.initialDoc)));
   const doc = history.present;
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setPrimaryId] = useState<string | null>(null);
+  // Shift-click adds items to the selection. The first one stays the primary
+  // selection; these are the others. Selecting one item clears them.
+  const [extraIds, setExtraIds] = useState<string[]>([]);
+  const setSelectedId = useCallback((itemId: string | null) => {
+    setPrimaryId(itemId);
+    setExtraIds([]);
+  }, []);
   const [slug, setSlug] = useState(props.initialSlug);
   const [status, setStatus] = useState(props.initialStatus);
   // While a draft's slug was made from its title, it follows the title. It stops
@@ -178,6 +186,21 @@ export function Editor(props: EditorProps) {
   const scale = stageWidth / canvasWidth;
   const selected = doc.items.find((i) => i.id === selectedId) ?? null;
   const selectedPlacement = selected ? placementOf(selected, layout) : null;
+  // Two or more items selected with shift-click: they move together, with no handles.
+  const groupIds = selected && extraIds.length ? [selected.id, ...extraIds.filter((x) => doc.items.some((i) => i.id === x && placementOf(i, layout)))] : [];
+  const grouped = groupIds.length > 1;
+  const isSelected = (itemId: string) => itemId === selectedId || (grouped && groupIds.includes(itemId));
+  /** Shift-click: adds the item to the selection, or takes it out. */
+  const toggleSelected = (itemId: string) => {
+    if (!selectedId) return setSelectedId(itemId);
+    if (itemId === selectedId) {
+      const [next, ...rest] = extraIds;
+      setPrimaryId(next ?? null);
+      setExtraIds(rest);
+    } else {
+      setExtraIds((ids) => (ids.includes(itemId) ? ids.filter((x) => x !== itemId) : [...ids, itemId]));
+    }
+  };
 
   // ---------- document changes ----------
   const change = useCallback((next: SeasonDoc | ((d: SeasonDoc) => SeasonDoc), key: string | null = null) => {
@@ -537,6 +560,13 @@ export function Editor(props: EditorProps) {
     change((d) => removeItem(d, selectedId));
     setSelectedId(null);
   };
+  /** Deletes every selected item that is not locked. */
+  const removeGroup = () => {
+    const ids = groupIds.filter((x) => !placementOf(doc.items.find((i) => i.id === x)!, layout)?.locked);
+    if (!ids.length) return;
+    change((d) => ids.reduce(removeItem, d));
+    setSelectedId(null);
+  };
 
   // ---------- keyboard and paste ----------
   useEffect(() => {
@@ -556,7 +586,16 @@ export function Editor(props: EditorProps) {
         setHistory(redo);
       } else if (mod && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        duplicate();
+        if (!grouped) duplicate();
+      } else if (grouped && (e.key === "Delete" || e.key === "Backspace")) {
+        e.preventDefault();
+        removeGroup();
+      } else if (grouped && e.key.startsWith("Arrow") && !cropId) {
+        e.preventDefault();
+        const step = e.shiftKey ? 10 : 1;
+        const dx = e.key === "ArrowLeft" ? -step : e.key === "ArrowRight" ? step : 0;
+        const dy = e.key === "ArrowUp" ? -step : e.key === "ArrowDown" ? step : 0;
+        change((d) => moveItems(d, groupIds, dx, dy, layout), `nudge:${layout}:${groupIds.join(",")}`);
       } else if ((e.key === "Delete" || e.key === "Backspace") && selected && !selectedPlacement?.locked) {
         e.preventDefault();
         remove();
@@ -647,7 +686,7 @@ export function Editor(props: EditorProps) {
   };
 
   // ---------- Moveable ----------
-  const target = selected && selectedPlacement && cropId !== selected.id ? itemRefs.current.get(selected.id) ?? null : null;
+  const target = !grouped && selected && selectedPlacement && cropId !== selected.id ? itemRefs.current.get(selected.id) ?? null : null;
   const locked = !!selectedPlacement?.locked;
   const live = (patch: Partial<Placement>) => {
     if (!selectedId) return;
@@ -742,10 +781,44 @@ export function Editor(props: EditorProps) {
     return () => stage.removeEventListener("wheel", onWheel);
   });
 
+  /**
+   * Drag on one of several selected items: they all follow the pointer or the
+   * finger. A press that does not move selects just that item.
+   */
+  const startGroupDrag = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
+    const ids = groupIds;
+    const before = latestDoc.current;
+    const touch = "touches" in e;
+    const point = (ev: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => ("touches" in ev ? ev.touches[0] ?? ev.changedTouches[0] : ev);
+    const { clientX: sx, clientY: sy } = point(e);
+    let moved = false;
+    const move = (ev: MouseEvent | TouchEvent) => {
+      if (touch) ev.preventDefault();
+      const { clientX, clientY } = point(ev);
+      if (!moved && Math.hypot(clientX - sx, clientY - sy) < 3) return;
+      moved = true;
+      const next = moveItems(before, ids, (clientX - sx) / scale, (clientY - sy) / scale, layout);
+      setHistory((h) => replace(h, next));
+    };
+    const [moveEvent, upEvent] = touch ? (["touchmove", "touchend"] as const) : (["mousemove", "mouseup"] as const);
+    const up = () => {
+      window.removeEventListener(moveEvent, move);
+      window.removeEventListener(upEvent, up);
+      if (touch) window.removeEventListener("touchcancel", up);
+      if (moved) setHistory((h) => commitGesture(h, before));
+      else setSelectedId(item.id);
+    };
+    window.addEventListener(moveEvent, move, { passive: false });
+    window.addEventListener(upEvent, up);
+    if (touch) window.addEventListener("touchcancel", up);
+  };
+
   const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
     if ("button" in e && e.button !== 0) return;
     e.stopPropagation();
     if (cropId === item.id) return startCropPan(item, e);
+    if (e.shiftKey && !("touches" in e)) return toggleSelected(item.id);
+    if (grouped && groupIds.includes(item.id)) return startGroupDrag(item, e);
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
     if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
@@ -914,20 +987,20 @@ export function Editor(props: EditorProps) {
             </div>
           </>
         ) : (
-          <>
-            <div className="row">
-              <Link href="/edit" className="quiet-link">
-                ← seasons
-              </Link>
-              <strong className="editor-title">{doc.title || "untitled"}</strong>
-              {layoutControls}
-              {saveStatus}
-            </div>
-            <div className="row">
-              {historyControls}
-              {publishControls}
-            </div>
-          </>
+            <>
+              <div className="row">
+                <Link href="/edit" className="quiet-link">
+                  ← seasons
+                </Link>
+                <strong className="editor-title">{doc.title || "untitled"}</strong>
+                {layoutControls}
+                {saveStatus}
+              </div>
+              <div className="row">
+                {historyControls}
+                {publishControls}
+              </div>
+            </>
         )}
       </header>
 
@@ -992,7 +1065,7 @@ export function Editor(props: EditorProps) {
                 else itemRefs.current.delete(item.id);
               }}
               data-item-id={item.id}
-              className={`item item-${item.type}${item.id === selectedId ? " is-selected" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
+              className={`item item-${item.type}${isSelected(item.id) ? " is-selected" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
               style={{ ...placementStyle(p, canvasHeight, canvasWidth), ...(item.id === cropId ? { zIndex: 100002 } : null) }}
               onDoubleClick={() => {
                 if (canCrop(item) && !p.locked) {
@@ -1008,7 +1081,7 @@ export function Editor(props: EditorProps) {
               }}
               onTouchStart={(e) => {
                 lastTouch.current = Date.now();
-                if (item.id === selectedId || item.id === cropId) onItemPress(item, e);
+                if (isSelected(item.id) || item.id === cropId) onItemPress(item, e);
               }}
               onClick={() => {
                 if (fromTouch() && item.id !== selectedId) setSelectedId(item.id);
@@ -1026,7 +1099,7 @@ export function Editor(props: EditorProps) {
               ) : null}
             </div>
           ))}
-          {alt && selectedPlacement ? (
+          {alt && selectedPlacement && !grouped ? (
             <MeasureOverlay
               m={measure(
                 selectedPlacement,
@@ -1100,8 +1173,20 @@ export function Editor(props: EditorProps) {
         />
       </div>
 
-      <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={selected ? "Item" : "Season settings"}>
-        {sheetHead(selected ? "Item" : "Season settings")}
+      <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={grouped ? "Items" : selected ? "Item" : "Season settings"}>
+        {sheetHead(grouped ? "Items" : selected ? "Item" : "Season settings")}
+        {grouped ? (
+          <div className="stack">
+            <p className="tools-heading">{groupIds.length} items selected</p>
+            <span className="small muted">Drag any of them, or use the arrow keys, to move them together. Shift-click an item to add it or take it out. Click one without dragging to select just that one.</span>
+            <div className="row">
+              <button onClick={() => setSelectedId(null)}>Deselect</button>
+              <button className="error" onClick={removeGroup}>
+                Delete {groupIds.length} items
+              </button>
+            </div>
+          </div>
+        ) : (
         <Inspector
           id={id}
           doc={doc}
@@ -1137,6 +1222,7 @@ export function Editor(props: EditorProps) {
             change((d) => (kind === "scaled" ? scaledMobileLayout(d) : singleColumnMobileLayout(d)));
           }}
         />
+        )}
       </aside>
 
       {compact ? (
