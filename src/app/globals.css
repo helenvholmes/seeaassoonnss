@@ -239,6 +239,21 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 
 /* ---------- Editor tool panels ---------- */
 .tool-panel { display: flex; flex-direction: column; gap: 6px; padding: 8px; margin-top: -4px; border: 1px solid #e3e3df; border-top: 0; border-radius: 0 0 4px 4px; background: #fafaf8; }
+.color-picker { display: flex; flex-direction: column; gap: 6px; }
+.color-toggle { display: flex; align-items: center; gap: 8px; padding: 4px 8px; align-self: flex-start; }
+.color-toggle:hover:not(:disabled) code { color: #fff; }
+.color-chip { width: 20px; height: 20px; border: 1px solid rgb(0 0 0 / 0.2); display: inline-block; }
+.color-panel { display: flex; flex-direction: column; gap: 8px; padding: 8px; border: 1px solid #e3e3df; background: #fff; }
+.color-square { position: relative; height: 140px; cursor: crosshair; touch-action: none; background-image: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, transparent); }
+.color-thumb { position: absolute; width: 14px; height: 14px; margin: -7px 0 0 -7px; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 0 1px rgb(0 0 0 / 0.4); pointer-events: none; }
+.color-hue { width: 100%; appearance: none; height: 12px; background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00); border: 0; }
+.color-hue::-webkit-slider-thumb { appearance: none; width: 10px; height: 16px; background: #fff; border: 1px solid #1d1d1b; }
+.color-hue::-moz-range-thumb { width: 10px; height: 16px; background: #fff; border: 1px solid #1d1d1b; border-radius: 0; }
+.color-hex { flex: 1; min-width: 0; font-family: "IBM Plex Mono", ui-monospace, monospace; }
+.color-swatches { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.color-swatch { aspect-ratio: 1; padding: 0; border: 1px solid rgb(0 0 0 / 0.2); }
+.color-swatch[aria-pressed="true"] { outline: 2px solid #1d1d1b; outline-offset: 1px; }
+.color-swatch:hover:not(:disabled) { border-color: #1d1d1b; }
 .shape-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
 .shape-add { aspect-ratio: 1; padding: 8px; container-type: inline-size; }
 .sticker-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }

@@ -16,13 +16,16 @@ import { commit, commitGesture, createHistory, redo, replace, undo, type History
 import { Inspector } from "./Inspector";
 import {
   addItem,
+  autoMobileLayout,
   convertPoint,
   duplicateItem,
   moveItems,
   moveLayer,
+  onlyMobileDiffers,
   placementOf,
   removeItem,
   roundPlacement,
+  sameMobileLayout,
   scaledMobileLayout,
   scatterLayout,
   setMobileVisible,
@@ -217,6 +220,30 @@ export function Editor(props: EditorProps) {
   const saving = useRef<Promise<void> | null>(null);
   const latestDoc = useRef(doc);
   latestDoc.current = doc;
+
+  // Automatic mobile layout: after every change, rebuild mobile from desktop. A
+  // change to the mobile layout alone means the owner arranged it by hand, which
+  // turns the automatic layout off (undo brings it back).
+  const lastAuto = useRef<SeasonDoc | null>(null);
+  useEffect(() => {
+    if (!doc.mobileAuto) {
+      lastAuto.current = null;
+      return;
+    }
+    const prev = lastAuto.current;
+    if (prev && prev !== doc && onlyMobileDiffers(prev, doc) && !sameMobileLayout(prev, doc)) {
+      lastAuto.current = null;
+      setHistory((h) => replace(h, { ...h.present, mobileAuto: false }));
+      return;
+    }
+    const auto = autoMobileLayout(doc);
+    if (sameMobileLayout(auto, doc)) {
+      lastAuto.current = doc;
+      return;
+    }
+    lastAuto.current = auto;
+    setHistory((h) => (h.present === doc ? replace(h, auto) : h));
+  }, [doc]);
   const fatal = save.kind === "error" && save.fatal;
 
   const saveNow = useCallback(async (): Promise<void> => {
@@ -1296,6 +1323,7 @@ export function Editor(props: EditorProps) {
           scatter={(s: Scatter) => change((d) => scatterLayout(d, layout, s))}
           sketchError={sketchError}
           clearSketchError={() => setSketchError(null)}
+          setMobileAuto={(on) => change((d) => (on ? autoMobileLayout({ ...d, mobileAuto: true }) : { ...d, mobileAuto: false }))}
           resetMobile={(kind) => {
             const what = kind === "scaled" ? "the desktop layout scaled down" : "a single column";
             if (!confirm(`Replace the whole mobile layout with ${what}?`)) return;
