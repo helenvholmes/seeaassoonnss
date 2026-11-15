@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 import { FOLLOW_DISTANCE, MAX_EFFECT_LETTERS, splitLetters } from "./letters";
 import { prefersReducedMotion, subscribeMotion, type MotionState } from "./motion";
 import type { QuoteEffect } from "@/lib/schema";
+import { typedCount, typeSchedule } from "@/lib/typewriter";
 
 interface Mover {
   el: HTMLElement;
@@ -35,13 +36,11 @@ interface Effect {
   /** Typewriter: when typing started (ms, performance.now), and letters typed so far. */
   start?: number;
   typed?: number;
+  /** Typewriter: when each letter appears, ms after the start. */
+  schedule?: number[];
 }
 
 const EASE = 0.12;
-/** Typewriter pace: ms per letter, so short quotes type slowly and long ones still finish in a few seconds. */
-function typeInterval(letters: number) {
-  return Math.min(70, Math.max(18, 2800 / Math.max(1, letters)));
-}
 /** How long the caret keeps blinking after the last letter, in ms. */
 const CARET_LINGER = 1800;
 
@@ -146,7 +145,8 @@ export function MotionLayer({ canvasWidth }: { canvasWidth: number }) {
           }
           const total = e.letters.length;
           if ((e.typed ?? 0) >= total) continue;
-          const n = Math.min(total, Math.floor((performance.now() - e.start) / typeInterval(total)) + 1);
+          e.schedule ??= typeSchedule(e.letters.map((l) => l.el.textContent ?? ""));
+          const n = typedCount(e.schedule, performance.now() - e.start, e.typed ?? 0);
           if (n !== e.typed) showTyped(e, n);
           if (n < total) moving = true;
           else {
