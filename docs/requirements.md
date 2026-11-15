@@ -221,6 +221,8 @@ Odyssey is built with seeaassoonnss: it is one season, and the route map is part
 3. **Method:** draw two copies of the same route path in two colors, one on top of the other. Set the top path's `stroke-dasharray` in proportion to scroll progress through the map section.
 4. **Steps tied to places:** each content section links to a place on the route. When a section comes into view, the map moves to that place and highlights it.
 5. **Reduced motion:** when the reader has reduced motion turned on, show the full route immediately with no animation.
+6. **Follow roads (added Nov 15).** A button in the route settings replaces the straight lines between stops with the driving route through them, from the public OSRM server on OpenStreetMap data (no key). Only the owner's editor asks for it; the path is saved with the route, so readers never call the service. The path is the fastest route, so a stop placed on a road the owner took pulls the line onto it. Adding or moving stops leaves the saved path as it is until the owner follows roads again.
+7. **Line-only style (added Nov 15).** A style setting shows only the route line on the page's own background, with no land, grey base line, stop dots or place label, as in "The Russia Left Behind". Linked items still move the map to their stop.
 
 ### Data and tools
 

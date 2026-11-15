@@ -673,6 +673,21 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
     editStops(order);
   };
   const removeStop = (index: number) => editStops(indexes().filter((i) => i !== index));
+  const [routing, setRouting] = useState(false);
+  // Asks for the driving route through the stops and saves it as the drawn path.
+  const followRoads = async () => {
+    setRouting(true);
+    setMessage(null);
+    try {
+      const { line } = await api<{ line: [number, number][] }>("/directions", { body: { stops: c.stops } });
+      set({ line }, "line");
+      setMessage("The line now follows the fastest driving route between stops. If you took a different road, add a stop on it.");
+    } catch (err) {
+      setMessage((err as Error).message);
+    } finally {
+      setRouting(false);
+    }
+  };
   const addStop = (p: { label: string; lat: number; lon: number }) => {
     editStops([...indexes(), -1], { name: p.label || `stop ${c.stops.length + 1}`, lat: p.lat, lon: p.lon });
     setMessage(null);
@@ -711,12 +726,15 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           <PlaceSearch onPick={addStop} onError={setMessage} label="Search" />
         </Field>
       ) : null}
-      {c.line.length ? (
-        <div className="stack" style={{ gap: 4 }}>
-          <span className="small muted">This route follows the path from the imported file, so new or moved stops are not on it.</span>
-          <button onClick={() => set({ line: [] }, "line")}>Use straight lines between stops</button>
+      <div className="stack" style={{ gap: 4 }}>
+        {c.line.length ? <span className="small muted">The line follows a saved path (roads or an imported file). After adding or moving stops, follow roads again to update it.</span> : null}
+        <div className="row">
+          <button disabled={c.stops.length < 2 || routing} onClick={followRoads}>
+            {routing ? "Finding roads…" : c.line.length ? "Follow roads again" : "Follow roads (driving)"}
+          </button>
+          {c.line.length ? <button onClick={() => set({ line: [] }, "line")}>Use straight lines</button> : null}
         </div>
-      ) : null}
+      </div>
       <div className="row">
         <button onClick={() => input.current?.click()}>Replace with another file…</button>
         <input
@@ -747,10 +765,18 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
         </Field>
       </div>
-      <label className="row small">
-        <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
-        Borders (countries, US states)
-      </label>
+      <Field label="Style">
+        <select value={c.style ?? "map"} onChange={(e) => set({ style: e.target.value as "map" | "line" }, "style")}>
+          <option value="map">Map: land, stops and the route</option>
+          <option value="line">Line only: just the route drawing in</option>
+        </select>
+      </Field>
+      {(c.style ?? "map") === "map" ? (
+        <label className="row small">
+          <input type="checkbox" checked={c.borders} onChange={(e) => set({ borders: e.target.checked }, "borders")} />
+          Borders (countries, US states)
+        </label>
+      ) : null}
     </>
   );
 }
