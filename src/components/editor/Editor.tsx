@@ -14,6 +14,7 @@ import { BackgroundLayer } from "../BackgroundLayer";
 import { modelUrl } from "../items/model-url";
 import { commit, commitGesture, createHistory, redo, replace, undo, type History } from "./history";
 import { Inspector } from "./Inspector";
+import { InlineQuoteEditor } from "./InlineQuoteEditor";
 import {
   addItem,
   autoMobileLayout,
@@ -160,6 +161,8 @@ export function Editor(props: EditorProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   // Crop mode for one photo: drag moves the photo inside its box, the wheel zooms.
   const [cropId, setCropId] = useState<string | null>(null);
+  // A quote whose text is being edited right on the canvas (double-click).
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [stageWidth, setStageWidth] = useState(1000);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
@@ -193,6 +196,7 @@ export function Editor(props: EditorProps) {
   const scale = stageWidth / canvasWidth;
   const selected = doc.items.find((i) => i.id === selectedId) ?? null;
   const selectedPlacement = selected ? placementOf(selected, layout) : null;
+  const editing = !!selected && selected.id === editingId && selected.type === "quote";
   // Two or more items selected with shift-click: they move together, with no handles.
   const groupIds = selected && extraIds.length ? [selected.id, ...extraIds.filter((x) => doc.items.some((i) => i.id === x && placementOf(i, layout)))] : [];
   const grouped = groupIds.length > 1;
@@ -1172,10 +1176,13 @@ export function Editor(props: EditorProps) {
                 else itemRefs.current.delete(item.id);
               }}
               data-item-id={item.id}
-              className={`item item-${item.type}${isSelected(item.id) ? " is-selected" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
+              className={`item item-${item.type}${isSelected(item.id) ? " is-selected" : ""}${editing && item.id === selectedId ? " is-editing" : ""}${p.locked ? " is-locked" : ""}${item.id === cropId ? " is-cropping" : ""}`}
               style={{ ...placementStyle(p, canvasHeight, canvasWidth), ...(item.id === cropId ? { zIndex: 100002 } : null) }}
               onDoubleClick={() => {
-                if (canCrop(item) && !p.locked) {
+                if (item.type === "quote") {
+                  setSelectedId(item.id);
+                  setEditingId(item.id);
+                } else if (canCrop(item) && !p.locked) {
                   setSelectedId(item.id);
                   setCropId(item.id);
                 }
@@ -1196,7 +1203,11 @@ export function Editor(props: EditorProps) {
               onMouseEnter={() => setHoveredId(item.id)}
               onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
             >
-              <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
+              {editing && item.id === selectedId && item.type === "quote" ? (
+                <InlineQuoteEditor item={item} doc={doc} layout={layout} placement={p} change={change} onDone={() => setEditingId(null)} />
+              ) : (
+                <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
+              )}
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
               {item.type === "photo" && item.content.parallax && item.content.fit === "cover" ? (
@@ -1231,7 +1242,7 @@ export function Editor(props: EditorProps) {
         <Moveable
           ref={moveableRef}
           target={target}
-          draggable={!locked}
+          draggable={!locked && !editing}
           resizable={!locked}
           rotatable={!locked && selected?.type !== "route"}
           keepRatio={shift}

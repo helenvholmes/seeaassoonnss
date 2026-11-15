@@ -1,5 +1,6 @@
 "use client";
 
+import { MarkdownTextarea } from "./MarkdownTextarea";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/client";
@@ -280,8 +281,8 @@ function SeasonSettings(props: Props) {
       <Field label="Title">
         <input type="text" value={doc.title} onChange={(e) => set("title", e.target.value)} />
       </Field>
-      <Field label="Subtitle (Markdown)">
-        <textarea rows={3} value={doc.subtitle} onChange={(e) => set("subtitle", e.target.value)} />
+      <Field label="Subtitle (Markdown: **bold** ⌘B, _italic_ ⌘I)">
+        <MarkdownTextarea rows={3} value={doc.subtitle} onChange={(v) => set("subtitle", v)} />
       </Field>
       <Field label="Period">
         <input type="text" placeholder="fall 2026" value={doc.period} onChange={(e) => set("period", e.target.value)} />
@@ -832,8 +833,8 @@ function ItemSettings(props: Props & { item: Item }) {
             <p className="small muted">Edit the {item.content.binding} in the season settings (click the empty canvas, or Season on a phone).</p>
           ) : (
             <>
-              <Field label="Text (Markdown: **bold**, *italic*, [link](https://…))">
-                <textarea rows={6} value={item.content.markdown} onChange={(e) => content({ markdown: e.target.value }, "markdown")} />
+              <Field label="Text (Markdown: **bold** ⌘B, _italic_ ⌘I, [link](https://…); or double-click the text)">
+                <MarkdownTextarea rows={6} value={item.content.markdown} onChange={(markdown) => content({ markdown }, "markdown")} />
               </Field>
               <Field label="Source">
                 <input type="text" value={item.content.source} onChange={(e) => content({ source: e.target.value }, "source")} />

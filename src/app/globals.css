@@ -136,6 +136,14 @@ input[type="text"], input[type="password"], input[type="number"], input[type="ur
 .editor .item * { pointer-events: none; }
 .editor .item.is-locked { cursor: default; }
 .editor .item.is-selected.is-locked { outline: 1px dashed #8a8a84; }
+/* Text edited in place: same type as on the page, in a box that fills the item. */
+.editor .item.is-editing { cursor: text; }
+.inline-quote-editor {
+  display: block; width: 100%; height: 100%; min-height: 1.3em; margin: 0; padding: 0;
+  border: 0; border-radius: 0; background: transparent; resize: none; overflow: hidden;
+  outline: 1px dashed #8a8a84; outline-offset: 2px;
+  -webkit-user-select: text; user-select: text; cursor: text;
+}
 .badge { position: absolute; top: 4px; left: 4px; font: 10px "IBM Plex Mono", monospace; background: #1d1d1b; color: #fff; padding: 1px 5px; border-radius: 3px; z-index: 1; }
 .badge-warn { background: #b3261e; }
 .editor .item:not(.is-selected) .badge-warn { opacity: 0; }

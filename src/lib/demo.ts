@@ -143,7 +143,7 @@ export async function createDemoSeason({ replace = false, log = (_: string) => {
 
   let doc: SeasonDoc = {
     ...emptySeasonDoc("demo season"),
-    subtitle: "placeholder items to *try the editor with*",
+    subtitle: "placeholder items to _try the editor with_",
     period: "any time",
     desktopHeight: 1500,
     backgroundLayer: leaves ? { kind: "sketch" as const, sketchId: leaves.id, name: leaves.name, code: leaves.code } : null,
