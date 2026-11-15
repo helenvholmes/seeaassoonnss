@@ -12,7 +12,8 @@ import { BASE_PATH, config } from "@/lib/config";
 
 // The landing page for the project: what it is and how to run your own copy. It
 // reads nothing from the database, so it builds and renders on a fresh fork. With
-// LANDING_PAGE=on, "/" sends visitors here (see next.config.ts).
+// LANDING_PAGE=on, "/" sends visitors here (see next.config.ts). On seeaassoonnss.app
+// it is served at "/" and "/about" instead (see vercel.json).
 export const dynamic = "force-static";
 
 const NAME = "seeaassoonnss";
@@ -21,7 +22,9 @@ const DESCRIPTION =
 
 export function generateMetadata(): Metadata {
   const site = process.env.SITE_URL;
-  const url = site ? new URL(`${BASE_PATH}/about`, site).toString() : undefined;
+  // With LANDING_PAGE=on this page is the site's front page (on seeaassoonnss.app,
+  // vercel.json serves it at "/" and "/about"), so "/" is its canonical address.
+  const url = site ? new URL(process.env.LANDING_PAGE === "on" ? "/" : `${BASE_PATH}/about`, site).toString() : undefined;
   return {
     title: `${NAME} · a page for a season of your life`,
     description: DESCRIPTION,

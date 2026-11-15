@@ -1,0 +1,23 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/seasons/about",
+      "has": [{ "type": "host", "value": "seeaassoonnss.app" }],
+      "destination": "/about",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "seeaassoonnss.app" }],
+      "destination": "/seasons/about"
+    },
+    {
+      "source": "/about",
+      "has": [{ "type": "host", "value": "seeaassoonnss.app" }],
+      "destination": "/seasons/about"
+    }
+  ]
+}
