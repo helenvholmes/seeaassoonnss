@@ -103,6 +103,23 @@ export function setPlacement(doc: SeasonDoc, id: string, patch: Partial<Placemen
   });
 }
 
+/**
+ * Moves several items together by (dx, dy) design units in one layout, rounded to
+ * whole units. Locked items, and items hidden in that layout, stay where they are.
+ */
+export function moveItems(doc: SeasonDoc, ids: readonly string[], dx: number, dy: number, layout: Layout = "desktop"): SeasonDoc {
+  const set = new Set(ids);
+  return {
+    ...doc,
+    items: doc.items.map((i) => {
+      const p = set.has(i.id) ? placementOf(i, layout) : null;
+      if (!p || p.locked) return i;
+      const moved = { ...p, x: Math.round(p.x + dx), y: Math.round(p.y + dy) };
+      return layout === "desktop" ? { ...i, desktop: moved } : { ...i, mobile: moved };
+    }),
+  };
+}
+
 /** Hides an item on mobile, or shows it again at its scaled desktop position. */
 export function setMobileVisible(doc: SeasonDoc, id: string, visible: boolean): SeasonDoc {
   return updateItem(doc, id, (i) => {
