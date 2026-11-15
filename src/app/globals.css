@@ -304,6 +304,15 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 }
 .route-place.reached { opacity: 0.75; }
 .route-place.current { opacity: 1; font-weight: 600; }
+/* Line-only style, after the railway map in "The Russia Left Behind" (NYT, 2013). */
+.route-svg-line .route-line { stroke-opacity: 0.75; }
+.route-line-ahead { fill: none; stroke: #c4c4c0; stroke-linecap: butt; }
+.route-dot { fill: #9a9a96; transition: r 0.3s, fill 0.3s; }
+.route-dot.current { fill: #1d1d1b; }
+.route-svg-line .route-place { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; stroke: #fff; transition: opacity 0.5s, fill 0.5s; }
+.route-svg-line .route-place.reached { opacity: 1; }
+.route-svg-line.ahead-faint .route-place { opacity: 1; fill: #c4c4c0; }
+.route-svg-line.ahead-faint .route-place.reached { fill: #1d1d1b; }
 @media (prefers-reduced-motion: reduce) { .route-move, .route-stop, .route-place { transition: none; } }
 .route-label {
   position: absolute; left: 12px; top: 12px; z-index: 1;

@@ -122,3 +122,12 @@ test("a rotated route still fits the frame, and the frame keeps its angle", () =
   assert.ok(Math.abs(b[1] - a[1]) > Math.abs(b[0] - a[0]));
   assert.equal(fitRoute({ stops: content.stops, line: [] }, 400, 900).angle, 0);
 });
+
+test("room for place names keeps the route clear of that side", () => {
+  const content = { stops: [{ name: "a", lon: 30, lat: 60 }, { name: "b", lon: 31, lat: 56 }], line: [] };
+  const f = fitRoute(content, 500, 900, { left: 150 });
+  for (const s of content.stops) {
+    const [x] = routeProjection(f)([s.lon, s.lat])!;
+    assert.ok(x > 150, `x ${x}`);
+  }
+});
