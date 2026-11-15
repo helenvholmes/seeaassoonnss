@@ -177,6 +177,10 @@ export function Editor(props: EditorProps) {
   const moveableRef = useRef<Moveable>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
+  // Alt+drag: the press copies the item in place and the drag moves the copy.
+  // `before` is the document without the copy, so one undo removes it; `dragged`
+  // turns true once the copy has moved (a press without a drag leaves no copy).
+  const altCopy = useRef<{ before: SeasonDoc; originals: string[]; dragged: boolean } | null>(null);
 
   const canvasWidth = CANVAS_WIDTH[layout];
   // The page grows to fit its lowest item. Below the end of the page the editor
@@ -717,11 +721,16 @@ export function Editor(props: EditorProps) {
     setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch, layout)));
   };
   const startGesture = () => {
-    gestureStart.current = latestDoc.current;
+    gestureStart.current = altCopy.current?.before ?? latestDoc.current;
   };
   const endGesture = (moved = false) => {
     const before = gestureStart.current;
     gestureStart.current = null;
+    if (altCopy.current) {
+      // A press without a drag: the release handler in startAltCopy takes the copy away.
+      if (!moved) return;
+      altCopy.current.dragged = true;
+    }
     if (!before || !selectedId) return;
     const snapping = moved && snapOn && !snapSkip;
     setHistory((h) => {
@@ -807,11 +816,11 @@ export function Editor(props: EditorProps) {
 
   /**
    * Drag on one of several selected items: they all follow the pointer or the
-   * finger. A press that does not move selects just that item.
+   * finger. A press that does not move calls `onTap`. `before` is what one undo
+   * goes back to; the items move from where they are now.
    */
-  const startGroupDrag = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
-    const ids = groupIds;
-    const before = latestDoc.current;
+  const startGroupDrag = (ids: string[], e: React.MouseEvent | React.TouchEvent, onTap: () => void, before = latestDoc.current) => {
+    const base = latestDoc.current;
     const touch = "touches" in e;
     const point = (ev: MouseEvent | TouchEvent | React.MouseEvent | React.TouchEvent) => ("touches" in ev ? ev.touches[0] ?? ev.changedTouches[0] : ev);
     const { clientX: sx, clientY: sy } = point(e);
@@ -821,7 +830,7 @@ export function Editor(props: EditorProps) {
       const { clientX, clientY } = point(ev);
       if (!moved && Math.hypot(clientX - sx, clientY - sy) < 3) return;
       moved = true;
-      const next = moveItems(before, ids, (clientX - sx) / scale, (clientY - sy) / scale, layout);
+      const next = moveItems(base, ids, (clientX - sx) / scale, (clientY - sy) / scale, layout);
       setHistory((h) => replace(h, next));
     };
     const [moveEvent, upEvent] = touch ? (["touchmove", "touchend"] as const) : (["mousemove", "mouseup"] as const);
@@ -830,11 +839,55 @@ export function Editor(props: EditorProps) {
       window.removeEventListener(upEvent, up);
       if (touch) window.removeEventListener("touchcancel", up);
       if (moved) setHistory((h) => commitGesture(h, before));
-      else setSelectedId(item.id);
+      else onTap();
     };
     window.addEventListener(moveEvent, move, { passive: false });
     window.addEventListener(upEvent, up);
     if (touch) window.addEventListener("touchcancel", up);
+  };
+
+  /**
+   * Alt+drag: copies the pressed item (or every selected item, when it is one of
+   * several) exactly in place, selects the copies and drags them. The originals
+   * stay. Returns false when there is nothing to copy (locked items).
+   */
+  const startAltCopy = (item: Item, e: React.MouseEvent) => {
+    const isLocked = (itemId: string) => {
+      const it = latestDoc.current.items.find((i) => i.id === itemId);
+      return !it || !!placementOf(it, layout)?.locked;
+    };
+    const originals = (grouped && groupIds.includes(item.id) ? groupIds : [item.id]).filter((x) => !isLocked(x));
+    if (!originals.length) return false;
+    const before = latestDoc.current;
+    const copies = originals.map(() => crypto.randomUUID());
+    const next = originals.reduce((d, id, n) => duplicateItem(d, id, copies[n], layout, false), before);
+    flushSync(() => {
+      setHistory((h) => replace(h, next));
+      setPrimaryId(copies[0]);
+      setExtraIds(copies.slice(1));
+    });
+    const takeBack = () => {
+      setHistory((h) => replace(h, before));
+      setPrimaryId(originals[0]);
+      setExtraIds(originals.slice(1));
+    };
+    if (copies.length > 1) {
+      startGroupDrag(copies, e, takeBack, before);
+      return true;
+    }
+    altCopy.current = { before, originals, dragged: false };
+    const up = () => {
+      window.removeEventListener("mouseup", up);
+      // After Moveable's own release handling (endGesture), which marks a real drag.
+      setTimeout(() => {
+        const a = altCopy.current;
+        altCopy.current = null;
+        if (a && !a.dragged) takeBack();
+      });
+    };
+    window.addEventListener("mouseup", up);
+    moveableRef.current?.dragStart(e.nativeEvent);
+    return true;
   };
 
   const onItemPress = (item: Item, e: React.MouseEvent | React.TouchEvent) => {
@@ -842,7 +895,8 @@ export function Editor(props: EditorProps) {
     e.stopPropagation();
     if (cropId === item.id) return startCropPan(item, e);
     if (e.shiftKey && !("touches" in e)) return toggleSelected(item.id);
-    if (grouped && groupIds.includes(item.id)) return startGroupDrag(item, e);
+    if (e.altKey && !("touches" in e) && startAltCopy(item, e)) return;
+    if (grouped && groupIds.includes(item.id)) return startGroupDrag(groupIds, e, () => setSelectedId(item.id));
     if (selectedId !== item.id) flushSync(() => setSelectedId(item.id));
     if (!placementOf(item, layout)?.locked) moveableRef.current?.dragStart(e.nativeEvent);
   };
