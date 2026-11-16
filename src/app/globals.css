@@ -166,6 +166,9 @@ body.is-resizing-panel iframe { pointer-events: none; }
   outline: 1px dashed #8a8a84; outline-offset: 2px;
   -webkit-user-select: text; user-select: text; cursor: text;
 }
+/* Items ignore the mouse inside (.editor .item *); the text being edited takes it back,
+   so clicks and drags place the cursor and select text. */
+.editor .item .inline-quote-editor { pointer-events: auto; }
 .badge { position: absolute; top: 4px; left: 4px; font: 10px "IBM Plex Mono", monospace; background: #1d1d1b; color: #fff; padding: 1px 5px; border-radius: 3px; z-index: 1; }
 .badge-warn { background: #b3261e; }
 .editor .item:not(.is-selected) .badge-warn { opacity: 0; }
