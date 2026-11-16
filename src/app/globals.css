@@ -110,7 +110,7 @@ input[type="text"], input[type="password"], input[type="number"], input[type="ur
 /* ---------- Editor ---------- */
 .editor {
   display: grid;
-  grid-template-columns: 200px 1fr 300px;
+  grid-template-columns: var(--tools-w, 200px) minmax(0, 1fr) var(--inspector-w, 300px);
   grid-template-rows: auto 1fr;
   height: 100vh;
   height: 100dvh;
@@ -122,7 +122,27 @@ input[type="text"], input[type="password"], input[type="number"], input[type="ur
   display: flex; justify-content: space-between; align-items: center; gap: 16px;
   padding: 8px 16px; background: #fff; border-bottom: 1px solid #dcdcd6;
 }
-.editor-tools, .editor-inspector { background: #fff; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+.editor-tools, .editor-inspector { background: #fff; padding: 16px; overflow-y: auto; overflow-x: hidden; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+/* Nothing in a panel may be wider than the panel: long dropdown text is cut off with … instead of scrolling the panel sideways. */
+.editor-tools > *, .editor-inspector > *, .editor-inspector label, .editor-inspector .row > * { min-width: 0; }
+.editor-tools select, .editor-inspector select { min-width: 0; max-width: 100%; text-overflow: ellipsis; }
+.editor-inspector input[type="range"] { min-width: 0; width: 100%; }
+/* Desktop: each part keeps its own column, and the panel edges can be dragged. */
+@media (min-width: 900px) {
+  .editor-tools { grid-column: 1; grid-row: 2; }
+  .editor-stage { grid-column: 2; grid-row: 2; }
+  .editor-inspector { grid-column: 3; grid-row: 2; }
+}
+.panel-handle {
+  grid-column: 2; grid-row: 2; z-index: 5; width: 9px; cursor: col-resize; touch-action: none; position: relative;
+}
+.panel-handle-tools { justify-self: start; margin-left: -5px; }
+.panel-handle-inspector { justify-self: end; margin-right: -5px; }
+.panel-handle::after { content: ""; position: absolute; top: 0; bottom: 0; left: 4px; width: 1px; background: transparent; transition: background 0.15s; }
+.panel-handle:hover::after, .panel-handle:focus-visible::after, .panel-handle.is-dragging::after { background: #1d1d1b; width: 2px; left: 3.5px; }
+.panel-handle:focus-visible { outline: none; }
+body.is-resizing-panel { cursor: col-resize; user-select: none; }
+body.is-resizing-panel iframe { pointer-events: none; }
 .editor-tools { border-right: 1px solid #dcdcd6; }
 .editor-inspector { border-left: 1px solid #dcdcd6; }
 .editor-stage { position: relative; overflow: auto; padding: 32px; }
@@ -152,7 +172,7 @@ input[type="text"], input[type="password"], input[type="number"], input[type="ur
 .tools-heading { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field > span { font-size: 11px; opacity: 0.7; }
-.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.grid2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; }
 .small { font-size: 11px; }
 .quiet-link { color: inherit; opacity: 0.7; }
 hr { border: 0; border-top: 1px solid #e3e3df; width: 100%; margin: 8px 0; }
