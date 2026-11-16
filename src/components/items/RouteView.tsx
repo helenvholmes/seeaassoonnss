@@ -67,6 +67,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
   const drawn = useRef<SVGPathElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const [editorPanelHeight, setEditorPanelHeight] = useState<number | null>(null);
+  const [editorBandHeight, setEditorBandHeight] = useState(0);
   const [progress, setProgress] = useState(interactive ? 0 : 1);
   const [active, setActive] = useState<number | null>(null);
   const [reduced, setReduced] = useState(false);
@@ -81,6 +82,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
       if (!interactive) {
         const scale = b.clientWidth / placement.w;
         setEditorPanelHeight(Math.min(b.clientHeight, SCREEN_UNITS[layout] * scale));
+        setEditorBandHeight(b.clientHeight);
       }
       const w = Math.max(QUANTUM, Math.round(el.clientWidth / QUANTUM) * QUANTUM);
       const h = Math.max(QUANTUM, Math.round(el.clientHeight / QUANTUM) * QUANTUM);
@@ -109,8 +111,11 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
       names = place();
       const over = nameOverflow(points, sizes, names, frame);
       if (over.left + over.right + over.top + over.bottom > 0.5) {
-        const room = (n: number) => (n > 0.5 ? n + 6 : 0);
-        frame = fitRoute(c, size.w, size.h, { left: room(over.left), right: room(over.right), top: room(over.top), bottom: room(over.bottom) });
+        // The same room on opposite sides, so the route stays centered in the frame.
+        const room = (a: number, b: number) => (Math.max(a, b) > 0.5 ? Math.max(a, b) + 6 : 0);
+        const x = room(over.left, over.right);
+        const y = room(over.top, over.bottom);
+        frame = fitRoute(c, size.w, size.h, { left: x, right: x, top: y, bottom: y });
         projection = routeProjection(frame);
         points = c.stops.map((s) => (projection([s.lon, s.lat]) ?? [0, 0]) as [number, number]);
         names = place();
@@ -183,7 +188,12 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
 
   return (
     <div className="route-band" ref={band}>
-      <div className={`route-panel${interactive ? " route-sticky" : ""}`} ref={panel} style={editorPanelHeight ? { height: editorPanelHeight } : undefined}>
+      <div
+        className={`route-panel${interactive ? " route-sticky" : ""}`}
+        ref={panel}
+        // In the editor, the preview of the pinned map sits in the middle of the band.
+        style={editorPanelHeight ? { height: editorPanelHeight, top: Math.max(0, (editorBandHeight - editorPanelHeight) / 2) } : undefined}
+      >
         {geometry && size ? (
           <svg
             className={`${lineOnly ? "route-svg-line" : ""}${aheadFaint ? " ahead-faint" : ""}`}
@@ -251,7 +261,42 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
           </span>
         ) : null}
       </div>
-      {!interactive ? <span className="route-band-note">route map band · the map stays on screen while the page scrolls through here</span> : null}
+      {!interactive && editorPanelHeight && geometry ? (
+        <ScrollScale band={editorBandHeight} screen={editorPanelHeight} stops={c.stops.map((s, i) => ({ name: s.name, at: geometry.fractions[i] }))} />
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * The editor's guide to how the band plays, measured at the middle of the screen
+ * (where linked items move the map): the line starts drawing when the top mark
+ * reaches mid-screen, reaches each stop at its tick, and is complete at the bottom
+ * mark. Above and below the marks, the map scrolls in and out with the page.
+ */
+function ScrollScale({ band, screen, stops }: { band: number; screen: number; stops: { name: string; at: number }[] }) {
+  const travel = band - screen;
+  if (travel <= 0) {
+    return <span className="route-scale-note">Make this band taller than one screen: the route draws in while the page scrolls through it.</span>;
+  }
+  const start = screen / 2;
+  const y = (f: number) => start + f * travel;
+  return (
+    <div className="route-scale" aria-hidden>
+      <div className="route-scale-outside" style={{ top: 0, height: start }} />
+      <div className="route-scale-outside" style={{ top: y(1), bottom: 0 }} />
+      <div className="route-scale-rail" style={{ top: start, height: travel }} />
+      <div className="route-scale-mark" style={{ top: start }}>
+        <span>▼ line starts drawing at mid-screen</span>
+      </div>
+      {stops.map((s, i) => (
+        <div key={i} className="route-scale-stop" style={{ top: y(s.at) }}>
+          <span>{s.name}</span>
+        </div>
+      ))}
+      <div className="route-scale-mark is-end" style={{ top: y(1) }}>
+        <span>▲ line complete · map scrolls away below</span>
+      </div>
     </div>
   );
 }
