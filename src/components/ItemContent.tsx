@@ -190,7 +190,17 @@ function Quote({ item, doc, layout, placement, interactive }: { item: QuoteItem;
 }
 
 /** What an item shows, without its position. The editor and the public page share it. */
-export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: string; interactive: boolean; layout: Layout; placement: Placement; cropping?: boolean }) {
+export function ItemContent(props: {
+  item: Item;
+  doc: SeasonDoc;
+  mediaBase: string;
+  interactive: boolean;
+  layout: Layout;
+  placement: Placement;
+  cropping?: boolean;
+  /** Editor only: a route map's start mark was dragged to `drawStart`. */
+  onRouteDrawStart?: (drawStart: number) => void;
+}) {
   const { item, doc, mediaBase, interactive, layout, placement } = props;
   switch (item.type) {
     case "photo":
@@ -211,7 +221,7 @@ export function ItemContent(props: { item: Item; doc: SeasonDoc; mediaBase: stri
     case "voice_note":
       return <VoiceNoteView item={item} mediaBase={mediaBase} interactive={interactive} />;
     case "route":
-      return <RouteView item={item} interactive={interactive} layout={layout} placement={placement} />;
+      return <RouteView item={item} interactive={interactive} layout={layout} placement={placement} onDrawStart={props.onRouteDrawStart} />;
     case "model_3d":
       return <ModelView content={item.content} mediaBase={mediaBase} live={interactive} poster={modelPoster(mediaBase, item.content)} />;
     case "shape":

@@ -44,7 +44,20 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
  * to that stop when they reach the middle of the screen. With reduced motion, the
  * whole route shows at once and nothing moves.
  */
-export function RouteView({ item, interactive, layout, placement }: { item: RouteItem; interactive: boolean; layout: Layout; placement: Placement }) {
+export function RouteView({
+  item,
+  interactive,
+  layout,
+  placement,
+  onDrawStart,
+}: {
+  item: RouteItem;
+  interactive: boolean;
+  layout: Layout;
+  placement: Placement;
+  /** Editor only: called while the start mark is dragged. */
+  onDrawStart?: (drawStart: number) => void;
+}) {
   const c = item.content;
   const lineOnly = c.style === "line";
   const lineWidth = c.lineWidth ?? 3.5;
@@ -270,7 +283,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
         ) : null}
       </div>
       {!interactive && editorPanelHeight && geometry ? (
-        <ScrollScale band={editorBandHeight} screen={editorPanelHeight} drawStart={c.drawStart ?? 0} stops={c.stops.map((s, i) => ({ name: s.name, at: geometry.fractions[i] }))} />
+        <ScrollScale band={editorBandHeight} screen={editorPanelHeight} drawStart={c.drawStart ?? 0} onDrawStart={onDrawStart} color={c.color} stops={c.stops.map((s, i) => ({ name: s.name, at: geometry.fractions[i] }))} />
       ) : null}
     </div>
   );
@@ -282,7 +295,64 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
  * reaches mid-screen, reaches each stop at its tick, and is complete at the bottom
  * mark. Above and below the marks, the map scrolls in and out with the page.
  */
-function ScrollScale({ band, screen, drawStart, stops }: { band: number; screen: number; drawStart: number; stops: { name: string; at: number }[] }) {
+function ScrollScale({
+  band,
+  screen,
+  drawStart,
+  onDrawStart,
+  color,
+  stops,
+}: {
+  color: string;
+  band: number;
+  screen: number;
+  drawStart: number;
+  onDrawStart?: (drawStart: number) => void;
+  stops: { name: string; at: number }[];
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const grip = useRef<HTMLDivElement>(null);
+  // The start mark can be dragged. Native listeners stop the press before the editor
+  // sees it, so dragging the mark never moves or deselects the route item.
+  useEffect(() => {
+    const el = grip.current;
+    if (!el || !onDrawStart) return;
+    const stop = (e: Event) => e.stopPropagation();
+    const down = (e: PointerEvent) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      document.body.classList.add("is-dragging-route-start");
+      const move = (ev: PointerEvent) => {
+        const r = box.current?.getBoundingClientRect();
+        if (!r) return;
+        // The band is drawn at the editor's zoom; measure in its own on-screen pixels.
+        const k = r.height / band;
+        const s = ((ev.clientY - r.top) / k - screen / 2) / (band - screen);
+        onDrawStart(Math.round(Math.min(0.9, Math.max(0, s)) * 100) / 100);
+      };
+      const up = () => {
+        document.body.classList.remove("is-dragging-route-start");
+        el.removeEventListener("pointermove", move);
+        el.removeEventListener("pointerup", up);
+        el.removeEventListener("pointercancel", up);
+      };
+      el.addEventListener("pointermove", move);
+      el.addEventListener("pointerup", up);
+      el.addEventListener("pointercancel", up);
+    };
+    el.addEventListener("pointerdown", down);
+    el.addEventListener("mousedown", stop);
+    el.addEventListener("touchstart", stop);
+    el.addEventListener("dblclick", stop);
+    return () => {
+      el.removeEventListener("pointerdown", down);
+      el.removeEventListener("mousedown", stop);
+      el.removeEventListener("touchstart", stop);
+      el.removeEventListener("dblclick", stop);
+    };
+  }, [onDrawStart, band, screen]);
   const travel = band - screen;
   if (travel <= 0) {
     return <span className="route-scale-note">Make this band taller than one screen: the route draws in while the page scrolls through it.</span>;
@@ -293,7 +363,7 @@ function ScrollScale({ band, screen, drawStart, stops }: { band: number; screen:
   const end = pin + travel;
   const y = (f: number) => begin + f * (end - begin);
   return (
-    <div className="route-scale" aria-hidden>
+    <div className="route-scale" ref={box} aria-hidden style={{ "--route": color } as React.CSSProperties}>
       <div className="route-scale-outside" style={{ top: 0, height: pin }} />
       <div className="route-scale-outside" style={{ top: end, bottom: 0 }} />
       {s > 0 ? (
@@ -305,8 +375,13 @@ function ScrollScale({ band, screen, drawStart, stops }: { band: number; screen:
         </>
       ) : null}
       <div className="route-scale-rail" style={{ top: begin, height: end - begin }} />
-      <div className="route-scale-mark" style={{ top: begin }}>
+      <div className={`route-scale-mark is-start${onDrawStart ? " is-draggable" : ""}`} style={{ top: begin }}>
         <span>▼ line starts drawing at mid-screen</span>
+        {onDrawStart ? (
+          <div ref={grip} className="route-scale-grip" title="Drag to change when the line starts drawing">
+            ↕ drag
+          </div>
+        ) : null}
       </div>
       {stops.map((s, i) => (
         <div key={i} className="route-scale-stop" style={{ top: y(s.at) }}>

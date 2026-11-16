@@ -1276,7 +1276,24 @@ export function Editor(props: EditorProps) {
               {editing && item.id === selectedId && item.type === "quote" ? (
                 <InlineQuoteEditor item={item} doc={doc} layout={layout} placement={p} change={change} onDone={() => setEditingId(null)} />
               ) : (
-                <ItemContent item={item} doc={doc} mediaBase={mediaBase} interactive={false} layout={layout} placement={p} cropping={item.id === cropId} />
+                <ItemContent
+                  item={item}
+                  doc={doc}
+                  mediaBase={mediaBase}
+                  interactive={false}
+                  layout={layout}
+                  placement={p}
+                  cropping={item.id === cropId}
+                  onRouteDrawStart={
+                    item.type === "route"
+                      ? (drawStart) => {
+                          setSelectedId(item.id);
+                          // One undo step for the whole drag (changes with the same key merge).
+                          change((d) => updateItem(d, item.id, (i) => (i.type === "route" ? { ...i, content: { ...i.content, drawStart } } : i)), `content:${item.id}:drawStart`);
+                        }
+                      : undefined
+                  }
+                />
               )}
               {item.type === "photo" && !item.content.alt ? <span className="badge badge-warn">no alt text</span> : null}
               {p.locked && item.id === selectedId ? <span className="badge">locked</span> : null}
