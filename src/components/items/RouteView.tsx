@@ -3,7 +3,7 @@
 import { geoPath } from "d3-geo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BASE_PATH, MAP_VERSION } from "@/lib/client";
-import { fitRoute, nameOverflow, nameSize, placeNames, routeCoordinates, routeProjection, sampleRoute, stopFractions, type NamePlacement, type RouteFrame } from "@/lib/route";
+import { drawProgress, fitRoute, nameOverflow, nameSize, placeNames, routeCoordinates, routeProjection, sampleRoute, stopFractions, type NamePlacement, type RouteFrame } from "@/lib/route";
 import type { Layout, Placement, RouteItem } from "@/lib/schema";
 
 const NAME_FONT = "Inter";
@@ -154,7 +154,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
       const vh = window.innerHeight;
       const travel = rect.height - p.offsetHeight;
       const raw = travel > 0 ? -rect.top / travel : (vh - rect.top) / (vh + rect.height);
-      setProgress(reduce ? 1 : Math.min(1, Math.max(0, raw)));
+      setProgress(reduce ? 1 : drawProgress(raw, c.drawStart ?? 0));
 
       let next: number | null = null;
       if (rect.bottom > 0 && rect.top < vh) {
@@ -182,7 +182,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
       window.removeEventListener("resize", onScroll);
       if (frame) cancelAnimationFrame(frame);
     };
-  }, [interactive, item.id, c.stops.length]);
+  }, [interactive, item.id, c.stops.length, c.drawStart]);
 
   const zoom = active !== null && !reduced && geometry ? c.stepZoom : 1;
   const focus = active !== null && geometry ? geometry.points[active] : null;
@@ -270,7 +270,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
         ) : null}
       </div>
       {!interactive && editorPanelHeight && geometry ? (
-        <ScrollScale band={editorBandHeight} screen={editorPanelHeight} stops={c.stops.map((s, i) => ({ name: s.name, at: geometry.fractions[i] }))} />
+        <ScrollScale band={editorBandHeight} screen={editorPanelHeight} drawStart={c.drawStart ?? 0} stops={c.stops.map((s, i) => ({ name: s.name, at: geometry.fractions[i] }))} />
       ) : null}
     </div>
   );
@@ -282,19 +282,30 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
  * reaches mid-screen, reaches each stop at its tick, and is complete at the bottom
  * mark. Above and below the marks, the map scrolls in and out with the page.
  */
-function ScrollScale({ band, screen, stops }: { band: number; screen: number; stops: { name: string; at: number }[] }) {
+function ScrollScale({ band, screen, drawStart, stops }: { band: number; screen: number; drawStart: number; stops: { name: string; at: number }[] }) {
   const travel = band - screen;
   if (travel <= 0) {
     return <span className="route-scale-note">Make this band taller than one screen: the route draws in while the page scrolls through it.</span>;
   }
-  const start = screen / 2;
-  const y = (f: number) => start + f * travel;
+  const pin = screen / 2;
+  const s = Math.min(0.9, Math.max(0, drawStart));
+  const begin = pin + s * travel;
+  const end = pin + travel;
+  const y = (f: number) => begin + f * (end - begin);
   return (
     <div className="route-scale" aria-hidden>
-      <div className="route-scale-outside" style={{ top: 0, height: start }} />
-      <div className="route-scale-outside" style={{ top: y(1), bottom: 0 }} />
-      <div className="route-scale-rail" style={{ top: start, height: travel }} />
-      <div className="route-scale-mark" style={{ top: start }}>
+      <div className="route-scale-outside" style={{ top: 0, height: pin }} />
+      <div className="route-scale-outside" style={{ top: end, bottom: 0 }} />
+      {s > 0 ? (
+        <>
+          <div className="route-scale-mark is-pin" style={{ top: pin }}>
+            <span>▼ map pins · line waits</span>
+          </div>
+          <div className="route-scale-wait" style={{ top: pin, height: begin - pin }} />
+        </>
+      ) : null}
+      <div className="route-scale-rail" style={{ top: begin, height: end - begin }} />
+      <div className="route-scale-mark" style={{ top: begin }}>
         <span>▼ line starts drawing at mid-screen</span>
       </div>
       {stops.map((s, i) => (

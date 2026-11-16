@@ -221,6 +221,8 @@ export const routeSchema = z.object({
     borders: z.boolean(),
     /** How far the map zooms in on a stop when an item linked to it is in view. */
     stepZoom: num.min(1).max(16),
+    /** How far into the band's scroll (0–0.9) the line waits before it starts drawing; it still finishes at the end. */
+    drawStart: num.min(0).max(0.9).optional(),
     /** "map" (default): land, stops and the line. "line": only the line, on the page's own background. */
     style: z.enum(["map", "line"]).optional(),
     /** Place names along the line, each appearing when the line reaches it. */
