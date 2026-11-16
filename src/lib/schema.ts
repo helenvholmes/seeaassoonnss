@@ -231,6 +231,8 @@ export const routeSchema = z.object({
     ahead: z.enum(["faint", "hidden"]).optional(),
     /** Which side of a stop its name sits on (default right). */
     labelSide: z.enum(["left", "right"]).optional(),
+    /** What the saved line was last made to follow, so the editor can offer to redo it the same way. */
+    follow: z.enum(["roads", "rail"]).optional(),
   }),
 });
 
