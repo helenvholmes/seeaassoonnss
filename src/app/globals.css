@@ -345,16 +345,19 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .route-line-base { fill: none; stroke: #c9c9c2; stroke-linecap: round; stroke-linejoin: round; }
 .route-line { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 .route-stop { fill: #fbfbf9; stroke: #1d1d1b; transition: r 0.3s; }
-/* Place names: Inter, regular weight, no outline. */
-.route-place { font-family: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 400; fill: #1d1d1b; opacity: 0; transition: opacity 0.5s, fill 0.5s; }
-.route-place.reached { opacity: 1; }
+/* Place names: Inter, regular weight, no outline. Each stays hidden until the line
+   reaches its stop, then softly enters: it fades in, rises a little and comes into focus. */
+.route-place {
+  font-family: Inter, "Helvetica Neue", Helvetica, Arial, sans-serif; font-weight: 400; fill: #1d1d1b;
+  opacity: 0; transform-box: fill-box; transform: translateY(0.4em); filter: blur(2px);
+  transition: opacity 0.8s ease, transform 0.9s cubic-bezier(0.2, 0.7, 0.2, 1), filter 0.8s ease;
+}
+.route-place.reached { opacity: 1; transform: none; filter: none; }
 /* Line-only style, after the railway map in "The Russia Left Behind" (NYT, 2013). */
 .route-svg-line .route-line { stroke-opacity: 0.75; }
 .route-line-ahead { fill: none; stroke: #c4c4c0; stroke-linecap: butt; }
 .route-dot { fill: #9a9a96; transition: r 0.3s, fill 0.3s; }
 .route-dot.current { fill: #1d1d1b; }
-.route-svg-line.ahead-faint .route-place { opacity: 1; fill: #c4c4c0; }
-.route-svg-line.ahead-faint .route-place.reached { fill: #1d1d1b; }
 @media (prefers-reduced-motion: reduce) { .route-move, .route-stop, .route-place { transition: none; } }
 .route-label {
   position: absolute; left: 12px; top: 12px; z-index: 1;
