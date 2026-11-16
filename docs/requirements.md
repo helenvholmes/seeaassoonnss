@@ -228,6 +228,10 @@ Odyssey is built with seeaassoonnss: it is one season, and the route map is part
 10. **Follow railway (added Nov 15).** Next to Follow roads, Follow railway makes the line run along train tracks between stops, from the public BRouter server's rail profile (OpenStreetMap data, no key). Stops should be stations on the line taken: a town on a branch line becomes a spur out and back. The route remembers which it last followed.
 11. **Place names and the band in the editor (added Nov 15).** Place names are set in Inter, regular weight with no outline, at a size that grows with the line. Each name sits wherever it covers the least of the line, the stops and the other names, inside the frame; the map leaves equal room on opposite sides so the route stays centered. In the editor the map preview sits in the middle of the band, and a scale down its left edge shows, at mid-screen, where the line starts drawing, where it reaches each stop and where it is complete; the striped parts above and below are where the map scrolls in and out.
 
+### Editor zoom and pan (added Nov 15)
+
+The page is a labeled frame on a larger artboard. Zoom with a trackpad pinch, ⌘/Ctrl + scroll, ⌘+ / ⌘−, or the controls in the stage's corner (which show the real size, 100% = one design unit per pixel); ⌘0 or Fit fits the page to the stage's width. The point under the pointer stays put while zooming. Pan by scrolling (Shift + scroll for sideways), or by holding Space or the middle mouse button and dragging. Zoom is desktop-only; small screens keep the fitted page.
+
 ### Data and tools
 
 1. **Input:** an ordered list of places (name, latitude, longitude). One possible source: the owner's Odyssey list in Google Maps.

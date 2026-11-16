@@ -78,6 +78,7 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
     const el = panel.current;
     const b = band.current;
     if (!el || !b) return;
+    let settle = 0;
     const measure = () => {
       if (!interactive) {
         const scale = b.clientWidth / placement.w;
@@ -86,13 +87,20 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
       }
       const w = Math.max(QUANTUM, Math.round(el.clientWidth / QUANTUM) * QUANTUM);
       const h = Math.max(QUANTUM, Math.round(el.clientHeight / QUANTUM) * QUANTUM);
-      setSize((s) => (s && s.w === w && s.h === h ? s : { w, h }));
+      const apply = () => setSize((s) => (s && s.w === w && s.h === h ? s : { w, h }));
+      // In the editor, wait for zooming to settle before drawing (and fetching land) at the new size.
+      window.clearTimeout(settle);
+      if (interactive) apply();
+      else settle = window.setTimeout(apply, 180);
     };
     measure();
     const ro = new ResizeObserver(measure);
     ro.observe(el);
     ro.observe(b);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      window.clearTimeout(settle);
+    };
   }, [interactive, layout, placement.w]);
 
   const geometry = useMemo(() => {
