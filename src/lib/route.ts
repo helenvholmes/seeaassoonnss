@@ -2,7 +2,7 @@
 // The browser draws the route line and the server draws the land behind it, so
 // both must build exactly the same projection: fitRoute() rounds its numbers and
 // routeProjection() rebuilds a projection from them on either side.
-import { geoDistance, geoMercator, type GeoProjection } from "d3-geo";
+import { geoDistance, geoInterpolate, geoMercator, type GeoProjection } from "d3-geo";
 import { ROUTE_MAX_LINE_POINTS, ROUTE_MAX_STOPS, type RouteContent } from "./schema.ts";
 
 type Position = [number, number];
@@ -138,11 +138,18 @@ export function routeProjection(f: RouteFrame): GeoProjection {
   return geoMercator().rotate([-f.lon, 0]).angle(f.angle).scale(f.scale).translate([f.tx, f.ty]);
 }
 
+export interface Inset {
+  left?: number;
+  right?: number;
+  top?: number;
+  bottom?: number;
+}
+
 /**
- * Fits the whole route into a width × height frame with some padding, plus room
- * on the left or right for place names (`inset`, in pixels).
+ * Fits the whole route into a width × height frame with some padding, plus extra
+ * room on any side for place names that would otherwise run off it (`inset`, in pixels).
  */
-export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">, width: number, height: number, inset: { left?: number; right?: number } = {}): RouteFrame {
+export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">, width: number, height: number, inset: Inset = {}): RouteFrame {
   const angle = r(content.angle ?? 0, 1);
   const w = Math.max(50, Math.round(width));
   const h = Math.max(50, Math.round(height));
@@ -155,15 +162,18 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
   );
   const lon = r((mean * 180) / Math.PI, 3);
   const pad = Math.min(w, h) * 0.12;
-  // Names may take at most half the frame's width.
-  const room = Math.max(0, w - 2 * pad);
-  const left = Math.min(inset.left ?? 0, room / 2);
-  const right = Math.min(inset.right ?? 0, room / 2);
+  // Names may take at most half the frame on each axis.
+  const roomX = Math.max(0, w - 2 * pad) / 2;
+  const roomY = Math.max(0, h - 2 * pad) / 2;
+  const left = Math.min(inset.left ?? 0, roomX);
+  const right = Math.min(inset.right ?? 0, roomX);
+  const top = Math.min(inset.top ?? 0, roomY);
+  const bottom = Math.min(inset.bottom ?? 0, roomY);
   const target = { type: "MultiPoint" as const, coordinates: coords };
   const p = geoMercator().rotate([-lon, 0]).angle(angle).fitExtent(
     [
-      [pad + left, pad],
-      [w - pad - right, h - pad],
+      [pad + left, pad + top],
+      [w - pad - right, h - pad - bottom],
     ],
     target,
   );
@@ -175,7 +185,7 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
     const capped = geoMercator().rotate([-lon, 0]).angle(angle).scale(scale).translate([0, 0]);
     const [cx, cy] = capped(coords[0])!;
     tx = (w + left - right) / 2 - cx;
-    ty = h / 2 - cy;
+    ty = (h + top - bottom) / 2 - cy;
   }
   return { lon, scale, tx: r(tx, 1), ty: r(ty, 1), width: w, height: h, angle };
 }
@@ -183,4 +193,144 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
 /** The equivalent zoom level of a Mercator scale (0 = the world 1000 px wide). */
 export function zoomOfScale(scale: number): number {
   return Math.log2((scale * 2 * Math.PI) / 1000);
+}
+
+// ---------- Place names ----------
+
+type Point = [number, number];
+
+/** Name size in pixels for a line thickness: names grow with the line. */
+export function nameSize(lineWidth: number): number {
+  return Math.round((9 + lineWidth * 1.15) * 2) / 2;
+}
+
+/**
+ * Points along the drawn route, in pixels, at most `step` apart. Straight stretches
+ * between stops follow the great circle, as the drawn line does.
+ */
+export function sampleRoute(projection: GeoProjection, coords: Position[], step = 3): Point[] {
+  const out: Point[] = [];
+  for (let i = 0; i < coords.length; i++) {
+    const p = projection(coords[i]);
+    if (!p) continue;
+    if (i > 0) {
+      const q = projection(coords[i - 1]);
+      const gap = q ? Math.hypot(p[0] - q[0], p[1] - q[1]) : 0;
+      if (gap > step) {
+        const along = geoInterpolate(coords[i - 1], coords[i]);
+        const n = Math.min(400, Math.ceil(gap / step));
+        for (let k = 1; k < n; k++) {
+          const m = projection(along(k / n));
+          if (m) out.push([m[0], m[1]]);
+        }
+      }
+    }
+    out.push([p[0], p[1]]);
+  }
+  return out;
+}
+
+export interface NamePlacement {
+  /** Left edge of the text, relative to its stop, in pixels. */
+  dx: number;
+  /** Vertical middle of the text, relative to its stop, in pixels. */
+  dy: number;
+}
+
+interface Box {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}
+
+// Where a name may sit around its stop, in order of preference when all else is equal.
+const SPOTS: [number, number][] = [
+  [1, 0], // right
+  [-1, 0], // left
+  [1, -1], // above right
+  [1, 1], // below right
+  [-1, -1], // above left
+  [-1, 1], // below left
+  [0, -1], // above
+  [0, 1], // below
+];
+
+/**
+ * Picks a spot for each stop's name (right, left, above, below or a corner) that
+ * covers as little of the line, the stops and the other names as possible, and
+ * stays inside the frame. `sizes` are the names' widths and heights in pixels.
+ */
+export function placeNames(
+  stops: Point[],
+  sizes: { w: number; h: number }[],
+  line: Point[],
+  frame: { width: number; height: number },
+  { gap, clearance }: { gap: number; clearance: number },
+): NamePlacement[] {
+  // Line points in a grid of cells, so each test only looks at nearby points.
+  const cell = 24;
+  const grid = new Map<string, Point[]>();
+  for (const p of line) {
+    const k = `${Math.floor(p[0] / cell)},${Math.floor(p[1] / cell)}`;
+    const list = grid.get(k);
+    if (list) list.push(p);
+    else grid.set(k, [p]);
+  }
+  const lineHits = (b: Box) => {
+    let n = 0;
+    const x0 = b.x0 - clearance, x1 = b.x1 + clearance, y0 = b.y0 - clearance, y1 = b.y1 + clearance;
+    for (let cx = Math.floor(x0 / cell); cx <= Math.floor(x1 / cell); cx++) {
+      for (let cy = Math.floor(y0 / cell); cy <= Math.floor(y1 / cell); cy++) {
+        for (const p of grid.get(`${cx},${cy}`) ?? []) if (p[0] >= x0 && p[0] <= x1 && p[1] >= y0 && p[1] <= y1) n++;
+      }
+    }
+    return n;
+  };
+  const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x1, b.x1) - Math.max(a.x0, b.x0)) * Math.max(0, Math.min(a.y1, b.y1) - Math.max(a.y0, b.y0));
+  const boxFor = ([x, y]: Point, { w, h }: { w: number; h: number }, [sx, sy]: [number, number]): Box => {
+    const g = sx && sy ? gap * 0.75 : gap;
+    const x0 = sx > 0 ? x + g : sx < 0 ? x - g - w : x - w / 2;
+    const y0 = sy > 0 ? y + g : sy < 0 ? y - g - h : y - h / 2;
+    return { x0, y0, x1: x0 + w, y1: y0 + h };
+  };
+
+  const placed: Box[] = [];
+  return stops.map((stop, i) => {
+    let best: Box | null = null;
+    let bestScore = Infinity;
+    SPOTS.forEach((spot, rank) => {
+      const b = boxFor(stop, sizes[i], spot);
+      let score = rank * 0.5 + lineHits(b) * 10;
+      // Other stops' dots.
+      stops.forEach((s, j) => {
+        if (j !== i && s[0] >= b.x0 - gap && s[0] <= b.x1 + gap && s[1] >= b.y0 - gap && s[1] <= b.y1 + gap) score += 40;
+      });
+      for (const p of placed) score += overlap(b, p) * 0.5;
+      // Running off the frame.
+      const out = Math.max(0, -b.x0) + Math.max(0, b.x1 - frame.width) + Math.max(0, -b.y0) + Math.max(0, b.y1 - frame.height);
+      score += out * 4;
+      if (score < bestScore) {
+        bestScore = score;
+        best = b;
+      }
+    });
+    const b = best!;
+    placed.push(b);
+    return { dx: b.x0 - stop[0], dy: (b.y0 + b.y1) / 2 - stop[1] };
+  });
+}
+
+/** How far placed names run past each edge of the frame, in pixels. */
+export function nameOverflow(stops: Point[], sizes: { w: number; h: number }[], placements: NamePlacement[], frame: { width: number; height: number }): Required<Inset> {
+  const o = { left: 0, right: 0, top: 0, bottom: 0 };
+  placements.forEach((p, i) => {
+    const x0 = stops[i][0] + p.dx;
+    const y0 = stops[i][1] + p.dy - sizes[i].h / 2;
+    o.left = Math.max(o.left, -x0);
+    o.right = Math.max(o.right, x0 + sizes[i].w - frame.width);
+    o.top = Math.max(o.top, -y0);
+    o.bottom = Math.max(o.bottom, y0 + sizes[i].h - frame.height);
+  });
+  return o;
 }

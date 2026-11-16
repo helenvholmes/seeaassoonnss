@@ -131,3 +131,19 @@ test("room for place names keeps the route clear of that side", () => {
     assert.ok(x > 150, `x ${x}`);
   }
 });
+
+test("place names step out of the line's way and stay in the frame", async () => {
+  const { placeNames, nameSize } = await import("../src/lib/route.ts");
+  const frame = { width: 400, height: 400 };
+  const opts = { gap: 8, clearance: 3 };
+  const size = { w: 80, h: 16 };
+  // A line running right from the stop: the name should not go right.
+  const rightward = Array.from({ length: 100 }, (_, i) => [200 + i * 2, 200] as [number, number]);
+  const [a] = placeNames([[200, 200]], [size], rightward, frame, opts);
+  assert.ok(a.dx < 0 || Math.abs(a.dy) >= size.h / 2, `placed at ${JSON.stringify(a)}`);
+  // A stop at the right edge: the name goes left, inside the frame.
+  const [b] = placeNames([[390, 100]], [size], [], frame, opts);
+  assert.ok(390 + b.dx >= 0 && 390 + b.dx + size.w <= 400, `placed at ${JSON.stringify(b)}`);
+  // Names grow with the line.
+  assert.ok(nameSize(8) > nameSize(3.5));
+});

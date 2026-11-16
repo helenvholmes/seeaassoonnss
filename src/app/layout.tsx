@@ -5,6 +5,7 @@ import "@fontsource/eb-garamond/600.css";
 import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/400-italic.css";
 import "@fontsource/ibm-plex-mono/600.css";
+import "@fontsource/inter/400.css";
 import "./globals.css";
 
 export const metadata: Metadata = { title: "seeaassoonnss" };

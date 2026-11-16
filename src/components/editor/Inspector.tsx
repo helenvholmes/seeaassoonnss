@@ -790,18 +790,10 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           </select>
         </Field>
       ) : null}
-      <div className="row small" style={{ flexWrap: "wrap" }}>
-        <label className="row">
-          <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
-          Place names along the line
-        </label>
-        {c.labels ? (
-          <select aria-label="Side for place names" value={c.labelSide ?? "right"} onChange={(e) => set({ labelSide: e.target.value as "left" | "right" }, "labelSide")}>
-            <option value="right">on the right</option>
-            <option value="left">on the left</option>
-          </select>
-        ) : null}
-      </div>
+      <label className="row small">
+        <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
+        Place names along the line (placed clear of the line)
+      </label>
       <div className="grid2">
         <Field label={`Rotate map: ${c.angle ?? 0}°`}>
           <input type="range" min={-180} max={180} step={5} value={c.angle ?? 0} onChange={(e) => set({ angle: Number(e.target.value) }, "angle")} />
