@@ -40,6 +40,7 @@ import {
 import { parseRouteGeoJSON } from "@/lib/route";
 import { formatBytes, isAcceptedImage, isAcceptedVideo, isAudio, isModelFile, modelReport, rejectionReason, uploadAudio, uploadImage, uploadImageBlob, uploadModel, uploadVideo, type StickerEntry, type UploadedModel } from "./upload";
 import { Tools } from "./Tools";
+import { PanelHandle, usePanelWidths } from "./PanelResize";
 import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
@@ -168,6 +169,7 @@ export function Editor(props: EditorProps) {
   const [layout, setLayout] = useState<Layout>("desktop");
   const [sortOrder, setSortOrder] = useState(props.initialSortOrder);
   const compact = useMediaQuery(COMPACT_QUERY);
+  const { widths: panelWidths, setWidth: setPanelWidth } = usePanelWidths();
   const coarse = useMediaQuery(COARSE_QUERY);
   // On a small screen, which sheet is open over the page.
   const [sheet, setSheet] = useState<null | "tools" | "inspector">(null);
@@ -1086,7 +1088,10 @@ export function Editor(props: EditorProps) {
   );
 
   return (
-    <div className={`editor${compact ? " is-compact" : ""}`}>
+    <div
+      className={`editor${compact ? " is-compact" : ""}`}
+      style={{ "--tools-w": `${panelWidths.tools}px`, "--inspector-w": `${panelWidths.inspector}px` } as React.CSSProperties}
+    >
       <header className="editor-bar">
         {compact ? (
           <>
@@ -1299,6 +1304,12 @@ export function Editor(props: EditorProps) {
         />
       </div>
 
+      {!compact ? (
+        <>
+          <PanelHandle side="tools" width={panelWidths.tools} setWidth={setPanelWidth} />
+          <PanelHandle side="inspector" width={panelWidths.inspector} setWidth={setPanelWidth} />
+        </>
+      ) : null}
       <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={grouped ? "Items" : selected ? "Item" : "Season settings"}>
         {sheetHead(grouped ? "Items" : selected ? "Item" : "Season settings")}
         {grouped ? (
