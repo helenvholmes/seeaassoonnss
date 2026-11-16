@@ -128,7 +128,7 @@ export interface RouteFrame {
   ty: number;
   width: number;
   height: number;
-  /** Clockwise turn of the map in degrees, after projecting. */
+  /** Counterclockwise turn of the map in degrees, after projecting. */
   angle: number;
 }
 

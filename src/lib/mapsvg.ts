@@ -107,6 +107,8 @@ export interface MapParams {
   lon: number;
   zoom: number;
   borders: boolean;
+  /** Counterclockwise turn around the place, in whole degrees. */
+  angle: number;
 }
 
 /** Validates and rounds query parameters, so equal maps share one cached URL. */
@@ -114,16 +116,18 @@ export function parseMapParams(search: URLSearchParams): MapParams | null {
   const lat = Number(search.get("lat"));
   const lon = Number(search.get("lon"));
   const zoom = Number(search.get("zoom"));
-  if (![lat, lon, zoom].every(Number.isFinite) || Math.abs(lat) > 85 || Math.abs(lon) > 180 || zoom < 0 || zoom > 12) return null;
+  const angle = Number(search.get("angle") ?? 0);
+  if (![lat, lon, zoom, angle].every(Number.isFinite) || Math.abs(lat) > 85 || Math.abs(lon) > 180 || zoom < 0 || zoom > 12 || Math.abs(angle) > 180) return null;
   return {
     lat: Math.round(lat * 1e4) / 1e4,
     lon: Math.round(lon * 1e4) / 1e4,
     zoom: Math.round(zoom * 4) / 4,
     borders: search.get("borders") === "1",
+    angle: Math.round(angle),
   };
 }
 
-export async function renderMapSvg({ lat, lon, zoom, borders }: MapParams): Promise<string> {
+export async function renderMapSvg({ lat, lon, zoom, borders, angle }: MapParams): Promise<string> {
   const { land: landShape, borders: borderShape } = await loadShapes(resolutionFor(zoom));
   const half = MAP_SIZE / 2;
   const radius = globeRadius(zoom);
@@ -133,7 +137,7 @@ export async function renderMapSvg({ lat, lon, zoom, borders }: MapParams): Prom
   const reach = Math.hypot(half, half) * 1.05;
   const clipAngle = reach >= radius ? 90 : (Math.asin(reach / radius) * 180) / Math.PI;
   const projection = geoOrthographic()
-    .rotate([-lon, -lat])
+    .rotate([-lon, -lat, angle])
     .scale(radius)
     .translate([half, half])
     .clipAngle(clipAngle)

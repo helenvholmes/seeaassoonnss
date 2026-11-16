@@ -129,7 +129,7 @@ function Sticker({ item, mediaBase, layout, placement }: { item: StickerItem; me
 }
 
 export function mapUrl(c: MapItem["content"]) {
-  return `${BASE_PATH}/map?lat=${c.lat.toFixed(4)}&lon=${c.lon.toFixed(4)}&zoom=${Math.round(c.zoom * 4) / 4}${c.borders ? "&borders=1" : ""}&v=${MAP_VERSION}`;
+  return `${BASE_PATH}/map?lat=${c.lat.toFixed(4)}&lon=${c.lon.toFixed(4)}&zoom=${Math.round(c.zoom * 4) / 4}${c.angle ? `&angle=${Math.round(c.angle)}` : ""}${c.borders ? "&borders=1" : ""}&v=${MAP_VERSION}`;
 }
 
 function MapView({ item, layout }: { item: MapItem; layout: Layout }) {

@@ -180,6 +180,8 @@ export const mapSchema = z.object({
     zoom: num.min(MAP_ZOOM_MIN).max(MAP_ZOOM_MAX),
     label: z.string().max(200),
     borders: z.boolean(),
+    /** Turns the map this many degrees counterclockwise around the place (0 = north up). */
+    angle: num.min(-180).max(180).optional(),
   }),
 });
 
@@ -223,7 +225,7 @@ export const routeSchema = z.object({
     style: z.enum(["map", "line"]).optional(),
     /** Place names along the line, each appearing when the line reaches it. */
     labels: z.boolean().optional(),
-    /** Turns the map this many degrees clockwise (0 = north up). */
+    /** Turns the map this many degrees counterclockwise (0 = north up). */
     angle: num.min(-180).max(180).optional(),
     /** Line thickness in screen pixels (default 3.5). */
     lineWidth: num.min(1).max(24).optional(),

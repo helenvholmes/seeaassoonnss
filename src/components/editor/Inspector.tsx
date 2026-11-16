@@ -1040,6 +1040,9 @@ function ItemSettings(props: Props & { item: Item }) {
               onChange={(e) => content({ zoom: Number(e.target.value) }, "zoom")}
             />
           </Field>
+          <Field label={`Rotate map: ${item.content.angle ?? 0}°`}>
+            <input type="range" min={-180} max={180} step={5} value={item.content.angle ?? 0} onChange={(e) => content({ angle: Number(e.target.value) }, "angle")} />
+          </Field>
           <div className="grid2">
             <Field label="Latitude">
               <NumberInput value={item.content.lat} step={0.01} onChange={(lat) => Math.abs(lat) <= 85 && content({ lat }, "lat")} />
