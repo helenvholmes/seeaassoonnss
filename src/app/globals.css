@@ -145,8 +145,10 @@ body.is-resizing-panel { cursor: col-resize; user-select: none; }
 body.is-resizing-panel iframe { pointer-events: none; }
 .editor-tools { border-right: 1px solid #dcdcd6; }
 .editor-inspector { border-left: 1px solid #dcdcd6; }
-.editor-stage { position: relative; overflow: auto; padding: 32px; }
-.editor-canvas { margin: 0; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.06); overflow: visible; }
+/* isolation keeps the page's dimming layer (z-index 100000) inside the stage, under the zoom controls and panel edges. */
+.editor-stage { position: relative; overflow: auto; padding: 32px 48px 96px; isolation: isolate; }
+/* The page is a frame on a larger artboard: centered when it is narrower than the stage. */
+.editor-canvas { margin: 0 auto; box-shadow: 0 0 0 1px #d4d4ce, 0 8px 24px rgb(0 0 0 / 0.06); overflow: visible; }
 /* Outside the canvas, items are shown faded so the cut-off is visible while editing. */
 .editor-canvas::after { content: ""; position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 0 100vmax rgb(236 236 232 / 0.75); z-index: 100000; }
 .editor .item { cursor: move; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; }
@@ -168,7 +170,17 @@ body.is-resizing-panel iframe { pointer-events: none; }
 .badge-warn { background: #b3261e; }
 .editor .item:not(.is-selected) .badge-warn { opacity: 0; }
 .editor:hover .item .badge-warn { opacity: 1; }
-.canvas-height-label { margin-top: 8px; }
+.canvas-height-label { margin: 8px auto 0; }
+.frame-label { margin: 0 auto 6px; color: #6f6f69; white-space: nowrap; }
+.stage-pan-layer { grid-column: 2; grid-row: 2; z-index: 6; cursor: grab; touch-action: none; }
+body.is-panning, body.is-panning * { cursor: grabbing !important; user-select: none; }
+.zoom-controls {
+  grid-column: 2; grid-row: 2; z-index: 7; align-self: end; justify-self: end; margin: 0 14px 14px 0;
+  display: flex; align-items: center; gap: 2px; padding: 3px; background: #fff; border: 1px solid #dcdcd6; border-radius: 6px;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+}
+.zoom-controls button { padding: 4px 7px; display: inline-flex; align-items: center; }
+.zoom-value { min-width: 3.6em; text-align: center; font-variant-numeric: tabular-nums; }
 .tools-heading { margin: 4px 0 0; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.55; }
 .field { display: flex; flex-direction: column; gap: 4px; }
 .field > span { font-size: 11px; opacity: 0.7; }

@@ -41,6 +41,7 @@ import { parseRouteGeoJSON } from "@/lib/route";
 import { formatBytes, isAcceptedImage, isAcceptedVideo, isAudio, isModelFile, modelReport, rejectionReason, uploadAudio, uploadImage, uploadImageBlob, uploadModel, uploadVideo, type StickerEntry, type UploadedModel } from "./upload";
 import { Tools } from "./Tools";
 import { PanelHandle, usePanelWidths } from "./PanelResize";
+import { PanLayer, panWithPointer, stepZoom, useStageZoom, ZoomControls } from "./StageZoom";
 import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
@@ -164,7 +165,10 @@ export function Editor(props: EditorProps) {
   const [cropId, setCropId] = useState<string | null>(null);
   // A quote whose text is being edited right on the canvas (double-click).
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [stageWidth, setStageWidth] = useState(1000);
+  // The width that fits the page to the stage; zoom multiplies it.
+  const [fitWidth, setFitWidth] = useState(1000);
+  // Space held: dragging pans the page instead of selecting.
+  const [spaceHeld, setSpaceHeld] = useState(false);
   const [playlistUrl, setPlaylistUrl] = useState("");
   const [layout, setLayout] = useState<Layout>("desktop");
   const [sortOrder, setSortOrder] = useState(props.initialSortOrder);
@@ -189,6 +193,9 @@ export function Editor(props: EditorProps) {
   // `before` is the document without the copy, so one undo removes it; `dragged`
   // turns true once the copy has moved (a press without a drag leaves no copy).
   const altCopy = useRef<{ before: SeasonDoc; originals: string[]; dragged: boolean } | null>(null);
+  const { zoom, zoomTo, fit } = useStageZoom(stageWrapRef, canvasRef, !compact);
+  /** The page's width on screen, in pixels. */
+  const stageWidth = fitWidth * zoom;
 
   const canvasWidth = CANVAS_WIDTH[layout];
   // The page grows to fit its lowest item. Below the end of the page the editor
@@ -305,7 +312,7 @@ export function Editor(props: EditorProps) {
     const measure = () => {
       const cs = getComputedStyle(el);
       const width = el.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
-      setStageWidth(layout === "mobile" ? Math.min(520, Math.max(280, width)) : Math.max(280, width));
+      setFitWidth(layout === "mobile" ? Math.min(520, Math.max(280, width)) : Math.max(280, width));
       // A background layer fills one screen of the stage (see .bg-layer-screen).
       el.style.setProperty("--stage-height", `${el.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)}px`);
     };
@@ -326,9 +333,14 @@ export function Editor(props: EditorProps) {
    */
   const visibleCenter = useCallback(() => {
     const wrap = stageWrapRef.current;
-    const top = wrap ? wrap.scrollTop / scale : 0;
-    const viewH = wrap ? wrap.clientHeight / scale : 800;
-    return convertPoint({ x: canvasWidth / 2, y: Math.min(canvasHeight, top + viewH / 2) }, layout, "desktop");
+    const page = canvasRef.current;
+    if (!wrap || !page) return convertPoint({ x: canvasWidth / 2, y: 400 }, layout, "desktop");
+    // The middle of the visible part of the stage, in page units (the page may be zoomed and scrolled sideways).
+    const s = wrap.getBoundingClientRect();
+    const c = page.getBoundingClientRect();
+    const x = Math.min(canvasWidth, Math.max(0, (s.left + s.width / 2 - c.left) / scale));
+    const y = Math.min(canvasHeight, Math.max(0, (s.top + s.height / 2 - c.top) / scale));
+    return convertPoint({ x, y }, layout, "desktop");
   }, [scale, canvasWidth, canvasHeight, layout]);
 
   /** A desktop placement of size w × h centered on `center` (desktop units), cascaded by index. */
@@ -645,9 +657,25 @@ export function Editor(props: EditorProps) {
       setSnapSkip(e.metaKey || e.ctrlKey);
       // On Windows a lone Alt press would focus the browser menu and swallow the next keys.
       if (e.key === "Alt") e.preventDefault();
+      if (e.code === "Space" && !compact) {
+        if (e.type === "keyup") setSpaceHeld(false);
+        else if (!isTyping(e.target)) {
+          e.preventDefault();
+          setSpaceHeld(true);
+        }
+      }
       if (e.type !== "keydown" || isTyping(e.target)) return;
       const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key.toLowerCase() === "z") {
+      if (mod && !compact && (e.key === "=" || e.key === "+")) {
+        e.preventDefault();
+        zoomTo((z) => stepZoom(z, 1));
+      } else if (mod && !compact && (e.key === "-" || e.key === "_")) {
+        e.preventDefault();
+        zoomTo((z) => stepZoom(z, -1));
+      } else if (mod && !compact && e.key === "0") {
+        e.preventDefault();
+        fit();
+      } else if (mod && e.key.toLowerCase() === "z") {
         e.preventDefault();
         setHistory((h) => (e.shiftKey ? redo(h) : undo(h)));
       } else if (mod && e.key.toLowerCase() === "y") {
@@ -682,6 +710,7 @@ export function Editor(props: EditorProps) {
       }
     };
     const onBlur = () => {
+      setSpaceHeld(false);
       setShift(false);
       setAlt(false);
       setSnapSkip(false);
@@ -860,6 +889,8 @@ export function Editor(props: EditorProps) {
     const stage = stageWrapRef.current;
     if (!stage || !cropId) return;
     const onWheel = (ev: WheelEvent) => {
+      // ⌘/Ctrl + scroll (and pinch) zooms the editor instead.
+      if (ev.ctrlKey || ev.metaKey) return;
       const el = itemRefs.current.get(cropId);
       if (!el || !el.contains(ev.target as Node)) return;
       ev.preventDefault();
@@ -1175,6 +1206,12 @@ export function Editor(props: EditorProps) {
           lastTouch.current = Date.now();
         }}
         onMouseDown={(e) => {
+          // The middle mouse button pans the page.
+          if (e.button === 1 && stageWrapRef.current) {
+            e.preventDefault();
+            panWithPointer(stageWrapRef.current, e);
+            return;
+          }
           // Moveable's handles live inside the stage; clicks on them keep the selection.
           if (!(e.target as HTMLElement).closest(".moveable-control-box")) setSelectedId(null);
         }}
@@ -1186,6 +1223,9 @@ export function Editor(props: EditorProps) {
           void uploadFiles(files, convertPoint({ x: (e.clientX - canvas.left) / scale, y: (e.clientY - canvas.top) / scale }, layout, "desktop"));
         }}
       >
+        <div className="frame-label small" style={{ width: stageWidth }}>
+          {layout === "desktop" ? "Desktop" : "Mobile"} · {canvasWidth} wide
+        </div>
         <div
           ref={canvasRef}
           className="canvas editor-canvas"
@@ -1268,7 +1308,7 @@ export function Editor(props: EditorProps) {
             <span>end of page · drag items below to make it longer</span>
           </div>
         </div>
-        <div className="canvas-height-label muted small">
+        <div className="canvas-height-label muted small" style={{ width: stageWidth }}>
           {layout} page {canvasWidth} × {pageEnd}, grows to fit
         </div>
         <Moveable
@@ -1339,6 +1379,8 @@ export function Editor(props: EditorProps) {
         <>
           <PanelHandle side="tools" width={panelWidths.tools} setWidth={setPanelWidth} />
           <PanelHandle side="inspector" width={panelWidths.inspector} setWidth={setPanelWidth} />
+          {spaceHeld ? <PanLayer stage={stageWrapRef} /> : null}
+          <ZoomControls zoom={zoom} scale={scale} zoomTo={zoomTo} fit={fit} />
         </>
       ) : null}
       <aside className={`editor-inspector${sheet === "inspector" ? " is-open" : ""}`} aria-label={grouped ? "Items" : selected ? "Item" : "Season settings"}>
