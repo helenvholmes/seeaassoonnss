@@ -147,3 +147,13 @@ test("place names step out of the line's way and stay in the frame", async () =>
   // Names grow with the line.
   assert.ok(nameSize(8) > nameSize(3.5));
 });
+
+test("the line can wait before it starts drawing, and still finishes at the end", async () => {
+  const { drawProgress } = await import("../src/lib/route.ts");
+  assert.equal(drawProgress(0.5), 0.5);
+  assert.equal(drawProgress(0.2, 0.4), 0);
+  assert.equal(drawProgress(0.4, 0.4), 0);
+  assert.ok(Math.abs(drawProgress(0.7, 0.4) - 0.5) < 1e-9);
+  assert.equal(drawProgress(1, 0.4), 1);
+  assert.equal(drawProgress(1.2, 0.9), 1);
+});

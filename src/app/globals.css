@@ -367,6 +367,8 @@ input[type="color"] { width: 40px; height: 28px; padding: 0; border: 1px solid #
 .route-scale-mark { position: absolute; left: 0; right: 0; border-top: 1px dashed #8a8a84; }
 .route-scale-mark span { position: absolute; right: 8px; top: 3px; white-space: nowrap; background: rgb(251 251 249 / 0.92); padding: 1px 6px; }
 .route-scale-mark.is-end span { top: auto; bottom: 3px; }
+.route-scale-mark.is-pin { border-top-style: dotted; }
+.route-scale-wait { position: absolute; left: 10px; width: 0; border-left: 2px dotted #b9b9b0; }
 .route-scale-stop { position: absolute; left: 6px; width: 10px; border-top: 2px solid #8a8a84; }
 .route-scale-stop span { position: absolute; left: 14px; top: -0.75em; white-space: nowrap; background: rgb(251 251 249 / 0.85); padding: 0 4px; }
 .route-scale-note { position: absolute; left: 8px; right: 8px; bottom: 8px; font: 11px "IBM Plex Mono", ui-monospace, monospace; color: #8a8a84; }

@@ -776,6 +776,17 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
         </Field>
       </div>
+      <Field label={(c.drawStart ?? 0) > 0 ? `Line starts drawing ${Math.round((c.drawStart ?? 0) * 100)}% of the way through the band` : "Line starts drawing as soon as the map pins"}>
+        <input
+          type="range"
+          min={0}
+          max={90}
+          step={1}
+          value={Math.round((c.drawStart ?? 0) * 100)}
+          aria-label="When the line starts drawing"
+          onChange={(e) => set({ drawStart: Number(e.target.value) / 100 }, "drawStart")}
+        />
+      </Field>
       <Field label="Style">
         <select value={c.style ?? "map"} onChange={(e) => set({ style: e.target.value as "map" | "line" }, "style")}>
           <option value="map">Map: land, stops and the route</option>

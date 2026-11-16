@@ -190,6 +190,16 @@ export function fitRoute(content: Pick<RouteContent, "stops" | "line" | "angle">
   return { lon, scale, tx: r(tx, 1), ty: r(ty, 1), width: w, height: h, angle };
 }
 
+/**
+ * How much of the line is drawn (0–1) at `scroll`, the progress through the band
+ * (0 when the map pins, 1 when it lets go). The line waits until `start`, then
+ * draws in over the rest of the band.
+ */
+export function drawProgress(scroll: number, start = 0): number {
+  const s = Math.min(0.9, Math.max(0, start));
+  return Math.min(1, Math.max(0, (scroll - s) / (1 - s)));
+}
+
 /** The equivalent zoom level of a Mercator scale (0 = the world 1000 px wide). */
 export function zoomOfScale(scale: number): number {
   return Math.log2((scale * 2 * Math.PI) / 1000);
