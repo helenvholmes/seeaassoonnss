@@ -167,6 +167,9 @@ export function Editor(props: EditorProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   // The width that fits the page to the stage; zoom multiplies it.
   const [fitWidth, setFitWidth] = useState(1000);
+  // ⌘S pressed: briefly say that the editor saves on its own.
+  const [saveHint, setSaveHint] = useState(false);
+  const saveHintTimer = useRef(0);
   // Space held: dragging pans the page instead of selecting.
   const [spaceHeld, setSpaceHeld] = useState(false);
   const [playlistUrl, setPlaylistUrl] = useState("");
@@ -653,6 +656,15 @@ export function Editor(props: EditorProps) {
       setSnapSkip(e.metaKey || e.ctrlKey);
       // On Windows a lone Alt press would focus the browser menu and swallow the next keys.
       if (e.key === "Alt") e.preventDefault();
+      // ⌘S / Ctrl+S: the draft saves itself; save now (instead of the browser's "Save page") and say so.
+      if (e.type === "keydown" && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        saveNow().catch(() => {});
+        setSaveHint(true);
+        window.clearTimeout(saveHintTimer.current);
+        saveHintTimer.current = window.setTimeout(() => setSaveHint(false), 2600);
+        return;
+      }
       if (e.code === "Space" && !compact) {
         if (e.type === "keyup") setSpaceHeld(false);
         else if (!isTyping(e.target)) {
@@ -1058,8 +1070,8 @@ export function Editor(props: EditorProps) {
     </>
   );
   const saveStatus = (
-    <span className={save.kind === "error" ? "error" : "muted"} role="status">
-      {saveLabel}
+    <span className={save.kind === "error" ? "error" : saveHint ? "save-hint" : "muted"} role="status">
+      {saveHint && save.kind !== "error" ? `${saveLabel} · no need for ⌘S, changes save automatically` : saveLabel}
     </span>
   );
   const historyControls = (

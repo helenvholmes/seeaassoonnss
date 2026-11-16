@@ -9,3 +9,6 @@ next-env.d.ts
 # Local storage driver (development only)
 .data/
 .DS_Store
+# Browser tests
+/test-results/
+/playwright-report/

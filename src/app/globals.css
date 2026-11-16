@@ -174,6 +174,9 @@ body.is-resizing-panel iframe { pointer-events: none; }
 .editor .item:not(.is-selected) .badge-warn { opacity: 0; }
 .editor:hover .item .badge-warn { opacity: 1; }
 .canvas-height-label { margin: 8px auto 0; }
+.save-hint { background: #1d1d1b; color: #fff; padding: 2px 8px; border-radius: 4px; white-space: nowrap; animation: save-hint-in 0.2s ease-out; }
+@keyframes save-hint-in { from { opacity: 0; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .save-hint { animation: none; } }
 .frame-label { margin: 0 auto 6px; color: #6f6f69; white-space: nowrap; }
 .stage-pan-layer { grid-column: 2; grid-row: 2; z-index: 6; cursor: grab; touch-action: none; }
 body.is-panning, body.is-panning * { cursor: grabbing !important; user-select: none; }
