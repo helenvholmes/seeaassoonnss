@@ -673,19 +673,23 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
     editStops(order);
   };
   const removeStop = (index: number) => editStops(indexes().filter((i) => i !== index));
-  const [routing, setRouting] = useState(false);
-  // Asks for the driving route through the stops and saves it as the drawn path.
-  const followRoads = async () => {
-    setRouting(true);
+  const [routing, setRouting] = useState<"roads" | "rail" | null>(null);
+  // Asks for the path along roads or railways through the stops and saves it as the drawn line.
+  const follow = async (mode: "roads" | "rail") => {
+    setRouting(mode);
     setMessage(null);
     try {
-      const { line } = await api<{ line: [number, number][] }>("/directions", { body: { stops: c.stops } });
-      set({ line }, "line");
-      setMessage("The line now follows the fastest driving route between stops. If you took a different road, add a stop on it.");
+      const { line } = await api<{ line: [number, number][] }>("/directions", { body: { stops: c.stops, mode } });
+      set({ line, follow: mode }, "line");
+      setMessage(
+        mode === "rail"
+          ? "The line now follows the railway between stops. If it takes a different line than your train did, add a stop (a station) on yours."
+          : "The line now follows the fastest driving route between stops. If you took a different road, add a stop on it.",
+      );
     } catch (err) {
       setMessage((err as Error).message);
     } finally {
-      setRouting(false);
+      setRouting(null);
     }
   };
   const addStop = (p: { label: string; lat: number; lon: number }) => {
@@ -727,12 +731,19 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
         </Field>
       ) : null}
       <div className="stack" style={{ gap: 4 }}>
-        {c.line.length ? <span className="small muted">The line follows a saved path (roads or an imported file). After adding or moving stops, follow roads again to update it.</span> : null}
-        <div className="row">
-          <button disabled={c.stops.length < 2 || routing} onClick={followRoads}>
-            {routing ? "Finding roads…" : c.line.length ? "Follow roads again" : "Follow roads (driving)"}
+        {c.line.length ? (
+          <span className="small muted">
+            The line follows {c.follow === "rail" ? "the railway" : c.follow === "roads" ? "roads" : "the path from an imported file"}. After adding or moving stops, follow again to update it.
+          </span>
+        ) : null}
+        <div className="row" style={{ flexWrap: "wrap" }}>
+          <button disabled={c.stops.length < 2 || routing !== null} onClick={() => follow("roads")}>
+            {routing === "roads" ? "Finding roads…" : "Follow roads"}
           </button>
-          {c.line.length ? <button onClick={() => set({ line: [] }, "line")}>Use straight lines</button> : null}
+          <button disabled={c.stops.length < 2 || routing !== null} onClick={() => follow("rail")}>
+            {routing === "rail" ? "Finding the railway…" : "Follow railway"}
+          </button>
+          {c.line.length ? <button onClick={() => set({ line: [], follow: undefined }, "line")}>Use straight lines</button> : null}
         </div>
       </div>
       <div className="row">
@@ -748,7 +759,7 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
             if (!file) return;
             try {
               const { stops, line } = parseRouteGeoJSON(JSON.parse(await file.text()));
-              set({ stops, line }, "geojson");
+              set({ stops, line, follow: undefined }, "geojson");
               setMessage(`Loaded ${stops.length} stops. Links to stops keep their numbers.`);
             } catch (err) {
               setMessage(err instanceof SyntaxError ? "That file is not valid JSON." : (err as Error).message);
