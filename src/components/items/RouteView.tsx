@@ -3,8 +3,18 @@
 import { geoPath } from "d3-geo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BASE_PATH, MAP_VERSION } from "@/lib/client";
-import { fitRoute, routeCoordinates, routeProjection, stopFractions, type RouteFrame } from "@/lib/route";
+import { fitRoute, nameOverflow, nameSize, placeNames, routeCoordinates, routeProjection, sampleRoute, stopFractions, type NamePlacement, type RouteFrame } from "@/lib/route";
 import type { Layout, Placement, RouteItem } from "@/lib/schema";
+
+const NAME_FONT = "Inter";
+let measurer: CanvasRenderingContext2D | null = null;
+/** A name's width in pixels, set in Inter at `size`. */
+function nameWidth(text: string, size: number): number {
+  measurer ??= document.createElement("canvas").getContext("2d");
+  if (!measurer) return text.length * size * 0.55;
+  measurer.font = `400 ${size}px ${NAME_FONT}, sans-serif`;
+  return measurer.measureText(text).width;
+}
 
 /** How tall a screen is in design units, for the editor's preview of the pinned map. */
 const SCREEN_UNITS: Record<Layout, number> = { desktop: 900, mobile: 780 };
@@ -39,7 +49,19 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
   const lineOnly = c.style === "line";
   const lineWidth = c.lineWidth ?? 3.5;
   const aheadFaint = lineOnly && (c.ahead ?? "faint") === "faint";
-  const labelLeft = c.labelSide === "left";
+  // Dot sizes grow with the line, like the names.
+  const dotR = lineOnly ? Math.max(3.5, lineWidth * 0.9) : 4.5 + Math.max(0, lineWidth - 3.5) / 2;
+  const fontSize = nameSize(lineWidth);
+  // Names are measured once Inter has loaded, so they are placed by their real width.
+  const [fontReady, setFontReady] = useState(false);
+  useEffect(() => {
+    if (!c.labels || fontReady) return;
+    let live = true;
+    document.fonts?.load(`400 ${fontSize}px ${NAME_FONT}`).then(() => live && setFontReady(true), () => live && setFontReady(true));
+    return () => {
+      live = false;
+    };
+  }, [c.labels, fontReady, fontSize]);
   const band = useRef<HTMLDivElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const drawn = useRef<SVGPathElement>(null);
@@ -73,14 +95,32 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
 
   const geometry = useMemo(() => {
     if (!size) return null;
-    // Room for the longest place name (about 0.55em per character).
-    const nameRoom = c.labels ? Math.max(0, ...c.stops.map((s) => s.name.length)) * (c.style === "line" ? 15 : 13) * 0.55 + 16 : 0;
-    const frame = fitRoute(c, size.w, size.h, c.labelSide === "left" ? { left: nameRoom } : { right: nameRoom });
-    const projection = routeProjection(frame);
-    const d = geoPath(projection)({ type: "LineString", coordinates: routeCoordinates(c) }) ?? "";
-    const points = c.stops.map((s) => projection([s.lon, s.lat]) ?? [0, 0]);
-    return { frame, d, points, fractions: stopFractions(c) };
-  }, [c, size]);
+    const coords = routeCoordinates(c);
+    let frame = fitRoute(c, size.w, size.h);
+    let projection = routeProjection(frame);
+    let points = c.stops.map((s) => (projection([s.lon, s.lat]) ?? [0, 0]) as [number, number]);
+    let names: NamePlacement[] = [];
+    if (c.labels) {
+      // Each name goes where it covers the least of the line; if names then run off
+      // the frame, the map is fitted again with room for them and they are placed again.
+      const sizes = c.stops.map((s) => ({ w: nameWidth(s.name, fontSize), h: fontSize * 1.25 }));
+      const opts = { gap: Math.max(dotR, lineWidth / 2) + fontSize * 0.35, clearance: lineWidth / 2 + 1 };
+      const place = () => placeNames(points, sizes, sampleRoute(projection, coords), frame, opts);
+      names = place();
+      const over = nameOverflow(points, sizes, names, frame);
+      if (over.left + over.right + over.top + over.bottom > 0.5) {
+        const room = (n: number) => (n > 0.5 ? n + 6 : 0);
+        frame = fitRoute(c, size.w, size.h, { left: room(over.left), right: room(over.right), top: room(over.top), bottom: room(over.bottom) });
+        projection = routeProjection(frame);
+        points = c.stops.map((s) => (projection([s.lon, s.lat]) ?? [0, 0]) as [number, number]);
+        names = place();
+      }
+    }
+    const d = geoPath(projection)({ type: "LineString", coordinates: coords }) ?? "";
+    return { frame, d, points, names, fractions: stopFractions(c) };
+    // fontReady: measure again once Inter has loaded.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [c, size, fontReady, fontSize, dotR, lineWidth]);
 
   useEffect(() => {
     if (drawn.current) setLength(drawn.current.getTotalLength() || 0);
@@ -170,14 +210,14 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
                 ? geometry.points.map(([x, y], i) => {
                     const reached = geometry.fractions[i] <= progress + 1e-6;
                     if (!aheadFaint && !reached) return null;
-                    return <circle key={i} cx={x} cy={y} r={(i === labelIndex ? 4.5 : 3.5) / zoom} className={`route-dot${i === labelIndex ? " current" : ""}`} />;
+                    return <circle key={i} cx={x} cy={y} r={(i === labelIndex ? dotR * 1.3 : dotR) / zoom} className={`route-dot${i === labelIndex ? " current" : ""}`} />;
                   })
                 : geometry.points.map(([x, y], i) => (
                 <circle
                   key={i}
                   cx={x}
                   cy={y}
-                  r={((i === labelIndex ? 7 : 4.5) + Math.max(0, lineWidth - 3.5) / 2) / zoom}
+                  r={(i === labelIndex ? dotR + 2.5 : dotR) / zoom}
                   strokeWidth={2 / zoom}
                   className={`route-stop${geometry.fractions[i] <= progress + 1e-6 ? " reached" : ""}`}
                   style={{ fill: geometry.fractions[i] <= progress + 1e-6 ? c.color : undefined }}
@@ -186,17 +226,16 @@ export function RouteView({ item, interactive, layout, placement }: { item: Rout
               {c.labels
                 ? c.stops.map((s, i) => {
                     const [x, y] = geometry.points[i];
+                    const spot = geometry.names[i] ?? { dx: 0, dy: 0 };
                     const reached = geometry.fractions[i] <= progress + 1e-6;
                     return (
                       <text
                         key={`label${i}`}
-                        x={x + ((labelLeft ? -1 : 1) * (Math.max(lineWidth / 2, 4.5) + 7)) / zoom}
-                        y={y}
+                        x={x + spot.dx / zoom}
+                        y={y + spot.dy / zoom}
                         dy="0.35em"
-                        textAnchor={labelLeft ? "end" : "start"}
-                        fontSize={(lineOnly ? 15 : 13) / zoom}
-                        strokeWidth={3 / zoom}
-                        className={`route-place${reached ? " reached" : ""}${i === labelIndex ? " current" : ""}`}
+                        fontSize={fontSize / zoom}
+                        className={`route-place${reached ? " reached" : ""}`}
                       >
                         {s.name}
                       </text>

@@ -231,8 +231,6 @@ export const routeSchema = z.object({
     lineWidth: num.min(1).max(24).optional(),
     /** Line-only style: "faint" (default) shows the route ahead as a grey dashed line with grey stops and names; "hidden" draws in from nothing. */
     ahead: z.enum(["faint", "hidden"]).optional(),
-    /** Which side of a stop its name sits on (default right). */
-    labelSide: z.enum(["left", "right"]).optional(),
     /** What the saved line was last made to follow, so the editor can offer to redo it the same way. */
     follow: z.enum(["roads", "rail"]).optional(),
   }),
