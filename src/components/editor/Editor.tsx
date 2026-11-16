@@ -764,6 +764,25 @@ export function Editor(props: EditorProps) {
   const startGesture = () => {
     gestureStart.current = altCopy.current?.before ?? latestDoc.current;
   };
+  // A route map's rotate handle turns the map inside its band, not the band: the band
+  // stays level so the map can stay pinned on screen. While dragging, the drawing turns
+  // as a preview; on release the turn is saved as the map's angle and the map refits.
+  const routeTurn = useRef<{ id: string; start: number; svg: SVGSVGElement | null; by: number } | null>(null);
+  const startRouteTurn = (target: HTMLElement | SVGElement) => {
+    if (selected?.type !== "route") return false;
+    routeTurn.current = { id: selected.id, start: selected.content.angle ?? 0, svg: target.querySelector(".route-panel svg"), by: 0 };
+    return true;
+  };
+  const endRouteTurn = () => {
+    const turn = routeTurn.current;
+    routeTurn.current = null;
+    if (!turn) return;
+    if (turn.svg) turn.svg.style.transform = "";
+    // Clockwise on screen is a negative angle (the map's angle turns it counterclockwise).
+    const angle = Math.round((((turn.start - turn.by + 180) % 360) + 360) % 360 - 180);
+    if (turn.by && angle !== turn.start) change((d) => updateItem(d, turn.id, (i) => (i.type === "route" ? { ...i, content: { ...i.content, angle } } : i)));
+    requestAnimationFrame(() => moveableRef.current?.updateRect());
+  };
   const endGesture = (moved = false) => {
     const before = gestureStart.current;
     gestureStart.current = null;
@@ -1257,7 +1276,7 @@ export function Editor(props: EditorProps) {
           target={target}
           draggable={!locked && !editing}
           resizable={!locked}
-          rotatable={!locked && selected?.type !== "route"}
+          rotatable={!locked}
           keepRatio={shift}
           throttleRotate={shift ? 15 : 0}
           rotationPosition="top"
@@ -1295,12 +1314,24 @@ export function Editor(props: EditorProps) {
             live({ w: e.width / scale, h: e.height / scale, x: e.drag.left / scale, y: e.drag.top / scale });
           }}
           onResizeEnd={() => endGesture()}
-          onRotateStart={startGesture}
+          onRotateStart={(e) => {
+            if (!startRouteTurn(e.target)) startGesture();
+          }}
           onRotate={(e) => {
+            const turn = routeTurn.current;
+            if (turn) {
+              turn.by = e.rotation;
+              if (turn.svg) turn.svg.style.transform = `rotate(${e.rotation}deg)`;
+              e.target.style.transform = "";
+              return;
+            }
             e.target.style.transform = `rotate(${e.rotation}deg)`;
             live({ rotation: e.rotation });
           }}
-          onRotateEnd={() => endGesture()}
+          onRotateEnd={() => {
+            if (routeTurn.current) endRouteTurn();
+            else endGesture();
+          }}
         />
       </div>
 
