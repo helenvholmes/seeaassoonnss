@@ -189,10 +189,6 @@ export function Editor(props: EditorProps) {
   const moveableRef = useRef<Moveable>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const gestureStart = useRef<SeasonDoc | null>(null);
-  // Alt+drag: the press copies the item in place and the drag moves the copy.
-  // `before` is the document without the copy, so one undo removes it; `dragged`
-  // turns true once the copy has moved (a press without a drag leaves no copy).
-  const altCopy = useRef<{ before: SeasonDoc; originals: string[]; dragged: boolean } | null>(null);
   const { zoom, zoomTo, fit } = useStageZoom(stageWrapRef, canvasRef, !compact);
   /** The page's width on screen, in pixels. */
   const stageWidth = fitWidth * zoom;
@@ -791,7 +787,7 @@ export function Editor(props: EditorProps) {
     setHistory((h) => replace(h, setPlacement(h.present, selectedId, patch, layout)));
   };
   const startGesture = () => {
-    gestureStart.current = altCopy.current?.before ?? latestDoc.current;
+    gestureStart.current = latestDoc.current;
   };
   // A route map's rotate handle turns the map inside its band, not the band: the band
   // stays level so the map can stay pinned on screen. While dragging, the drawing turns
@@ -815,11 +811,6 @@ export function Editor(props: EditorProps) {
   const endGesture = (moved = false) => {
     const before = gestureStart.current;
     gestureStart.current = null;
-    if (altCopy.current) {
-      // A press without a drag: the release handler in startAltCopy takes the copy away.
-      if (!moved) return;
-      altCopy.current.dragged = true;
-    }
     if (!before || !selectedId) return;
     const snapping = moved && snapOn && !snapSkip;
     setHistory((h) => {
@@ -962,22 +953,11 @@ export function Editor(props: EditorProps) {
       setPrimaryId(originals[0]);
       setExtraIds(originals.slice(1));
     };
-    if (copies.length > 1) {
-      startGroupDrag(copies, e, takeBack, before);
-      return true;
-    }
-    altCopy.current = { before, originals, dragged: false };
-    const up = () => {
-      window.removeEventListener("mouseup", up);
-      // After Moveable's own release handling (endGesture), which marks a real drag.
-      setTimeout(() => {
-        const a = altCopy.current;
-        altCopy.current = null;
-        if (a && !a.dragged) takeBack();
-      });
-    };
-    window.addEventListener("mouseup", up);
-    moveableRef.current?.dragStart(e.nativeEvent);
+    // The editor drags the copies itself. (Handing the press to Moveable failed: the
+    // press belongs to the original, and Moveable now targets the copy, so it never
+    // dragged and the copy was taken back.) One undo removes the copies; a press
+    // without a drag leaves no copy.
+    startGroupDrag(copies, e, takeBack, before);
     return true;
   };
 
