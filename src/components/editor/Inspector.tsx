@@ -796,14 +796,14 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
       {c.style === "line" ? (
         <Field label="The route ahead">
           <select value={c.ahead ?? "faint"} onChange={(e) => set({ ahead: e.target.value as "faint" | "hidden" }, "ahead")}>
-            <option value="faint">Faint: a grey dashed line, grey stops and names</option>
+            <option value="faint">Faint: a grey dashed line and grey stops</option>
             <option value="hidden">Hidden: the line draws in from nothing</option>
           </select>
         </Field>
       ) : null}
       <label className="row small">
         <input type="checkbox" checked={c.labels ?? false} onChange={(e) => set({ labels: e.target.checked }, "labels")} />
-        Place names along the line (placed clear of the line)
+        Place names (each appears when the line reaches it, clear of the line)
       </label>
       <div className="grid2">
         <Field label={`Rotate map: ${c.angle ?? 0}°`}>

@@ -1094,15 +1094,13 @@ export function Editor(props: EditorProps) {
   );
   const publishControls = (
     <>
-      {/* On a small screen the preview opens full screen in this window (an installed app has no tabs). */}
+      {/* The preview opens in this window (full screen on a small screen); ⌘-click still opens a new tab. */}
       <a
         className="button"
         href={`${BASE_PATH}/edit/${id}/preview?device=${layout === "mobile" ? "phone" : "laptop"}${compact ? "&full=1" : ""}`}
-        target={compact ? undefined : "_blank"}
-        rel="noreferrer"
         onClick={(e) => {
-          if (!compact) return void saveNow().catch(() => {});
-          // Leave only once the draft is saved, so the preview shows the latest changes.
+          // Opens in this tab (the preview has a link back), once the draft is saved so it shows the latest changes.
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return void saveNow().catch(() => {});
           e.preventDefault();
           const href = e.currentTarget.href;
           saveNow()
