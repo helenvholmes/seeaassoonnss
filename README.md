@@ -231,7 +231,7 @@ On a Neon branch this has nothing to do: the branch already has production's tab
 npm run dev
 ```
 
-Open http://localhost:3000/seasons/edit, enter your setup token and register a passkey. Browsers allow passkeys on `localhost` without https. On a Neon branch, production's passkeys are copied too but work only on your domain, so register a new one here; it is saved on the branch, not in production. Use a new setup token: one already used in production is marked used on the branch as well. Photos and other media from production do not show locally, because they are in R2 and `STORAGE_DRIVER=local` reads `.data/`.
+Open http://localhost:3000/seasons/edit, enter your setup token and register a passkey. Browsers allow passkeys on `localhost` without https. On a Neon branch, production's passkeys are copied too but work only on your domain, so register a new one here: click **Lost your passkeys?** to show the setup token field. The new passkey is saved on the branch, not in production. Use a new setup token: one already used in production is marked used on the branch as well. Photos and other media from production do not show locally, because they are in R2 and `STORAGE_DRIVER=local` reads `.data/`.
 
 | Command | What it does |
 | --- | --- |
