@@ -203,7 +203,13 @@ Open `https://<your site>/seasons/api/health` first. It says which part of the s
 
 ## Run it locally
 
-You need Node.js 20 or later and Postgres.
+You need Node.js 20 or later and a Postgres database. The easiest is a Neon branch: a separate copy of your production database, so nothing you do locally changes the live site.
+
+1. In Vercel, open the project → **Storage** → your Neon database → **Open in Neon**.
+2. Open **Branches** → **Create branch**. Name it `dev`, pick your production branch as the parent, and keep **Current data**.
+3. Click **Connect**, choose the `dev` branch, and copy the connection string with **Connection pooling** on (its host contains `-pooler`).
+
+To use Postgres on your computer instead, create an empty database and use its URL, for example `postgres://seasons:seasons@localhost:5432/seasons`.
 
 ```bash
 npm install
@@ -213,17 +219,19 @@ npm install
 cp .env.example .env.local
 ```
 
-Edit `.env.local`: set `DATABASE_URL`, and set `SETUP_TOKEN` to any string. Leave `STORAGE_DRIVER=local` to store uploads in `.data/` instead of R2.
+Edit `.env.local`: set `DATABASE_URL` to the connection string, and set `SETUP_TOKEN` to a new token (`openssl rand -base64 32`). Leave `STORAGE_DRIVER=local` to store uploads in `.data/` instead of R2.
 
 ```bash
 npm run db:migrate
 ```
 
+On a Neon branch this has nothing to do: the branch already has production's tables.
+
 ```bash
 npm run dev
 ```
 
-Open http://localhost:3000/seasons/edit, enter your setup token and register a passkey. Browsers allow passkeys on `localhost` without https.
+Open http://localhost:3000/seasons/edit, enter your setup token and register a passkey. Browsers allow passkeys on `localhost` without https. On a Neon branch, production's passkeys are copied too but work only on your domain, so register a new one here; it is saved on the branch, not in production. Use a new setup token: one already used in production is marked used on the branch as well. Photos and other media from production do not show locally, because they are in R2 and `STORAGE_DRIVER=local` reads `.data/`.
 
 | Command | What it does |
 | --- | --- |
