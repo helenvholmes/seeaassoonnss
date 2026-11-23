@@ -23,7 +23,7 @@
       "destination": "/seasons/about"
     },
     {
-      "source": "/((?!$|seasons(?:/|$)|about$|login$|_vercel(?:/|$)).*)",
+      "source": "/((?!$|seasons(?:/|$)|about$|login$|signin$|_vercel(?:/|$)).*)",
       "destination": "/seasons/404"
     }
   ]

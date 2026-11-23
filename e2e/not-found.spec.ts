@@ -21,9 +21,9 @@ test("the rewrite target for addresses outside /seasons is the not-found page", 
   await expect(page.getByRole("heading", { name: "// not here" })).toBeVisible();
 });
 
-// /login is the address people guess for signing in; it goes to the sign-in page.
-test("/login and /seasons/login redirect to the sign-in page", async ({ request }) => {
-  for (const path of ["/login", "/seasons/login"]) {
+// /login and /signin are the addresses people guess for signing in; they go to the sign-in page.
+test("/login and /signin (also under /seasons) redirect to the sign-in page", async ({ request }) => {
+  for (const path of ["/login", "/seasons/login", "/signin", "/seasons/signin"]) {
     const res = await request.get(`http://localhost:3100${path}`, { maxRedirects: 0 });
     expect(res.status(), path).toBe(307);
     expect(res.headers()["location"], path).toBe("/seasons/edit/sign-in");
