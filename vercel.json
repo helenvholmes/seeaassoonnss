@@ -21,6 +21,10 @@
       "source": "/about",
       "has": [{ "type": "host", "value": "seeaassoonnss.app" }],
       "destination": "/seasons/about"
+    },
+    {
+      "source": "/((?!$|seasons(?:/|$)|about$|_vercel(?:/|$)).*)",
+      "destination": "/seasons/page-not-found"
     }
   ]
 }

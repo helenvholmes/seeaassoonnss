@@ -12,3 +12,11 @@ test("an unknown address shows the not-found page with a way back", async ({ pag
   await expect(page.locator(".not-found-sticker")).toHaveJSProperty("complete", true);
   expect(await page.locator(".not-found-sticker").evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
 });
+
+// On seeaassoonnss.app, vercel.json rewrites addresses outside /seasons (like /login)
+// to this route, so they get the same page instead of Vercel's plain 404.
+test("the rewrite target for addresses outside /seasons is the not-found page", async ({ page }) => {
+  const res = await page.goto("page-not-found");
+  expect(res?.status()).toBe(404);
+  await expect(page.getByRole("heading", { name: "// not here" })).toBeVisible();
+});
