@@ -16,7 +16,16 @@ test("an unknown address shows the not-found page with a way back", async ({ pag
 // On seeaassoonnss.app, vercel.json rewrites addresses outside /seasons (like /login)
 // to this route, so they get the same page instead of Vercel's plain 404.
 test("the rewrite target for addresses outside /seasons is the not-found page", async ({ page }) => {
-  const res = await page.goto("page-not-found");
+  const res = await page.goto("404");
   expect(res?.status()).toBe(404);
   await expect(page.getByRole("heading", { name: "// not here" })).toBeVisible();
+});
+
+// /login is the address people guess for signing in; it goes to the sign-in page.
+test("/login and /seasons/login redirect to the sign-in page", async ({ request }) => {
+  for (const path of ["/login", "/seasons/login"]) {
+    const res = await request.get(`http://localhost:3100${path}`, { maxRedirects: 0 });
+    expect(res.status(), path).toBe(307);
+    expect(res.headers()["location"], path).toBe("/seasons/edit/sign-in");
+  }
 });

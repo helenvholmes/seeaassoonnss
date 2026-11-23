@@ -23,8 +23,8 @@
       "destination": "/seasons/about"
     },
     {
-      "source": "/((?!$|seasons(?:/|$)|about$|_vercel(?:/|$)).*)",
-      "destination": "/seasons/page-not-found"
+      "source": "/((?!$|seasons(?:/|$)|about$|login$|_vercel(?:/|$)).*)",
+      "destination": "/seasons/404"
     }
   ]
 }

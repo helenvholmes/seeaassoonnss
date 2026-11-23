@@ -32,6 +32,10 @@ const nextConfig: NextConfig = {
         basePath: false,
         permanent: false,
       },
+      // /login (and /seasons/login) is the address people guess for signing in.
+      // vercel.json leaves /login out of its catch-all 404 rewrite so this runs.
+      { source: "/login", destination: "/seasons/edit/sign-in", basePath: false, permanent: false },
+      { source: "/login", destination: "/edit/sign-in", permanent: false },
     ];
   },
 };
