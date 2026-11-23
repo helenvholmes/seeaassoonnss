@@ -89,6 +89,8 @@ body {
   .owner input[type="text"], .owner input[type="password"] { font-size: 16px; }
   .owner button { min-height: 40px; }
 }
+.not-found { padding-top: 15vh; }
+.not-found-sticker { display: block; width: 180px; height: auto; margin: 0 0 16px -8px; transform: rotate(-4deg); user-select: none; }
 .muted { opacity: 0.55; }
 .error { color: #b3261e; }
 button, .button, input, textarea, select { font: inherit; }
