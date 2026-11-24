@@ -14,6 +14,7 @@ import type { LayerMove } from "./ops";
 import { normalizeRotation, placementOf, setRouteStops } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isCropped, NO_CROP, zoomCrop } from "@/lib/crop";
+import { nextPartNumber, seriesKey, sortParts, type SeriesOption } from "@/lib/series";
 
 interface Props {
   id: string;
@@ -35,6 +36,8 @@ interface Props {
   setCropping: (on: boolean) => void;
   sortOrder: number | null;
   onSortOrderChange: (n: number | null) => void;
+  /** The series in the owner's seasons (this one included, as it was when the editor opened). */
+  seriesOptions: SeriesOption[];
   select: (id: string | null) => void;
   setMobileVisible: (id: string, visible: boolean) => void;
   resetMobile: (kind: "scaled" | "column") => void;
@@ -143,6 +146,70 @@ function MonthInput({ value, onChange }: { value: string | null; onChange: (mont
         style={{ width: 90 }}
       />
     </div>
+  );
+}
+
+/** Which series this season is a part of, and which part. Seasons with the same series name link to each other. */
+function SeriesField({ id, doc, change, seriesOptions }: Props) {
+  const series = doc.series ?? null;
+  const [name, setName] = useState(series?.name ?? "");
+  useEffect(() => setName(doc.series?.name ?? ""), [doc.series?.name]);
+  const key = seriesKey(name);
+  const others = (seriesOptions.find((o) => seriesKey(o.name) === key)?.members ?? []).filter((m) => m.id !== id);
+  // Typing the name is one undo step, changing the part another.
+  const setSeries = (next: SeasonDoc["series"], key = "season:series") => change((d) => ({ ...d, series: next }), key);
+  const clash = series ? others.find((m) => m.part === series.part) : undefined;
+  const listId = `series-names-${id}`;
+  return (
+    <Field label="Series">
+      <input
+        type="text"
+        list={listId}
+        placeholder="none"
+        maxLength={100}
+        value={name}
+        onChange={(e) => {
+          const text = e.target.value;
+          setName(text);
+          const k = seriesKey(text);
+          if (!k) return setSeries(null);
+          const members = (seriesOptions.find((o) => seriesKey(o.name) === k)?.members ?? []).filter((m) => m.id !== id);
+          // Keep the part number while the name is typed; a season joining a series goes after its last part.
+          const sameSeries = series && seriesKey(series.name) === k;
+          const part = sameSeries || (series && members.length === 0) ? series!.part : nextPartNumber(members.map((m) => m.part));
+          setSeries({ name: text.trim().replace(/\s+/g, " "), part });
+        }}
+      />
+      <datalist id={listId}>
+        {seriesOptions.map((o) => (
+          <option key={seriesKey(o.name)} value={o.name} />
+        ))}
+      </datalist>
+      {series ? (
+        <>
+          <div className="row" style={{ flexWrap: "nowrap", alignItems: "center" }}>
+            <span className="small">part</span>
+            <NumberInput value={series.part} min={1} onChange={(n) => setSeries({ ...series, part: Math.min(999, Math.max(1, Math.round(n))) }, "season:series-part")} />
+          </div>
+          {others.length ? (
+            <ul className="series-members small muted">
+              {sortParts([...others.map((m) => ({ ...m, slug: m.id, self: false })), { id, slug: id, title: doc.title, part: series.part, status: "draft" as const, self: true }]).map((m) => (
+                <li key={m.id}>
+                  {m.part}. {m.title || "untitled"}
+                  {m.self ? " (this season)" : m.status === "draft" ? " (draft)" : ""}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {clash ? <span className="small error">“{clash.title || "untitled"}” is also part {series.part}.</span> : null}
+          <span className="small muted">
+            {others.length ? "Readers get a menu of the parts and a link to the next one, once each part is published." : "A new series. Give other seasons the same series name to link them."}
+          </span>
+        </>
+      ) : (
+        <span className="small muted">Seasons with the same series name link to each other, in order of their part number.</span>
+      )}
+    </Field>
   );
 }
 
@@ -313,6 +380,7 @@ function SeasonSettings(props: Props) {
           <span className="small muted">Follows the title until you publish or set a slug here.</span>
         ) : null}
       </Field>
+      <SeriesField {...props} />
       <SortOrderField id={id} sortOrder={props.sortOrder} onSortOrderChange={props.onSortOrderChange} />
       <Field label="Month">
         <MonthInput value={doc.month ?? null} onChange={(m) => change((d) => ({ ...d, month: m }), "season:month")} />

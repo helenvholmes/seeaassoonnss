@@ -25,11 +25,7 @@ export function plainText(markdown: string): string {
     .trim();
 }
 
-/** "// leafy greens": the lowercase // title format, without doubling an existing //. */
-export function slashTitle(title: string): string {
-  const t = title.trim() || "untitled";
-  return t.startsWith("//") ? t : `// ${t}`;
-}
+export { slashTitle } from "./layout";
 
 export function seasonMetadata(slug: string, doc: SeasonDoc, mediaBase: string): Metadata {
   const title = doc.title || "untitled";

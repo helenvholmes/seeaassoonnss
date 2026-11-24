@@ -1,6 +1,7 @@
 import "server-only";
 import { sql } from "./db";
-import { emptySeasonDoc, seasonDocSchema, slugProblem, titleSlug, type SeasonDoc } from "./schema";
+import { emptySeasonDoc, seasonDocSchema, slugProblem, titleSlug, type SeasonDoc, type Series } from "./schema";
+import { seriesKey, type SeriesMember, type SeriesOption } from "./series";
 
 export type SeasonStatus = "draft" | "published";
 
@@ -94,6 +95,43 @@ export async function listPublishedSeasons(): Promise<IndexEntry[]> {
              published->>'month' desc nulls last,
              created_at desc`;
   return rows.map((r) => ({ slug: r.slug, doc: r.published as SeasonDoc }));
+}
+
+/** The published parts of a series (see lib/series.ts), in no particular order. */
+export async function listSeriesMembers(name: string): Promise<SeriesMember[]> {
+  const key = seriesKey(name);
+  const rows = await sql`
+    select slug, published->>'title' as title, published->'series' as series from seasons
+    where status = 'published' and jsonb_typeof(published->'series') = 'object'`;
+  return rows
+    .filter((r) => seriesKey((r.series as Series).name ?? "") === key)
+    .map((r) => ({ slug: r.slug, title: r.title ?? "", part: (r.series as Series).part }));
+}
+
+/** Every series in the owner's drafts, for the editor's series field. */
+export async function listSeriesOptions(): Promise<SeriesOption[]> {
+  const rows = await sql`
+    select id, status, draft->>'title' as title, draft->'series' as series from seasons
+    where jsonb_typeof(draft->'series') = 'object'
+    order by created_at asc`;
+  const groups = new Map<string, SeriesOption>();
+  for (const r of rows) {
+    const series = r.series as Series;
+    const key = seriesKey(series.name ?? "");
+    if (!key) continue;
+    const group = groups.get(key) ?? { name: series.name.trim(), members: [] };
+    group.members.push({ id: r.id, title: r.title ?? "", part: series.part, status: r.status });
+    groups.set(key, group);
+  }
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Slugs of the published seasons in any of these series, for refreshing their pages. */
+export async function seriesSlugs(...names: (string | null | undefined)[]): Promise<string[]> {
+  const slugs = new Set<string>();
+  const keys = new Set(names.filter((n): n is string => !!n && !!seriesKey(n)).map(seriesKey));
+  for (const key of keys) for (const m of await listSeriesMembers(key)) slugs.add(m.slug);
+  return [...slugs];
 }
 
 /** Position on the index page; null = listed by date. */

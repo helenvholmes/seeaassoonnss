@@ -46,6 +46,7 @@ import { measure, refineSnap } from "./measure";
 import { MeasureOverlay } from "./MeasureOverlay";
 import type { Place } from "@/lib/geo";
 import { parseSpotifyLink, type SpotifyInfo } from "@/lib/spotify";
+import type { SeriesOption } from "@/lib/series";
 
 type SaveState = { kind: "saved" } | { kind: "pending" } | { kind: "saving" } | { kind: "error"; message: string; fatal: boolean };
 
@@ -58,6 +59,8 @@ export interface EditorProps {
   initialPublished: SeasonDoc | null;
   initialSortOrder: number | null;
   mediaBase: string;
+  /** The series in the owner's other seasons, for the series field. */
+  seriesOptions?: SeriesOption[];
 }
 
 const SAVE_DELAY = 1000;
@@ -1425,6 +1428,7 @@ export function Editor(props: EditorProps) {
           setCropping={(on) => setCropId(on ? selectedId : null)}
           sortOrder={sortOrder}
           onSortOrderChange={setSortOrder}
+          seriesOptions={props.seriesOptions ?? []}
           select={setSelectedId}
           setMobileVisible={(itemId, visible) => change((d) => setMobileVisible(d, itemId, visible))}
           addBackgroundModel={(file, textureSize) => void addModel(file, textureSize, "background")}

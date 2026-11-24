@@ -329,6 +329,18 @@ export const scatterSchema = z.object({
 export type Scatter = z.infer<typeof scatterSchema>;
 export const DEFAULT_SCATTER: Scatter = { seed: 1, minScale: 0.7, maxScale: 1.3 };
 
+/** Longest series name. */
+export const MAX_SERIES_NAME = 100;
+/**
+ * A multi-part series: seasons with the same name (ignoring case and spacing) are
+ * parts of one series, read in order of `part`. See lib/series.ts.
+ */
+export const seriesSchema = z.object({
+  name: z.string().trim().min(1).max(MAX_SERIES_NAME),
+  part: z.number().int().min(1).max(999),
+});
+export type Series = z.infer<typeof seriesSchema>;
+
 export const seasonDocSchema = z.object({
   title: z.string().max(200),
   subtitle: z.string().max(2000),
@@ -340,6 +352,8 @@ export const seasonDocSchema = z.object({
   scatter: scatterSchema.default(DEFAULT_SCATTER),
   /** Optional month the season belongs to, "YYYY-MM". Orders the index. */
   month: z.string().regex(MONTH_PATTERN).nullable().default(null),
+  /** The series this season is a part of, if any. */
+  series: seriesSchema.nullable().default(null),
   /**
    * Minimum canvas heights. The page always grows to fit its lowest item (see
    * lib/layout.ts), so these only add empty space; there is no upper limit.
@@ -414,6 +428,7 @@ export function emptySeasonDoc(title: string): SeasonDoc {
     period: "",
     coverItemId: null,
     month: null,
+    series: null,
     background: { type: "color", value: DEFAULT_BACKGROUND },
     backgroundLayer: null,
     scatter: DEFAULT_SCATTER,

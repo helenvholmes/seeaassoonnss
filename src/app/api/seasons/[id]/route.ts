@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { handle, readJson } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/session";
 import { refreshPublicPage } from "@/lib/revalidate";
-import { deleteSeason, getSeason, renameSlug, saveDraft, SeasonError, setSortOrder } from "@/lib/seasons";
+import { deleteSeason, getSeason, renameSlug, saveDraft, SeasonError, seriesSlugs, setSortOrder } from "@/lib/seasons";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -29,7 +29,9 @@ export const PATCH = handle(async (request: Request, { params }: Ctx) => {
   const body = await readJson(request);
   if (typeof body.slug === "string") {
     const result = await renameSlug(id, body.slug.trim());
-    refreshPublicPage(result.oldSlug, result.slug);
+    // The other parts of its series link to this season by slug.
+    const season = await getSeason(id);
+    refreshPublicPage(result.oldSlug, result.slug, ...(await seriesSlugs(season?.published?.series?.name)));
     return NextResponse.json(result);
   }
   if ("sortOrder" in body && (body.sortOrder === null || typeof body.sortOrder === "number")) {
@@ -42,8 +44,10 @@ export const PATCH = handle(async (request: Request, { params }: Ctx) => {
 
 export const DELETE = handle(async (request: Request, { params }: Ctx) => {
   await requireOwner(request);
-  const slug = await deleteSeason((await params).id);
+  const { id } = await params;
+  const before = await getSeason(id);
+  const slug = await deleteSeason(id);
   if (!slug) throw new SeasonError("Season not found.", 404);
-  refreshPublicPage(slug);
+  refreshPublicPage(slug, ...(await seriesSlugs(before?.status === "published" ? before.published?.series?.name : null)));
   return NextResponse.json({ ok: true });
 });

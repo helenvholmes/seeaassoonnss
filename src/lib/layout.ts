@@ -22,6 +22,12 @@ export function pageHeight(doc: SeasonDoc, layout: Layout): number {
   return Math.ceil(Math.max(minimum, lowest > 0 ? lowest + BOTTOM_SPACE[layout] : 0));
 }
 
+/** "// leafy greens": the lowercase // title format, without doubling an existing //. */
+export function slashTitle(title: string): string {
+  const t = title.trim() || "untitled";
+  return t.startsWith("//") ? t : `// ${t}`;
+}
+
 /** "2025-10" → "october 2025" (lowercase, like season titles). */
 export function formatMonth(month: string | null | undefined): string {
   if (!month) return "";

@@ -2,6 +2,8 @@
 // Fixed seasons for the browser tests. See [fixture]/page.tsx.
 import { Editor } from "@/components/editor/Editor";
 import { RouteView } from "@/components/items/RouteView";
+import { SeriesMenu, SeriesNext } from "@/components/SeriesNav";
+import { seriesNavigation, type SeriesOption } from "@/lib/series";
 import { emptySeasonDoc, type Item, type RouteItem, type SeasonDoc } from "@/lib/schema";
 
 const QUOTE: Item = {
@@ -34,8 +36,32 @@ const ROUTE: RouteItem = {
 
 const doc = (title: string, items: Item[]): SeasonDoc => ({ ...emptySeasonDoc(title), items });
 
+/** Two parts of "Odyssey" in the owner's other seasons. */
+const SERIES_OPTIONS: SeriesOption[] = [
+  {
+    name: "Odyssey",
+    members: [
+      { id: "00000000-0000-4000-8000-0000000000b1", title: "Odyssey p 1", part: 1, status: "published" },
+      { id: "00000000-0000-4000-8000-0000000000b2", title: "Odyssey p 2", part: 2, status: "draft" },
+    ],
+  },
+];
+
 function EditorFixture({ initial }: { initial: SeasonDoc }) {
-  return <Editor id="00000000-0000-4000-8000-0000000000aa" initialSlug="e2e" initialDoc={initial} initialVersion={1} initialStatus="draft" initialPublished={null} initialSortOrder={null} mediaBase="/seasons/local-media" />;
+  return <Editor id="00000000-0000-4000-8000-0000000000aa" initialSlug="e2e" initialDoc={initial} initialVersion={1} initialStatus="draft" initialPublished={null} initialSortOrder={null} mediaBase="/seasons/local-media" seriesOptions={SERIES_OPTIONS} />;
+}
+
+/** The middle part of a three-part series, as a season page shows it. */
+function ReaderSeries() {
+  const part = (n: number) => ({ slug: `odyssey-p-${n}`, title: `Odyssey p ${n}`, part: n });
+  const nav = seriesNavigation("Odyssey", part(2), [part(1), part(2), part(3)])!;
+  return (
+    <main className="season-page" style={{ background: "#fbfbf9" }}>
+      <SeriesMenu nav={nav} />
+      <div style={{ height: "250vh" }} />
+      <SeriesNext nav={nav} />
+    </main>
+  );
 }
 
 function ReaderRoute() {
@@ -53,6 +79,7 @@ export const FIXTURES = {
   "editor-quote": () => <EditorFixture initial={doc("quote", [QUOTE])} />,
   "editor-route": () => <EditorFixture initial={doc("route", [ROUTE])} />,
   "reader-route": () => <ReaderRoute />,
+  "reader-series": () => <ReaderSeries />,
 };
 
 export type FixtureName = keyof typeof FIXTURES;
