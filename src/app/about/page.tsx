@@ -382,6 +382,11 @@ export default function Landing() {
   const guide = `${source}#deploy-your-own-copy`;
   return (
     <main className="landing">
+      <nav className="landing-nav" aria-label="Account">
+        <Link className="button" href="/edit/sign-in">
+          log in
+        </Link>
+      </nav>
       <header className="landing-hero">
         <h1 className="landing-name">
           <Wordmark />

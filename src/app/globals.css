@@ -488,7 +488,9 @@ body.is-dragging-route-start, body.is-dragging-route-start * { cursor: ns-resize
 .wordmark-echo { font-style: italic; }
 .landing { font: 14px/1.5 "IBM Plex Mono", ui-monospace, monospace; overflow-x: clip; }
 .landing a { color: inherit; }
-.landing-hero { max-width: 1280px; margin: 0 auto; padding: 72px 32px 24px; }
+.landing-nav { max-width: 1280px; margin: 0 auto; padding: 20px 32px 0; display: flex; justify-content: flex-end; }
+.landing-nav .button { padding: 6px 14px; }
+.landing-hero { max-width: 1280px; margin: 0 auto; padding: 40px 32px 24px; }
 .landing-name { font: 400 clamp(48px, 11vw, 148px)/0.95 "EB Garamond", serif; letter-spacing: -0.01em; margin: 0 0 24px; }
 .landing-lede { font: 400 clamp(22px, 2.6vw, 32px)/1.25 "EB Garamond", serif; max-width: 26em; margin: 0 0 28px; }
 .landing-actions { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -564,7 +566,8 @@ body.is-dragging-route-start, body.is-dragging-route-start * { cursor: ns-resize
   .tour-quote p { font-size: 6.4cqw; }
 }
 @media (max-width: 640px) {
-  .landing-hero { padding: 48px 16px 16px; }
+  .landing-nav { padding: 16px 16px 0; }
+  .landing-hero { padding: 24px 16px 16px; }
   .landing-sample, .landing-section { padding-left: 16px; padding-right: 16px; }
   .landing-section { padding-top: 64px; }
 }
