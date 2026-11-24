@@ -3,7 +3,7 @@
 import { geoPath } from "d3-geo";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BASE_PATH, MAP_VERSION } from "@/lib/client";
-import { drawProgress, fitRoute, nameOverflow, nameSize, placeNames, routeCoordinates, routeProjection, sampleRoute, stopFractions, type NamePlacement, type RouteFrame } from "@/lib/route";
+import { drawProgress, fitRoute, ROUTE_SCREEN_UNITS, nameOverflow, nameSize, placeNames, routeCoordinates, routeProjection, sampleRoute, stopFractions, type NamePlacement, type RouteFrame } from "@/lib/route";
 import type { Layout, Placement, RouteItem } from "@/lib/schema";
 
 const NAME_FONT = "Inter";
@@ -16,8 +16,6 @@ function nameWidth(text: string, size: number): number {
   return measurer.measureText(text).width;
 }
 
-/** How tall a screen is in design units, for the editor's preview of the pinned map. */
-const SCREEN_UNITS: Record<Layout, number> = { desktop: 900, mobile: 780 };
 /** Frame sizes are rounded so small window changes reuse the same land image. */
 const QUANTUM = 40;
 
@@ -40,9 +38,10 @@ export function frameUrl(f: RouteFrame, k: number, borders: boolean) {
 /**
  * A scroll-driven route map. The item's box is a band of the canvas. While the
  * reader scrolls through the band, the map panel stays fixed on screen (sticky),
- * the route draws in with scroll progress, and items linked to a stop move the map
- * to that stop when they reach the middle of the screen. With reduced motion, the
- * whole route shows at once and nothing moves.
+ * the route draws in with scroll progress, and an item linked to a stop marks that
+ * stop (larger, named) while it is at or above the middle of the screen. The map
+ * itself never moves: the editor places linked items so they reach mid-screen as
+ * the line reaches their stop. With reduced motion, the whole route shows at once.
  */
 export function RouteView({
   item,
@@ -83,7 +82,6 @@ export function RouteView({
   const [editorBandHeight, setEditorBandHeight] = useState(0);
   const [progress, setProgress] = useState(interactive ? 0 : 1);
   const [active, setActive] = useState<number | null>(null);
-  const [reduced, setReduced] = useState(false);
   const [length, setLength] = useState(0);
 
   // Panel size → frame. In the editor the panel previews one screen's height.
@@ -95,7 +93,7 @@ export function RouteView({
     const measure = () => {
       if (!interactive) {
         const scale = b.clientWidth / placement.w;
-        setEditorPanelHeight(Math.min(b.clientHeight, SCREEN_UNITS[layout] * scale));
+        setEditorPanelHeight(Math.min(b.clientHeight, ROUTE_SCREEN_UNITS[layout] * scale));
         setEditorBandHeight(b.clientHeight);
       }
       const w = Math.max(QUANTUM, Math.round(el.clientWidth / QUANTUM) * QUANTUM);
@@ -156,7 +154,6 @@ export function RouteView({
   useEffect(() => {
     if (!interactive) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    setReduced(reduce);
     let frame = 0;
     const update = () => {
       frame = 0;
@@ -197,12 +194,6 @@ export function RouteView({
     };
   }, [interactive, item.id, c.stops.length, c.drawStart]);
 
-  const zoom = active !== null && !reduced && geometry ? c.stepZoom : 1;
-  const focus = active !== null && geometry ? geometry.points[active] : null;
-  const transform =
-    zoom > 1 && focus && size
-      ? `translate(${size.w / 2}px, ${size.h / 2}px) scale(${zoom}) translate(${-focus[0]}px, ${-focus[1]}px)`
-      : "none";
   // The last stop the line has reached, unless a linked item names one.
   const reachedIndex = geometry ? geometry.fractions.reduce((last, f, i) => (f <= progress + 1e-6 ? i : last), -1) : -1;
   const labelIndex = active ?? (progress > 0 ? reachedIndex : -1);
@@ -220,20 +211,20 @@ export function RouteView({
             className={`${lineOnly ? "route-svg-line" : ""}${aheadFaint ? " ahead-faint" : ""}`}
             viewBox={`0 0 ${size.w} ${size.h}`}
             preserveAspectRatio="xMidYMid slice" role="img" aria-label={`Route map: ${c.stops.map((s) => s.name).join(", ")}`}>
-            <g className="route-move" style={{ transform, transition: reduced || !interactive ? "none" : undefined }}>
+            <g>
               {lineOnly ? null : (
                 <>
-                  <image href={frameUrl(geometry.frame, c.stepZoom, c.borders)} x={-size.w / 2} y={-size.h / 2} width={size.w * 2} height={size.h * 2} />
-                  <path d={geometry.d} className="route-line-base" strokeWidth={(lineWidth * 0.85) / zoom} />
+                  <image href={frameUrl(geometry.frame, 1, c.borders)} x={-size.w / 2} y={-size.h / 2} width={size.w * 2} height={size.h * 2} />
+                  <path d={geometry.d} className="route-line-base" strokeWidth={lineWidth * 0.85} />
                 </>
               )}
-              {aheadFaint ? <path d={geometry.d} className="route-line-ahead" strokeWidth={1.2 / zoom} strokeDasharray={`${4 / zoom} ${3 / zoom}`} /> : null}
+              {aheadFaint ? <path d={geometry.d} className="route-line-ahead" strokeWidth={1.2} strokeDasharray={"4 3"} /> : null}
               <path
                 ref={drawn}
                 d={geometry.d}
                 className="route-line"
                 stroke={c.color}
-                strokeWidth={lineWidth / zoom}
+                strokeWidth={lineWidth}
                 strokeDasharray={length ? `${length} ${length}` : undefined}
                 strokeDashoffset={length && Number.isFinite(progress) ? length * (1 - progress) : undefined}
               />
@@ -241,15 +232,15 @@ export function RouteView({
                 ? geometry.points.map(([x, y], i) => {
                     const reached = geometry.fractions[i] <= progress + 1e-6;
                     if (!aheadFaint && !reached) return null;
-                    return <circle key={i} cx={x} cy={y} r={(i === labelIndex ? dotR * 1.3 : dotR) / zoom} className={`route-dot${i === labelIndex ? " current" : ""}`} />;
+                    return <circle key={i} cx={x} cy={y} r={i === labelIndex ? dotR * 1.3 : dotR} className={`route-dot${i === labelIndex ? " current" : ""}`} />;
                   })
                 : geometry.points.map(([x, y], i) => (
                 <circle
                   key={i}
                   cx={x}
                   cy={y}
-                  r={(i === labelIndex ? dotR + 2.5 : dotR) / zoom}
-                  strokeWidth={2 / zoom}
+                  r={i === labelIndex ? dotR + 2.5 : dotR}
+                  strokeWidth={2}
                   className={`route-stop${geometry.fractions[i] <= progress + 1e-6 ? " reached" : ""}`}
                   style={{ fill: geometry.fractions[i] <= progress + 1e-6 ? c.color : undefined }}
                 />
@@ -262,10 +253,10 @@ export function RouteView({
                     return (
                       <text
                         key={`label${i}`}
-                        x={x + spot.dx / zoom}
-                        y={y + spot.dy / zoom}
+                        x={x + spot.dx}
+                        y={y + spot.dy}
                         dy="0.35em"
-                        fontSize={fontSize / zoom}
+                        fontSize={fontSize}
                         className={`route-place${reached ? " reached" : ""}`}
                       >
                         {s.name}

@@ -2,6 +2,7 @@
 // Content is shared by both layouts; placement is separate per layout.
 import { CANVAS_WIDTH, DESKTOP_WIDTH, MOBILE_WIDTH, type Item, type Layout, type Placement, type RouteContent, type Scatter, type SeasonDoc } from "../../lib/schema.ts";
 import { bottomOf } from "../../lib/layout.ts";
+import { ROUTE_SCREEN_UNITS, stopFractions } from "../../lib/route.ts";
 
 export type LayerMove = "front" | "forward" | "backward" | "back";
 
@@ -287,6 +288,48 @@ export function setRouteStops(doc: SeasonDoc, routeId: string, stops: RouteConte
       return { ...i, routeStop: index < 0 ? null : { routeId, index } };
     }),
   };
+}
+
+/**
+ * Where on the page (design units) an item's top must be for it to reach the middle
+ * of the screen just as the route's line reaches stop `index`. Null when the band is
+ * no taller than a screen (the line then draws with no pinned scroll to line up with).
+ */
+export function routeStopTop(route: Item & { type: "route" }, layout: Layout, index: number): number | null {
+  const p = placementOf(route, layout);
+  if (!p) return null;
+  const screen = ROUTE_SCREEN_UNITS[layout];
+  const travel = p.h - screen;
+  if (travel <= 0) return null;
+  const start = Math.min(0.9, Math.max(0, route.content.drawStart ?? 0));
+  const at = stopFractions(route.content)[index] ?? 0;
+  return round(p.y + screen / 2 + (start + at * (1 - start)) * travel);
+}
+
+/**
+ * Moves an item linked to a route stop up or down, in every layout it shows in,
+ * so it reaches mid-screen as the line reaches its stop. The map stays still; the
+ * text comes to it.
+ */
+export function alignToRouteStop(doc: SeasonDoc, id: string): SeasonDoc {
+  const item = doc.items.find((i) => i.id === id);
+  const link = item?.routeStop;
+  const route = link && doc.items.find((i) => i.id === link.routeId);
+  if (!item || !link || route?.type !== "route") return doc;
+  const moved = { ...item };
+  for (const layout of ["desktop", "mobile"] as const) {
+    const p = placementOf(item, layout);
+    const y = routeStopTop(route, layout, link.index);
+    if (!p || y === null || p.locked) continue;
+    if (layout === "desktop") moved.desktop = { ...p, y };
+    else moved.mobile = { ...p, y };
+  }
+  return { ...doc, items: doc.items.map((i) => (i.id === id ? moved : i)) };
+}
+
+/** Lines up every item linked to a stop on this route. */
+export function alignAllToRoute(doc: SeasonDoc, routeId: string): SeasonDoc {
+  return doc.items.filter((i) => i.routeStop?.routeId === routeId).reduce((d, i) => alignToRouteStop(d, i.id), doc);
 }
 
 /** Hides an item on mobile, or shows it again at its scaled desktop position. */

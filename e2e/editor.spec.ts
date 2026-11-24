@@ -11,7 +11,7 @@ const center = async (l: Locator) => {
 };
 const inspectorText = (page: Page) => page.locator(".editor-inspector").innerText();
 
-async function openEditor(page: Page, fixture: "editor-quote" | "editor-route") {
+async function openEditor(page: Page, fixture: "editor-quote" | "editor-route" | "editor-route-text") {
   await page.goto(`e2e/${fixture}`);
   await expect(page.locator(".editor-canvas")).toBeVisible();
   await expect(items(page).first()).toBeVisible();
@@ -167,6 +167,50 @@ test.describe("route maps in the editor", () => {
     // The route box itself did not move.
     await page.keyboard.press("ControlOrMeta+z");
     await expect.poll(() => inspectorText(page)).toContain("Line starts drawing as soon as the map pins");
+  });
+});
+
+test.describe("text linked to route stops", () => {
+  test("linking a quote to a stop moves it level with that stop's tick; one undo puts it back", async ({ page }) => {
+    await openEditor(page, "editor-route-text");
+    const quote = page.locator(".editor-canvas .item.item-quote");
+    const before = (await quote.boundingBox())!;
+    await quote.click();
+    await page.getByLabel(/Route stop/).selectOption({ label: "2. Madrid" });
+
+    // The quote's top now sits on Madrid's tick in the band's scroll guide: it reaches
+    // mid-screen just as the line reaches Madrid.
+    const tick = page.locator(".route-scale-stop").nth(1);
+    await expect.poll(async () => Math.abs((await quote.boundingBox())!.y - (await tick.boundingBox())!.y)).toBeLessThan(3);
+    expect((await quote.boundingBox())!.x).toBeCloseTo(before.x, 0); // only up or down
+
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect.poll(async () => (await quote.boundingBox())!.y).toBeCloseTo(before.y, 0);
+  });
+
+  test("on the page, the map holds still and marks the stop while its text is mid-screen", async ({ page }) => {
+    await page.goto("e2e/reader-route-text");
+    const dots = page.locator(".route-dot");
+    await expect(dots).toHaveCount(3);
+    const text = page.locator(".linked-text");
+    const scrollTextTo = async (fromTop: number) => {
+      const top = await text.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+      await page.evaluate((y) => window.scrollTo(0, y), top - fromTop);
+      await page.waitForTimeout(250);
+    };
+    const vh = page.viewportSize()!.height;
+
+    await scrollTextTo(vh * 0.8); // below mid-screen: Madrid is not marked yet
+    await expect(dots.nth(1)).not.toHaveClass(/current/);
+    const at = await dots.nth(1).boundingBox();
+
+    await scrollTextTo(vh * 0.4); // above mid-screen: Madrid is marked
+    await expect(dots.nth(1)).toHaveClass(/current/);
+    await page.waitForTimeout(1000); // longer than any transition
+    const after = (await dots.nth(1).boundingBox())!;
+    // The stop is where it was: the map did not pan or zoom to it.
+    expect(Math.abs(after.x + after.width / 2 - (at!.x + at!.width / 2))).toBeLessThan(1);
+    expect(Math.abs(after.y + after.height / 2 - (at!.y + at!.height / 2))).toBeLessThan(1);
   });
 });
 

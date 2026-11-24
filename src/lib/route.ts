@@ -3,7 +3,10 @@
 // both must build exactly the same projection: fitRoute() rounds its numbers and
 // routeProjection() rebuilds a projection from them on either side.
 import { geoDistance, geoInterpolate, geoMercator, type GeoProjection } from "d3-geo";
-import { ROUTE_MAX_LINE_POINTS, ROUTE_MAX_STOPS, type RouteContent } from "./schema.ts";
+import { ROUTE_MAX_LINE_POINTS, ROUTE_MAX_STOPS, type Layout, type RouteContent } from "./schema.ts";
+
+/** How tall a screen is in design units, as the editor previews a route band. */
+export const ROUTE_SCREEN_UNITS: Record<Layout, number> = { desktop: 900, mobile: 780 };
 
 type Position = [number, number];
 type Stop = RouteContent["stops"][number];

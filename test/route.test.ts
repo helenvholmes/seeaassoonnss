@@ -157,3 +157,34 @@ test("the line can wait before it starts drawing, and still finishes at the end"
   assert.equal(drawProgress(1, 0.4), 1);
   assert.equal(drawProgress(1.2, 0.9), 1);
 });
+
+test("linked items line up to reach mid-screen as the line reaches their stop", async () => {
+  const { alignAllToRoute, alignToRouteStop } = await import("../src/components/editor/ops.ts");
+  const routeId = "00000000-0000-4000-8000-000000000001";
+  // Three stops evenly spaced along the equator: the line reaches them at 0, ½ and 1.
+  const route: Item = {
+    id: routeId,
+    type: "route",
+    desktop: { x: 0, y: 1000, w: 720, h: 2700, rotation: 0, z: 1, locked: false },
+    mobile: { x: 0, y: 500, w: 390, h: 780, rotation: 0, z: 1, locked: false },
+    content: { stops: [{ name: "a", lon: 0, lat: 0 }, { name: "b", lon: 10, lat: 0 }, { name: "c", lon: 20, lat: 0 }], line: [], color: "#c63d32", borders: true, stepZoom: 3, drawStart: 0.5 },
+  };
+  const linked = (n: number, index: number, locked = false): Item => ({
+    id: `00000000-0000-4000-8000-00000000002${n}`,
+    type: "quote",
+    routeStop: { routeId, index },
+    desktop: { x: 0, y: 0, w: 100, h: 100, rotation: 0, z: 2, locked },
+    mobile: { x: 0, y: 7, w: 100, h: 100, rotation: 0, z: 2, locked: false },
+    content: { markdown: "", source: "", font: "serif", size: 20, align: "left", color: "#000000", binding: null },
+  });
+  const doc = { ...emptySeasonDoc("t"), items: [route, linked(0, 0), linked(1, 1), linked(2, 2, true)] };
+  // Band 2700 tall, screen 900: the map pins with 1800 to travel. The line waits for
+  // half of it, so stop b (halfway along the line) is reached ¾ of the way: 1000 + 450 + 1350.
+  const one = alignToRouteStop(doc, linked(1, 1).id);
+  assert.equal(one.items[2].desktop.y, 2800);
+  // The mobile band is one screen tall, so there is nothing to line up with there.
+  assert.equal(one.items[2].mobile?.y, 7);
+
+  const all = alignAllToRoute(doc, routeId);
+  assert.deepEqual(all.items.slice(1).map((i) => i.desktop.y), [2350, 2800, 0]); // a locked item stays put
+});

@@ -11,7 +11,7 @@ import { formatBytes } from "./upload";
 import { imageUrl, quoteSize } from "../ItemContent";
 import { formatDuration } from "../items/VoiceNoteView";
 import type { LayerMove } from "./ops";
-import { normalizeRotation, placementOf, setRouteStops } from "./ops";
+import { alignAllToRoute, alignToRouteStop, normalizeRotation, placementOf, setRouteStops } from "./ops";
 import { parseRouteGeoJSON } from "@/lib/route";
 import { isCropped, NO_CROP, zoomCrop } from "@/lib/crop";
 import { nextPartNumber, seriesKey, sortParts, type SeriesOption } from "@/lib/series";
@@ -725,7 +725,7 @@ function CropControls({ item, p, cropping, setCropping, updateItem }: { item: Ph
   );
 }
 
-function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"]; swatches: string[] }) {
+function RouteSettings({ item, updateItem, change, swatches, linked }: { item: RouteItem; updateItem: Props["updateItem"]; change: Props["change"]; swatches: string[]; linked: number }) {
   const c = item.content;
   const input = useRef<HTMLInputElement>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -836,14 +836,9 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
         />
       </div>
       {message ? <span className="small muted">{message}</span> : null}
-      <div className="grid2">
-        <Field label="Route color">
-          <ColorPicker label="Route color" value={c.color} swatches={swatches} onChange={(color) => set({ color }, "color")} />
-        </Field>
-        <Field label={`Zoom on a stop: ${c.stepZoom}×`}>
-          <input type="range" min={1} max={8} step={0.5} value={c.stepZoom} onChange={(e) => set({ stepZoom: Number(e.target.value) }, "stepZoom")} />
-        </Field>
-      </div>
+      <Field label="Route color">
+        <ColorPicker label="Route color" value={c.color} swatches={swatches} onChange={(color) => set({ color }, "color")} />
+      </Field>
       <Field label={(c.drawStart ?? 0) > 0 ? `Line starts drawing ${Math.round((c.drawStart ?? 0) * 100)}% of the way through the band` : "Line starts drawing as soon as the map pins"}>
         <input
           type="range"
@@ -855,6 +850,14 @@ function RouteSettings({ item, updateItem, change, swatches }: { item: RouteItem
           onChange={(e) => set({ drawStart: Number(e.target.value) / 100 }, "drawStart")}
         />
       </Field>
+      {linked > 0 ? (
+        <div className="stack">
+          <button type="button" onClick={() => change((d) => alignAllToRoute(d, item.id))}>
+            Line up {linked === 1 ? "the linked item" : `the ${linked} linked items`} with their stops
+          </button>
+          <span className="small muted">After changing the band, the stops or when the line starts, this moves each linked item so it reaches mid-screen as the line reaches its stop.</span>
+        </div>
+      ) : null}
       <Field label="Style">
         <select value={c.style ?? "map"} onChange={(e) => set({ style: e.target.value as "map" | "line" }, "style")}>
           <option value="map">Map: land, stops and the route</option>
@@ -1138,7 +1141,7 @@ function ItemSettings(props: Props & { item: Item }) {
         </>
       ) : null}
 
-      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} swatches={docColors(doc)} /> : null}
+      {item.type === "route" ? <RouteSettings item={item} updateItem={updateItem} change={change} swatches={docColors(doc)} linked={doc.items.filter((i) => i.routeStop?.routeId === item.id).length} /> : null}
 
       {item.type === "model_3d" ? <ModelFields {...props} target={item.id} content={item.content} /> : null}
 
@@ -1172,12 +1175,14 @@ function ItemSettings(props: Props & { item: Item }) {
       ) : null}
 
       {item.type !== "route" && doc.items.some((i) => i.type === "route") ? (
-        <Field label="Route stop (moves the map there when this item is mid-screen)">
+        <Field label="Route stop (marks it on the map while this item is mid-screen)">
           <select
             value={item.routeStop ? `${item.routeStop.routeId}:${item.routeStop.index}` : ""}
             onChange={(e) => {
               const [routeId, index] = e.target.value.split(":");
-              updateItem((i) => ({ ...i, routeStop: e.target.value ? { routeId, index: Number(index) } : null }));
+              const routeStop = e.target.value ? { routeId, index: Number(index) } : null;
+              // Linking moves the item to where the line reaches the stop: the map stays still.
+              change((d) => alignToRouteStop({ ...d, items: d.items.map((i) => (i.id === item.id ? { ...i, routeStop } : i)) }, item.id));
             }}
           >
             <option value="">none</option>
@@ -1194,6 +1199,14 @@ function ItemSettings(props: Props & { item: Item }) {
               ))}
           </select>
         </Field>
+      ) : null}
+      {item.type !== "route" && item.routeStop ? (
+        <div className="stack">
+          <button type="button" onClick={() => change((d) => alignToRouteStop(d, item.id))}>
+            Line up with its stop
+          </button>
+          <span className="small muted">Moves this item up or down so it reaches mid-screen as the line reaches the stop.</span>
+        </div>
       ) : null}
 
       <hr />

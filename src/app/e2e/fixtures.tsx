@@ -75,9 +75,26 @@ function ReaderRoute() {
   );
 }
 
+/** A text block linked to Madrid, partway down the band. */
+function ReaderRouteText() {
+  return (
+    <div className="canvas" style={{ background: "#fff", position: "relative" }}>
+      <div style={{ height: "400vh", width: 540 }}>
+        <RouteView item={ROUTE} interactive layout="desktop" placement={ROUTE.desktop} />
+      </div>
+      <div className="linked-text" data-route-stop={`${ROUTE.id}:1`} style={{ position: "absolute", top: "200vh", left: 560, width: 300 }}>
+        Madrid at noon
+      </div>
+      <div style={{ height: "50vh" }} />
+    </div>
+  );
+}
+
 export const FIXTURES = {
   "editor-quote": () => <EditorFixture initial={doc("quote", [QUOTE])} />,
   "editor-route": () => <EditorFixture initial={doc("route", [ROUTE])} />,
+  "editor-route-text": () => <EditorFixture initial={doc("route and text", [ROUTE, { ...QUOTE, desktop: { ...QUOTE.desktop, x: 1100, y: 500, w: 300 } }])} />,
+  "reader-route-text": () => <ReaderRouteText />,
   "reader-route": () => <ReaderRoute />,
   "reader-series": () => <ReaderSeries />,
 };
