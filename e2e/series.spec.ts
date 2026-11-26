@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Multi-part series: the parts menu and the next-part link on a season page, and
+// Multi-part series: the parts menu and the previous/next links on a season page, and
 // the series field in the editor. Fixtures in src/app/e2e.
 
 test.describe("reading a series", () => {
@@ -36,14 +36,54 @@ test.describe("reading a series", () => {
     expect(after.y).toBeCloseTo(before.y, 0);
   });
 
-  test("the end of the page links to the next part and back to the previous one", async ({ page }) => {
+  test("the bottom of the page has the previous part on the left and the next on the right", async ({ page }) => {
+    await page.goto("e2e/reader-series");
+    await page.mouse.wheel(0, 5000);
+    const previous = page.locator(".series-previous");
+    const next = page.locator(".series-next-link");
+    await expect(previous).toBeInViewport();
+    await expect(next).toBeInViewport();
+    await expect(previous).toContainText("part 1 of 3");
+    await expect(previous).toHaveAttribute("href", "/seasons/odyssey-p-1");
+    await expect(next).toContainText("part 3 of 3");
+    await expect(next).toHaveAttribute("href", "/seasons/odyssey-p-3");
+
+    const width = page.viewportSize()!.width;
+    const p = (await previous.boundingBox())!;
+    const n = (await next.boundingBox())!;
+    expect(p.x).toBeLessThan(width / 4);
+    expect(n.x + n.width).toBeGreaterThan((width * 3) / 4);
+    expect(Math.abs(p.y - n.y)).toBeLessThan(2);
+  });
+
+  test("the first part links only forward, on the right; the last only back, on the left", async ({ page }) => {
+    const width = page.viewportSize()!.width;
+
+    await page.goto("e2e/reader-series-first");
+    await page.mouse.wheel(0, 5000);
+    await expect(page.locator(".series-previous")).toHaveCount(0);
+    const next = page.locator(".series-next-link");
+    await expect(next).toBeInViewport();
+    await expect(next).toHaveAttribute("href", "/seasons/odyssey-p-2");
+    const n = (await next.boundingBox())!;
+    expect(n.x + n.width).toBeGreaterThan((width * 3) / 4);
+
+    await page.goto("e2e/reader-series-last");
+    await page.mouse.wheel(0, 5000);
+    await expect(page.locator(".series-next-link")).toHaveCount(0);
+    const previous = page.locator(".series-previous");
+    await expect(previous).toBeInViewport();
+    await expect(previous).toHaveAttribute("href", "/seasons/odyssey-p-2");
+    expect((await previous.boundingBox())!.x).toBeLessThan(width / 4);
+  });
+
+  test("clicking the next part goes there", async ({ page }) => {
     await page.goto("e2e/reader-series");
     await page.mouse.wheel(0, 5000);
     const next = page.locator(".series-next-link");
     await expect(next).toBeInViewport();
-    await expect(next).toContainText("part 3 of 3");
-    await expect(next).toHaveAttribute("href", "/seasons/odyssey-p-3");
-    await expect(page.locator(".series-previous")).toHaveAttribute("href", "/seasons/odyssey-p-1");
+    await next.click();
+    await expect(page).toHaveURL(/\/odyssey-p-3$/);
   });
 });
 

@@ -30,27 +30,28 @@ export function SeriesMenu({ nav }: { nav: SeriesNavigation }) {
   );
 }
 
-/** At the end of each part: on to the next one, or back to the start after the last. */
+/**
+ * Along the bottom of each part: the previous part on the left, the next on the
+ * right. Each side shows only when there is a part to go to.
+ */
 export function SeriesNext({ nav }: { nav: SeriesNavigation }) {
-  const first = nav.parts[0];
+  const count = nav.parts.length;
   return (
     <nav className="series-next" aria-label={`${nav.name}, the series`}>
-      {nav.next ? (
-        <Link href={`/${nav.next.slug}`} className="series-next-link" rel="next">
-          <span className="series-next-label">
-            next in {nav.name} · part {nav.index + 2} of {nav.parts.length}
-          </span>
-          <span className="series-next-title">{slashTitle(nav.next.title)} →</span>
-        </Link>
-      ) : (
-        <Link href={`/${first.slug}`} className="series-next-link">
-          <span className="series-next-label">the end of {nav.name}</span>
-          <span className="series-next-title">← back to {slashTitle(first.title)}</span>
-        </Link>
-      )}
       {nav.previous ? (
-        <Link href={`/${nav.previous.slug}`} className="series-previous" rel="prev">
-          ← previous: {slashTitle(nav.previous.title)}
+        <Link href={`/${nav.previous.slug}`} className="series-step series-previous" rel="prev" aria-label={`Previous: ${slashTitle(nav.previous.title)}, part ${nav.index} of ${count}`}>
+          <span className="series-step-label">
+            ← part {nav.index} of {count}
+          </span>
+          <span className="series-step-title">{slashTitle(nav.previous.title)}</span>
+        </Link>
+      ) : null}
+      {nav.next ? (
+        <Link href={`/${nav.next.slug}`} className="series-step series-next-link" rel="next" aria-label={`Next: ${slashTitle(nav.next.title)}, part ${nav.index + 2} of ${count}`}>
+          <span className="series-step-label">
+            part {nav.index + 2} of {count} →
+          </span>
+          <span className="series-step-title">{slashTitle(nav.next.title)}</span>
         </Link>
       ) : null}
     </nav>

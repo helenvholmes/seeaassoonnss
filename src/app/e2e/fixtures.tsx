@@ -51,10 +51,10 @@ function EditorFixture({ initial }: { initial: SeasonDoc }) {
   return <Editor id="00000000-0000-4000-8000-0000000000aa" initialSlug="e2e" initialDoc={initial} initialVersion={1} initialStatus="draft" initialPublished={null} initialSortOrder={null} mediaBase="/seasons/local-media" seriesOptions={SERIES_OPTIONS} />;
 }
 
-/** The middle part of a three-part series, as a season page shows it. */
-function ReaderSeries() {
+/** One part of a three-part series (the middle one unless told), as a season page shows it. */
+function ReaderSeries({ current = 2 }: { current?: number }) {
   const part = (n: number) => ({ slug: `odyssey-p-${n}`, title: `Odyssey p ${n}`, part: n });
-  const nav = seriesNavigation("Odyssey", part(2), [part(1), part(2), part(3)])!;
+  const nav = seriesNavigation("Odyssey", part(current), [part(1), part(2), part(3)])!;
   return (
     <main className="season-page" style={{ background: "#fbfbf9" }}>
       <SeriesMenu nav={nav} />
@@ -97,6 +97,8 @@ export const FIXTURES = {
   "reader-route-text": () => <ReaderRouteText />,
   "reader-route": () => <ReaderRoute />,
   "reader-series": () => <ReaderSeries />,
+  "reader-series-first": () => <ReaderSeries current={1} />,
+  "reader-series-last": () => <ReaderSeries current={3} />,
 };
 
 export type FixtureName = keyof typeof FIXTURES;

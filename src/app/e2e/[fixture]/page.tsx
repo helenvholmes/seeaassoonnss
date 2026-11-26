@@ -7,7 +7,7 @@ import { Fixture, type FixtureName } from "../fixtures";
 export const dynamic = "force-dynamic";
 
 // Kept here, not in fixtures.tsx: a server page cannot read values from a client module.
-const NAMES: FixtureName[] = ["editor-quote", "editor-route", "editor-route-text", "reader-route", "reader-route-text", "reader-series"];
+const NAMES: FixtureName[] = ["editor-quote", "editor-route", "editor-route-text", "reader-route", "reader-route-text", "reader-series", "reader-series-first", "reader-series-last"];
 
 export default async function E2EFixture({ params }: { params: Promise<{ fixture: string }> }) {
   const { fixture } = await params;
