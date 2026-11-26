@@ -43,6 +43,20 @@ function Sticker({ file }: { file: string }) {
   return <img className="collage-sticker" src={sticker(file)} alt="" draggable={false} decoding="async" />;
 }
 
+/**
+ * The sample season's voice note: 42 seconds of frogs (public/landing/media/frogs/audio.mp3),
+ * cut from "frogs_01" by musicbrain on Freesound (CC0), mono MP3 like an upload.
+ */
+const FROGS = {
+  mediaId: "frogs",
+  caption: "frogs, 10 pm",
+  duration: 42,
+  waveform: [
+    0.62, 1, 0.82, 0.71, 0.77, 0.76, 0.96, 0.84, 0.8, 0.83, 0.7, 0.51, 0.75, 0.57, 0.79, 0.61, 0.66, 0.61, 0.66, 0.75, 0.66, 0.57,
+    0.64, 0.67, 0.81, 0.74, 0.83, 0.86, 0.96, 0.85, 0.62, 0.82, 0.77, 0.75, 0.64, 0.41,
+  ],
+};
+
 const PIECES: CollagePiece[] = [
   {
     id: "iris",
@@ -132,21 +146,13 @@ const PIECES: CollagePiece[] = [
     mobile: [4, 80, 62, 0],
     z: 5,
     className: "collage-voice",
+    live: true,
     children: (
-      <div className="voice-note">
-        <span className="voice-play"><PlayIcon /></span>
-        <span className="voice-body">
-          <svg className="voice-wave" viewBox={`0 0 ${WAVE.length * 3} 20`} preserveAspectRatio="none">
-            {WAVE.map((h, i) => (
-              <rect key={i} x={i * 3} y={10 - h * 10} width={2} height={h * 20} className={i < 11 ? "played" : undefined} />
-            ))}
-          </svg>
-          <span className="voice-meta">
-            <span className="voice-caption">frogs, 10 pm</span>
-            <span className="voice-time">0:42</span>
-          </span>
-        </span>
-      </div>
+      <VoiceNoteView
+        item={{ id: "frogs", type: "voice_note", desktop: null, mobile: null, content: FROGS } as never}
+        mediaBase={`${BASE_PATH}/landing`}
+        interactive
+      />
     ),
   },
   {

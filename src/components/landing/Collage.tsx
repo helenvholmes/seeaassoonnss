@@ -10,7 +10,16 @@ import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 /** Left, top, width (all % of the collage) and rotation (degrees). */
 type Spot = [x: number, y: number, w: number, r: number];
-export type CollagePiece = { id: string; desktop: Spot; mobile: Spot; z: number; children: ReactNode; className?: string };
+export type CollagePiece = {
+  id: string;
+  desktop: Spot;
+  mobile: Spot;
+  z: number;
+  children: ReactNode;
+  className?: string;
+  /** In a picture-only collage, a piece with a control in it (a play button) stays reachable. */
+  live?: boolean;
+};
 
 /** Pixels a pointer must move before a press becomes a drag, so buttons inside pieces still click. */
 const DRAG_START = 4;
@@ -62,10 +71,12 @@ export function Collage({
     drag.current = null;
   };
 
+  // A picture with a live piece in it is a labelled group, since an image's insides are never read.
+  const role = readable ? undefined : pieces.some((p) => p.live) ? "group" : "img";
   return (
     <div
       className={`collage ${className}`}
-      role={readable ? undefined : "img"}
+      role={role}
       aria-label={readable ? undefined : label}
       style={{ "--aspect": aspect, "--maspect": mobileAspect } as CSSProperties}
     >
@@ -94,7 +105,7 @@ export function Collage({
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={onPointerUp}
-            aria-hidden={readable ? undefined : true}
+            aria-hidden={readable || p.live ? undefined : true}
           >
             {p.children}
           </div>
