@@ -4,11 +4,14 @@ import { expect, test } from "@playwright/test";
 // the series field in the editor. Fixtures in src/app/e2e.
 
 test.describe("reading a series", () => {
-  test("the corner menu opens on click and lists every part, this one marked", async ({ page }) => {
+  test("the upper-right menu shows the part count, opens on click and lists every part, this one marked", async ({ page }) => {
     await page.goto("e2e/reader-series");
     const menu = page.locator(".series-menu");
-    await expect(menu.locator("summary")).toContainText("Odyssey");
-    await expect(menu.locator("summary")).toContainText("2/3");
+    // Just the count, in the upper right corner; the series name is in the list's links.
+    await expect(menu.locator("summary")).toHaveText("2/3");
+    const box = (await menu.boundingBox())!;
+    expect(box.y).toBeLessThan(24);
+    expect(box.x + box.width).toBeGreaterThan(page.viewportSize()!.width - 24);
     await expect(menu.locator(".series-menu-parts")).toBeHidden();
 
     await menu.locator("summary").click();
@@ -43,16 +46,21 @@ test.describe("reading a series", () => {
     const next = page.locator(".series-next-link");
     await expect(previous).toBeInViewport();
     await expect(next).toBeInViewport();
-    await expect(previous).toContainText("part 1 of 3");
+    await expect(previous).toHaveText("← Odyssey p 1");
+    await expect(previous).toHaveCSS("font-style", "italic");
     await expect(previous).toHaveAttribute("href", "/seasons/odyssey-p-1");
-    await expect(next).toContainText("part 3 of 3");
+    await expect(next).toHaveText("Odyssey p 3 →");
     await expect(next).toHaveAttribute("href", "/seasons/odyssey-p-3");
+    await expect(next).toHaveAccessibleName("Next: Odyssey p 3, part 3 of 3");
 
+    // Inset from the edges, not hard against them.
     const width = page.viewportSize()!.width;
     const p = (await previous.boundingBox())!;
     const n = (await next.boundingBox())!;
     expect(p.x).toBeLessThan(width / 4);
+    expect(p.x).toBeGreaterThan(64);
     expect(n.x + n.width).toBeGreaterThan((width * 3) / 4);
+    expect(n.x + n.width).toBeLessThan(width - 64);
     expect(Math.abs(p.y - n.y)).toBeLessThan(2);
   });
 

@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { SeasonCanvas } from "@/components/SeasonCanvas";
 import { Lightbox } from "@/components/Lightbox";
 import { lightboxPhotos } from "@/lib/lightbox";
-import { config } from "@/lib/config";
 import { getPublishedSeason, listSeriesMembers } from "@/lib/seasons";
 import { seriesNavigation } from "@/lib/series";
 import { SeriesMenu, SeriesNext } from "@/components/SeriesNav";
@@ -38,7 +37,7 @@ async function load(slug: string) {
     const season = await getPublishedSeason(slug);
     const series = season?.doc.series;
     const nav = season && series ? seriesNavigation(series.name, { slug: season.slug, title: season.doc.title, part: series.part }, await listSeriesMembers(series.name)) : null;
-    return { season, nav, mediaBase: storage().publicBaseUrl(), sourceUrl: config.sourceUrl };
+    return { season, nav, mediaBase: storage().publicBaseUrl() };
   } catch (e) {
     logPageError(`season page /${slug} (see /seasons/api/health)`, e);
     throw e;
@@ -46,7 +45,7 @@ async function load(slug: string) {
 }
 
 export default async function SeasonPage({ params }: Props) {
-  const { season, nav, mediaBase, sourceUrl } = await load((await params).slug);
+  const { season, nav, mediaBase } = await load((await params).slug);
   if (!season) notFound();
   const { doc } = season;
   return (
@@ -57,7 +56,6 @@ export default async function SeasonPage({ params }: Props) {
       {nav ? <SeriesNext nav={nav} /> : null}
       <nav className="season-footer">
         <Link href="/">// all seasons</Link>
-        <a href={sourceUrl}>seeaassoonnss is open source</a>
       </nav>
     </main>
   );
